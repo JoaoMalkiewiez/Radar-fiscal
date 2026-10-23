@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Collect observed SEFAZ outages and persist incident transitions on a data branch."""
+"""Collect SEFAZ status transitions and persist a bounded incident history."""
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
-import re
 import sys
 import urllib.error
 import urllib.parse
@@ -14,10 +14,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 API_URL = "https://monitor.tecnospeed.com.br/monitores"
+STATUS_PAGE_URL = "https://monitor.tecnospeed.com.br/"
 DOCS = ("nfe", "nfce", "cte")
+UFS = (
+    "ac", "al", "ap", "am", "ba", "ce", "df", "es", "go",
+    "ma", "mt", "ms", "mg", "pa", "pb", "pr", "pe", "pi",
+    "rj", "rn", "rs", "ro", "rr", "sc", "sp", "se", "to",
+)
 OUTAGE_STATUSES = {3, 4, 5}
 STATUS_LABELS = {3: "muito_lento", 4: "timeout", 5: "erro"}
-WORKER_RE = re.compile(r"^sefaz_(nfe|nfce|cte)_envio_([a-z]{2})$")
+VALID_STATUSES = {1, 2, 3, 4, 5}
 
 
 def utc_now() -> datetime:
@@ -40,53 +46,93 @@ def parse_timestamp(value: object, fallback: datetime) -> datetime:
         return fallback
 
 
-def fetch_doc_statuses(doc: str) -> dict[str, int]:
-    query = urllib.parse.urlencode({"stateStatus": "true", "doc": doc})
+def parse_status(value: object) -> int | None:
+    """TecnoSpeed may serialize a numeric status as e.g. '1.0000'."""
+    try:
+        number = float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    if not number.is_integer():
+        return None
+    status = int(number)
+    return status if status in VALID_STATUSES else None
+
+
+def fetch_worker_status(doc: str, uf: str) -> tuple[str, str, int | None, str | None]:
+    """Return (doc, UF, status, detail); missing workers are not treated as normal."""
+    worker_id = f"sefaz_{doc}_envio_{uf}"
+    query = urllib.parse.urlencode({"current": "true", "worker_id": worker_id})
     request = urllib.request.Request(
         f"{API_URL}?{query}",
         headers={
             "Accept": "application/json",
-            "Referer": "https://monitor.tecnospeed.com.br/",
-            "User-Agent": "RadarFiscal-SEFAZ-History/1.0",
+            "Accept-Encoding": "identity",
+            "Referer": STATUS_PAGE_URL,
+            "X-Requested-With": "XMLHttpRequest",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
         },
     )
-    with urllib.request.urlopen(request, timeout=20) as response:
-        if response.status != 200:
-            raise RuntimeError(f"HTTP {response.status} ao consultar {doc}")
-        payload = json.loads(response.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            if response.status != 200:
+                return doc, uf.upper(), None, f"HTTP {response.status}"
+            raw = response.read()
+        payload = json.loads(raw.decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, OSError) as error:
+        return doc, uf.upper(), None, str(error)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        return doc, uf.upper(), None, f"Resposta inválida: {error}"
 
+    if isinstance(payload, dict):
+        payload = [payload]
     if not isinstance(payload, list):
-        raise RuntimeError(f"Resposta inesperada da TecnoSpeed para {doc}")
+        return doc, uf.upper(), None, "Formato inesperado na resposta"
 
-    statuses: dict[str, int] = {}
     for item in payload:
         if not isinstance(item, dict):
             continue
-        match = WORKER_RE.match(str(item.get("id_worker") or ""))
-        if not match or match.group(1) != doc:
+        returned_worker = str(item.get("id_worker") or "")
+        # Never attribute a result from one worker to a different document/UF.
+        if returned_worker and returned_worker != worker_id:
             continue
-        try:
-            status = int(item.get("status"))
-        except (TypeError, ValueError):
-            continue
-        if status not in {1, 2, 3, 4, 5}:
-            continue
-        statuses[match.group(2).upper()] = status
+        status = parse_status(item.get("status"))
+        if status is not None:
+            return doc, uf.upper(), status, None
 
-    if not statuses:
-        sample = [
-            {
-                "id_worker": item.get("id_worker"),
-                "status": item.get("status"),
-                "keys": list(item.keys()),
-            }
-            for item in payload[:3]
-            if isinstance(item, dict)
-        ]
-        raise RuntimeError(
-            f"API retornou {len(payload)} registros, mas nenhum correspondeu ao padrão esperado; amostra={sample!r}"
-        )
-    return statuses
+    return doc, uf.upper(), None, None
+
+
+def fetch_all_statuses() -> tuple[dict[str, dict[str, int]], dict[str, str]]:
+    statuses: dict[str, dict[str, int]] = {doc: {} for doc in DOCS}
+    errors: dict[str, list[str]] = {doc: [] for doc in DOCS}
+    tasks = [(doc, uf) for doc in DOCS for uf in UFS]
+
+    # Parallel requests keep the whole collection within the five-minute interval.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
+        futures = [executor.submit(fetch_worker_status, doc, uf) for doc, uf in tasks]
+        for future in concurrent.futures.as_completed(futures):
+            doc, uf, status, detail = future.result()
+            if status is not None:
+                statuses[doc][uf] = status
+            elif detail:
+                errors[doc].append(f"{uf}: {detail}")
+
+    summary_errors: dict[str, str] = {}
+    for doc in DOCS:
+        print(f"{doc.upper()}: {len(statuses[doc])} UFs com status recebidos")
+        if errors[doc]:
+            print(f"{doc.upper()}: {len(errors[doc])} erros de requisição; exemplo: {errors[doc][0]}", file=sys.stderr)
+        if not statuses[doc]:
+            summary_errors[doc] = (
+                f"Nenhum status válido recebido para {doc.upper()}. "
+                f"Erros de requisição: {len(errors[doc])}; "
+                f"exemplo: {errors[doc][0] if errors[doc] else 'a fonte retornou lista vazia ou worker não encontrado'}"
+            )
+    return statuses, summary_errors
 
 
 def latest_open_incident(incidents: list[dict], key: str) -> dict | None:
@@ -106,23 +152,21 @@ def main() -> int:
     if not isinstance(history, dict) or not isinstance(history.get("incidents"), list):
         raise RuntimeError("Estrutura inválida em history.json; nenhum dado foi sobrescrito.")
 
+    statuses_by_doc, errors = fetch_all_statuses()
+    for doc, detail in errors.items():
+        print(f"AVISO: {detail}", file=sys.stderr)
+
+    # Do not update trackingSince if a whole document could not be queried.
+    successful_docs = sum(bool(statuses_by_doc[doc]) for doc in DOCS)
+    if successful_docs == 0:
+        raise RuntimeError("Nenhuma consulta válida da TecnoSpeed; o histórico foi preservado.")
+
     now = utc_now()
     incidents: list[dict] = history["incidents"]
     updated = False
-    successful_docs = 0
 
     for doc in DOCS:
-        try:
-            statuses = fetch_doc_statuses(doc)
-            if not statuses:
-                raise RuntimeError("A fonte não retornou status reconhecíveis para nenhuma UF")
-            successful_docs += 1
-            print(f"{doc.upper()}: {len(statuses)} UFs com status recebidos")
-        except (urllib.error.URLError, TimeoutError, RuntimeError, json.JSONDecodeError) as error:
-            print(f"AVISO: consulta de {doc} falhou: {error}", file=sys.stderr)
-            continue
-
-        for uf, status in statuses.items():
+        for uf, status in statuses_by_doc[doc].items():
             key = f"{doc}:{uf}"
             active = latest_open_incident(incidents, key)
 
@@ -154,14 +198,13 @@ def main() -> int:
                 detected_at = parse_timestamp(active.get("detectedAt"), now)
                 recovered_at = max(now, detected_at)
                 active["recoveredAt"] = iso(recovered_at)
-                active["durationSeconds"] = max(0, int((recovered_at - detected_at).total_seconds()))
+                active["durationSeconds"] = max(
+                    0, int((recovered_at - detected_at).total_seconds())
+                )
                 print(f"Serviço normalizado: {doc.upper()} {uf}")
                 updated = True
 
-    if successful_docs == 0:
-        raise RuntimeError("As três consultas à TecnoSpeed falharam; o histórico foi preservado.")
-
-    if not history.get("trackingSince"):
+    if successful_docs > 0 and not history.get("trackingSince"):
         history["trackingSince"] = iso(now)
         updated = True
 
@@ -169,19 +212,21 @@ def main() -> int:
         print("Nenhuma mudança de instabilidade detectada; histórico preservado sem novo commit.")
         return 0
 
-    # Keep a bounded history while never removing active incidents.
+    # Keep up to 300 events and retain every currently open incident.
     active_incidents = [item for item in incidents if not item.get("recoveredAt")]
     closed_incidents = sorted(
         (item for item in incidents if item.get("recoveredAt")),
         key=lambda item: str(item.get("detectedAt") or ""),
     )
     keep_closed = max(0, 300 - len(active_incidents))
+    retained_closed = closed_incidents[-keep_closed:] if keep_closed else []
     history["incidents"] = sorted(
-        closed_incidents[-keep_closed:] + active_incidents if keep_closed else active_incidents,
+        retained_closed + active_incidents,
         key=lambda item: str(item.get("detectedAt") or ""),
     )
-    history.setdefault("schemaVersion", 1)
-    history.setdefault("trackingSince", iso(now))
+    history["schemaVersion"] = 1
+    if not history.get("trackingSince"):
+        history["trackingSince"] = iso(now)
     history["updatedAt"] = iso(now)
 
     temporary_path = history_path.with_suffix(".json.tmp")
