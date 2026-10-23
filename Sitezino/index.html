@@ -293,6 +293,57 @@
               <span>Atualizar</span>
             </button>
           </div>
+          <div class="monitor-summary" id="monitor-summary" aria-label="Resumo do status atual"></div>
+          <div class="monitor-map-dashboard">
+            <section class="monitor-map-card" aria-labelledby="monitor-map-title">
+              <div class="monitor-map-card-heading">
+                <div>
+                  <p class="eyebrow eyebrow--dark">Visão geográfica</p>
+                  <h3 id="monitor-map-title">Status por estado</h3>
+                  <p id="monitor-map-caption">Mapa de disponibilidade por UF para o documento selecionado.</p>
+                </div>
+                <button class="monitor-map-reset" type="button" data-map-reset>Limpar seleção</button>
+              </div>
+              <div class="monitor-map-stage" id="monitor-map-stage" role="group" aria-label="Mapa interativo do Brasil por unidade federativa">
+                <svg class="monitor-brazil-shape" viewBox="0 0 320 420" role="img" aria-label="Silhueta aproximada do Brasil">
+                  <defs>
+                    <linearGradient id="monitor-map-fill" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="currentColor" stop-opacity=".17"/>
+                      <stop offset="100%" stop-color="currentColor" stop-opacity=".04"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M112 10 L145 17 L169 34 L199 38 L217 55 L245 62 L270 82 L297 101 L286 122 L270 138 L277 155 L262 174 L280 195 L267 213 L249 230 L261 245 L247 265 L234 290 L218 320 L200 350 L190 381 L170 410 L155 389 L145 366 L125 350 L115 326 L96 307 L82 280 L60 254 L53 228 L35 208 L47 182 L39 158 L53 136 L44 114 L61 95 L54 73 L74 54 L71 34 L92 22 Z" fill="url(#monitor-map-fill)" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+                </svg>
+                <div class="monitor-map-pins" id="monitor-map-pins"></div>
+              </div>
+              <div class="monitor-map-legend" aria-label="Legenda do mapa">
+                <span><i class="legend-dot tone-normal" aria-hidden="true"></i>Normal</span>
+                <span><i class="legend-dot tone-slow" aria-hidden="true"></i>Lento</span>
+                <span><i class="legend-dot tone-vslow" aria-hidden="true"></i>Muito lento</span>
+                <span><i class="legend-dot tone-timeout" aria-hidden="true"></i>Sem resposta</span>
+                <span><i class="legend-dot tone-error" aria-hidden="true"></i>Erro</span>
+                <span><i class="legend-dot tone-unmonitored" aria-hidden="true"></i>Sem dados</span>
+              </div>
+              <p class="monitor-map-footnote">Os pontos são referências visuais aproximadas das UFs, não limites geográficos oficiais. Clique em um ponto para filtrar o estado.</p>
+              <div class="monitor-map-selected" id="monitor-map-selected" role="status">Selecione um ponto do mapa para filtrar por UF.</div>
+            </section>
+            <section class="monitor-map-services" aria-labelledby="monitor-map-services-title">
+              <div class="monitor-map-card-heading">
+                <div>
+                  <p class="eyebrow eyebrow--dark">Resumo nacional</p>
+                  <h3 id="monitor-map-services-title">Status por serviço</h3>
+                  <p>Selecione um documento para atualizar o mapa e a grade.</p>
+                </div>
+              </div>
+              <div id="monitor-map-services" class="monitor-map-service-list" aria-live="polite">
+                <div class="monitor-map-service-loading">Carregando status dos serviços…</div>
+              </div>
+              <div class="monitor-map-service-note">
+                <span class="live-dot" aria-hidden="true"></span>
+                <span>Fonte: Monitor SEFAZ · TecnoSpeed</span>
+              </div>
+            </section>
+          </div>
           <div class="monitor-grid" id="monitor-grid" role="tabpanel" aria-labelledby="tab-nfe"></div>
           <div class="monitor-foot">
             <div class="monitor-legend" aria-label="Legenda de status">
@@ -315,12 +366,56 @@
             <div class="monitor-history-heading">
               <p class="eyebrow eyebrow--dark">Histórico de instabilidades</p>
               <h3>Quedas e recuperações recentes</h3>
-              <p>Registros observados nos serviços de NF-e, NFC-e e CT-e.</p>
+              <p>Filtre as ocorrências observadas e acompanhe quando cada serviço foi afetado e normalizado.</p>
             </div>
-            <div class="monitor-history-collection" id="monitor-history-status" aria-label="Frequência de coleta">
+            <div class="monitor-history-collection" id="monitor-history-status" aria-label="Estado da coleta">
               <span class="live-dot" aria-hidden="true"></span>
               <span>Coleta automática · cerca de 5 min</span>
             </div>
+          </div>
+          <div class="monitor-history-controls" aria-label="Filtros do histórico">
+            <div class="monitor-history-period" role="group" aria-label="Período do histórico">
+              <button type="button" data-history-period="24h" aria-pressed="false">24 horas</button>
+              <button type="button" data-history-period="7d" class="is-active" aria-pressed="true">7 dias</button>
+              <button type="button" data-history-period="30d" aria-pressed="false">30 dias</button>
+            </div>
+            <label class="monitor-history-select">Documento
+              <select id="monitor-history-document">
+                <option value="all">Todos</option>
+                <option value="nfe">NF-e</option>
+                <option value="nfce">NFC-e</option>
+                <option value="cte">CT-e</option>
+              </select>
+            </label>
+            <label class="monitor-history-select">Estado
+              <select id="monitor-history-uf">
+                <option value="all">Todas as UFs</option>
+              </select>
+            </label>
+            <label class="monitor-history-select">Situação
+              <select id="monitor-history-state">
+                <option value="all">Todas</option>
+                <option value="open">Em andamento</option>
+                <option value="resolved">Normalizadas</option>
+              </select>
+            </label>
+            <button class="monitor-map-reset" type="button" data-history-reset>Limpar filtros</button>
+          </div>
+          <div class="monitor-history-summary" id="monitor-history-summary" aria-label="Resumo do período"></div>
+          <div class="monitor-history-chart-wrap">
+            <div class="monitor-history-chart-heading">
+              <div>
+                <strong id="monitor-history-chart-title">Instabilidades observadas por dia</strong>
+                <span id="monitor-history-chart-description">Contagem de ocorrências no período selecionado</span>
+              </div>
+            </div>
+            <div class="monitor-history-chart" id="monitor-history-chart" aria-live="polite">
+              <div class="monitor-history-chart-empty">Carregando gráfico…</div>
+            </div>
+          </div>
+          <div class="monitor-history-results">
+            <strong id="monitor-history-results-count">Ocorrências recentes</strong>
+            <span>Os registros começam a partir da ativação da coleta.</span>
           </div>
           <div class="monitor-history-list" id="monitor-history-list" role="list" aria-live="polite">
             <div class="monitor-history-empty">Carregando o histórico de instabilidades…</div>
