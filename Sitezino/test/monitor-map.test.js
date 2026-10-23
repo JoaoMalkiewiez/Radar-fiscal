@@ -103,11 +103,15 @@ test("NF-e, NFC-e e CT-e têm mapeamento de cor para cada status recebido", () =
   );
 });
 
-test("coletor consulta cada documento sem restringir a UF a São Paulo", () => {
+test("coleta cada documento com o worker de referência e rejeita resposta sem UFs", () => {
   const server = read("server.js");
-  const request = server.match(/const url = `([^\`]+)`;/);
+  const request = server.match(/const url = `([^`]+)`;/);
   assert.ok(request, "URL de coleta não encontrada");
-  assert.match(request[1], /\/monitores\?stateStatus=true&doc=\$\{encodeURIComponent\(doc\)\}/);
-  assert.doesNotMatch(request[1], /worker_id=/, "a coleta não deve limitar o retorno a SP");
+  assert.match(
+    request[1],
+    /\/monitores\?stateStatus=true&doc=\$\{encodeURIComponent\(doc\)\}&worker_id=sefaz_\$\{doc\}_envio_sp/
+  );
   assert.match(server, /\^sefaz_\(nfe\|nfce\|cte\)_envio_\(\[a-z\]\{2\}\)\$/);
+  assert.match(server, /if \(Object\.keys\(states\)\.length === 0\)/);
+  assert.match(server, /A fonte não retornou status estaduais reconhecíveis/);
 });
