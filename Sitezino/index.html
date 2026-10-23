@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="pt-BR" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Radar Fiscal — CNPJ, IE e status da SEFAZ (NF-e, NFC-e e CT-e)</title>
+  <meta name="description" content="Consulte qualquer CNPJ e veja as inscrições estaduais (IE), a situação na SEFAZ, os dados da Receita Federal e o status dos serviços de NF-e, NFC-e e CT-e em todos os estados. Gratuito e sem cadastro.">
+  <meta name="theme-color" content="#0A1F17">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" content="Radar Fiscal — CNPJ, IE e monitor SEFAZ">
+  <meta property="og:description" content="Consulte o CNPJ de qualquer empresa brasileira, veja as inscrições estaduais e acompanhe o status de NF-e, NFC-e e CT-e por estado.">
+  <meta property="og:site_name" content="Radar Fiscal">
+  <meta name="robots" content="index,follow">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "name": "Radar Fiscal",
+        "description": "Consulta de CNPJ, inscrição estadual e status dos serviços fiscais da SEFAZ para NF-e, NFC-e e CT-e.",
+        "inLanguage": "pt-BR"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "O que é a Inscrição Estadual (IE)?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A Inscrição Estadual é o registro da empresa na Secretaria de Fazenda do estado. Ela é necessária para operações com ICMS e não é a mesma coisa que o CNPJ."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "De onde vêm os dados da consulta?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Os dados cadastrais vêm da base pública da Receita Federal via BrasilAPI. As inscrições estaduais vêm do publica.cnpj.ws. O status dos serviços de NF-e, NFC-e e CT-e vem do Monitor SEFAZ da TecnoSpeed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "O que significam os status Normal, Lento e Sem resposta?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Normal indica resposta em até 2 segundos; Lento, até 5 segundos; Muito lento, até 30 segundos; Sem resposta indica timeout; Erro indica retorno com erro. A disponibilidade é atualizada automaticamente a cada minuto."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230A1F17'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%23D9F36C' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='8' fill='none' stroke='%23D9F36C' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='3' fill='%23D9F36C'/%3E%3Cpath d='M32 32L46 18' stroke='%23D9F36C' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <script>
+    (() => {
+      const key = "radarfiscal:theme";
+      let theme = null;
+      try { theme = localStorage.getItem(key); } catch { /* armazenamento indisponível */ }
+      if (theme !== "dark" && theme !== "light") {
+        theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.dataset.theme = theme;
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", theme === "dark" ? "#070F0B" : "#0A1F17");
+      document.documentElement.classList.remove("no-js");
+      document.documentElement.classList.add("js");
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <noscript><div class="noscript">Este site precisa de JavaScript ativado para consultar o CNPJ.</div></noscript>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="Radar Fiscal — início">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="34" height="34" fill="none">
+            <rect width="32" height="32" rx="9" fill="#D9F36C"/>
+            <circle cx="16" cy="16" r="9" stroke="#0A1F17" stroke-width="1.8"/>
+            <circle cx="16" cy="16" r="4.5" stroke="#0A1F17" stroke-width="1.8"/>
+            <path d="M16 16l6.5-6.5" stroke="#0A1F17" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="16" cy="16" r="1.8" fill="#0A1F17"/>
+            <circle cx="23.5" cy="8.5" r="1.8" fill="#0A1F17"/>
+          </svg>
+        </span>
+        <span class="brand-word">Radar<span>Fiscal</span></span>
+      </a>
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#monitor">Monitor SEFAZ</a>
+        <a href="#portais">Portais</a>
+        <a href="#faq">Dúvidas</a>
+      </nav>
+      <div class="header-actions">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Ativar modo escuro" aria-pressed="false" title="Alternar tema">
+          <svg class="icon-moon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M15.4 12.5A6.6 6.6 0 0 1 7.5 4.6a6.5 6.5 0 1 0 7.9 7.9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <svg class="icon-sun" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="3.4" stroke="currentColor" stroke-width="1.5"/><path d="M10 1.8v2M10 16.2v2M1.8 10h2M16.2 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M15.8 4.2l-1.4 1.4M5.6 14.4l-1.4 1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+        <a class="header-cta" href="#busca">
+          <span class="cta-dot" aria-hidden="true"></span>
+          <span>Consultar CNPJ</span>
+        </a>
+        <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-menu">
+          <span class="menu-toggle-box" aria-hidden="true"><span></span><span></span><span></span></span>
+        </button>
+      </div>
+      <nav class="mobile-nav" id="mobile-menu" aria-label="Menu mobile" hidden>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#monitor">Monitor SEFAZ</a>
+        <a href="#portais">Portais oficiais</a>
+        <a href="#faq">Dúvidas frequentes</a>
+        <a class="mobile-nav-cta" href="#busca"><span class="cta-dot" aria-hidden="true"></span>Consultar CNPJ</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section class="hero" id="busca">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Consulta fiscal gratuita · 100% online</p>
+          <h1>CNPJ, IE e situação na SEFAZ. <span class="accent">Em uma só busca.</span></h1>
+          <p class="hero-sub">Digite o CNPJ de qualquer empresa brasileira e veja as inscrições estaduais, o status em cada estado e os dados oficiais da Receita Federal. Acompanhe também NF-e, NFC-e e CT-e em todo o país.</p>
+
+          <form class="search-form" id="search-form" novalidate>
+            <label class="sr-only" for="cnpj">CNPJ da empresa</label>
+            <div class="search-box" id="search-box">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              <input id="cnpj" name="cnpj" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="18" placeholder="00.000.000/0000-00" aria-describedby="cnpj-help">
+              <button type="submit" class="btn-search" id="btn-search">
+                <span class="btn-label">Consultar</span>
+                <svg class="arrow" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="spinner" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="form-foot">
+              <p class="help-text" id="cnpj-help" role="status" aria-live="polite">Digite os 14 números do CNPJ.</p>
+            </div>
+          </form>
+
+          <div class="examples" id="examples">
+            <span class="examples-label">Experimente:</span>
+            <button class="chip" type="button" data-cnpj="33000167000101">Petrobras</button>
+            <button class="chip" type="button" data-cnpj="18236120000158">Nubank</button>
+            <button class="chip" type="button" data-cnpj="47960950000121">Magazine Luiza</button>
+          </div>
+          <div class="recents" id="recents" hidden>
+            <span class="examples-label">Recentes:</span>
+            <div class="recents-list" id="recents-list"></div>
+          </div>
+
+          <ul class="trust-row">
+            <li><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.5l6 2.2v4.5c0 3.8-2.5 6.6-6 8.3-3.5-1.7-6-4.5-6-8.3V4.7l6-2.2z" stroke="currentColor" stroke-width="1.4"/><path d="M7.3 9.8l1.9 1.9 3.6-3.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Fontes públicas oficiais</li>
+            <li><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M11 2L4 11h5l-1 7 8-10h-5l0-6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg> Resultado em segundos</li>
+            <li><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="8.5" width="12" height="8.5" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M7 8.5V6a3 3 0 016 0v2.5" stroke="currentColor" stroke-width="1.4"/></svg> Sem cadastro</li>
+          </ul>
+        </div>
+
+        <aside class="hero-visual" aria-label="Prévia ilustrativa de um resultado">
+          <div class="preview-card">
+            <div class="preview-top">
+              <span class="preview-status"><span class="dot" aria-hidden="true"></span> Consulta concluída</span>
+              <span class="preview-badge">Prévia</span>
+            </div>
+            <div class="preview-company">
+              <div class="preview-monogram" aria-hidden="true">EX</div>
+              <div class="preview-company-info">
+                <strong>Empresa Exemplo S.A.</strong>
+                <span>12.345.678/0001-95</span>
+              </div>
+              <span class="pill pill-active">Ativa</span>
+            </div>
+            <div class="preview-divider" aria-hidden="true"></div>
+            <p class="preview-label">Inscrições estaduais</p>
+            <div class="preview-ies">
+              <div class="preview-ie">
+                <span class="preview-uf">SP</span>
+                <div class="preview-ie-info"><strong>110.042.490.114</strong><span>São Paulo</span></div>
+                <span class="mini-status ativo"><i aria-hidden="true"></i>Ativa</span>
+              </div>
+              <div class="preview-ie">
+                <span class="preview-uf">MG</span>
+                <div class="preview-ie-info"><strong>062.307.904/0049</strong><span>Minas Gerais</span></div>
+                <span class="mini-status inativo"><i aria-hidden="true"></i>Inativa</span>
+              </div>
+              <div class="preview-ie">
+                <span class="preview-uf">DF</span>
+                <div class="preview-ie-info"><strong>07.488.786/0013-1</strong><span>Distrito Federal</span></div>
+                <span class="mini-status ativo"><i aria-hidden="true"></i>Ativa</span>
+              </div>
+            </div>
+            <div class="preview-footer"><span>3 inscrições · 3 estados</span><span class="good">2 ativas</span></div>
+          </div>
+          <div class="float-badge">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 18s6-5.1 6-10a6 6 0 10-12 0c0 4.9 6 10 6 10z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg>
+            <span><strong>27 UFs</strong> cobertas</span>
+          </div>
+        </aside>
+      </div>
+      <div class="container hero-bottom">
+        <p>Dados públicos da Receita Federal e das bases estaduais. Projeto independente, sem vínculo com o governo.</p>
+      </div>
+    </section>
+
+    <section class="results container" id="resultado" hidden aria-live="polite" aria-busy="false"></section>
+
+    <section class="section how" id="como-funciona">
+      <div class="container">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow eyebrow--dark">Como funciona</p>
+          <h2>Da Receita Federal à SEFAZ, sem complicação.</h2>
+          <p>Uma única consulta reúne o cadastro da empresa, todas as inscrições estaduais localizadas e a situação de cada uma delas.</p>
+        </div>
+        <div class="steps">
+          <article class="step" data-reveal>
+            <span class="step-number">01</span>
+            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M7 9h6M7 13h10M7 17h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <h3>Digite o CNPJ</h3>
+            <p>Informe os 14 dígitos. A validação dos dígitos verificadores acontece antes de qualquer consulta, sem cadastro.</p>
+          </article>
+          <article class="step" data-reveal>
+            <span class="step-number">02</span>
+            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3" stroke="currentColor" stroke-width="1.6"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" stroke="currentColor" stroke-width="1.6"/></svg></div>
+            <h3>Cruzamos as bases</h3>
+            <p>Buscamos os dados cadastrais na Receita Federal e as inscrições estaduais nas bases públicas de IE.</p>
+          </article>
+          <article class="step" data-reveal>
+            <span class="step-number">03</span>
+            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 2.6v5.1c0 4.6-3 8-7 10-4-2-7-5.4-7-10V5.6L12 3z" stroke="currentColor" stroke-width="1.6"/><path d="M9 12l2 2 4-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3>Confira e valide</h3>
+            <p>Veja a situação em cada estado e abra o portal da SEFAZ para a confirmação oficial, quando precisar.</p>
+          </article>
+        </div>
+        <div class="how-note" data-reveal>
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/><path d="M10 9v4M10 6.5v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <p><strong>Transparência:</strong> a situação da IE reflete a última atualização da base pública. Para efeito legal, vale sempre a consulta no portal da SEFAZ do estado.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section monitor" id="monitor">
+      <div class="container">
+        <div class="section-head section-head--split" data-reveal>
+          <div>
+            <p class="eyebrow eyebrow--dark">Monitor SEFAZ</p>
+            <h2>Os serviços fiscais, estado por estado.</h2>
+            <p>Disponibilidade dos webservices de NF-e, NFC-e e CT-e em todo o Brasil, com dados do Monitor SEFAZ da TecnoSpeed.</p>
+          </div>
+          <div class="monitor-live" aria-label="Atualização automática">
+            <span class="live-dot" aria-hidden="true"></span>
+            <div><span>Atualização automática</span><strong>NF-e · NFC-e · CT-e</strong></div>
+          </div>
+        </div>
+        <div class="monitor-panel" data-reveal>
+          <div class="monitor-bar">
+            <div class="monitor-tabs" role="tablist" aria-label="Tipo de documento fiscal">
+              <button class="monitor-tab" type="button" role="tab" id="tab-nfe" data-doc="nfe" aria-selected="true" aria-controls="monitor-grid">NF-e</button>
+              <button class="monitor-tab" type="button" role="tab" id="tab-nfce" data-doc="nfce" aria-selected="false" aria-controls="monitor-grid" tabindex="-1">NFC-e</button>
+              <button class="monitor-tab" type="button" role="tab" id="tab-cte" data-doc="cte" aria-selected="false" aria-controls="monitor-grid" tabindex="-1">CT-e</button>
+            </div>
+            <div class="monitor-updated" id="monitor-updated" aria-live="polite">
+              <span class="live-dot" aria-hidden="true"></span>
+              <span>Consultando…</span>
+            </div>
+          </div>
+          <div class="monitor-tools">
+            <label class="monitor-search" for="monitor-search">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input id="monitor-search" type="search" placeholder="Buscar UF ou estado" autocomplete="off" spellcheck="false" aria-label="Buscar estado no monitor">
+            </label>
+            <div class="monitor-filter" role="group" aria-label="Filtrar estados">
+              <button class="monitor-filter-btn is-active" type="button" data-filter="all" aria-pressed="true">Todos</button>
+              <button class="monitor-filter-btn" type="button" data-filter="alert" aria-pressed="false">Com alerta</button>
+            </div>
+            <button class="monitor-refresh" id="monitor-refresh" type="button" title="Atualizar status agora" aria-label="Atualizar status agora">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 4.5V9h-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Atualizar</span>
+            </button>
+          </div>
+          <div class="monitor-grid" id="monitor-grid" role="tabpanel" aria-labelledby="tab-nfe"></div>
+          <div class="monitor-foot">
+            <div class="monitor-legend" aria-label="Legenda de status">
+              <span class="legend-item"><i class="legend-dot tone-normal" aria-hidden="true"></i>Normal</span>
+              <span class="legend-item"><i class="legend-dot tone-slow" aria-hidden="true"></i>Lento</span>
+              <span class="legend-item"><i class="legend-dot tone-vslow" aria-hidden="true"></i>Muito lento</span>
+              <span class="legend-item"><i class="legend-dot tone-timeout" aria-hidden="true"></i>Sem resposta</span>
+              <span class="legend-item"><i class="legend-dot tone-error" aria-hidden="true"></i>Erro</span>
+              <span class="legend-item"><i class="legend-dot tone-none" aria-hidden="true"></i>Sem dados</span>
+              <span class="legend-item"><i class="legend-dot tone-unmonitored" aria-hidden="true"></i>Não monitorado</span>
+            </div>
+            <a class="monitor-source-link" href="https://monitor.tecnospeed.com.br/" target="_blank" rel="noopener noreferrer">
+              Fonte: Monitor SEFAZ · TecnoSpeed
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3h7v7M13 3L4 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+        </div>
+        <p class="monitor-note">Os status refletem a disponibilidade dos webservices no momento da consulta e são atualizados automaticamente a cada minuto.</p>
+      </div>
+    </section>
+
+    <section class="section portals" id="portais">
+      <div class="container">
+        <div class="section-head section-head--split" data-reveal>
+          <div>
+            <p class="eyebrow eyebrow--dark">Portais oficiais</p>
+            <h2>Confirme direto na SEFAZ.</h2>
+            <p>Precisa da validação oficial? Acesse o portal da Secretaria da Fazenda de cada estado ou use a consulta nacional do SINTEGRA.</p>
+          </div>
+          <div class="coverage-stat" aria-label="27 unidades federativas cobertas">
+            <strong>27</strong>
+            <span>UFs cobertas</span>
+          </div>
+        </div>
+        <div class="portal-grid" id="portal-grid" aria-label="Portais da SEFAZ por estado"></div>
+        <p class="portal-foot">Prefere uma consulta nacional? <a href="https://www.sintegra.gov.br/" target="_blank" rel="noopener noreferrer">Acesse o SINTEGRA <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3h7v7M13 3L4 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>.</p>
+      </div>
+    </section>
+
+    <section class="section faq" id="faq">
+      <div class="container faq-grid">
+        <div class="faq-intro" data-reveal>
+          <p class="eyebrow eyebrow--dark">Dúvidas frequentes</p>
+          <h2>Antes de consultar.</h2>
+          <p>O essencial sobre CNPJ, Inscrição Estadual e os limites de uma consulta feita com dados públicos.</p>
+        </div>
+        <div class="faq-list" data-reveal>
+          <details class="faq-item">
+            <summary>O que é a Inscrição Estadual (IE)?<span class="faq-icon" aria-hidden="true">+</span></summary>
+            <p>É o registro da empresa na Secretaria da Fazenda do estado, necessário para operações sujeitas ao ICMS. Uma mesma empresa pode ter uma IE em cada estado onde atua, e cada uma tem numeração e situação próprias.</p>
+          </details>
+          <details class="faq-item">
+            <summary>De onde vêm os dados da consulta?<span class="faq-icon" aria-hidden="true">+</span></summary>
+            <p>Os dados cadastrais vêm da base pública da Receita Federal, consultada via BrasilAPI. As inscrições estaduais e a indicação de estarem ativas ou inativas vêm da base pública do publica.cnpj.ws. O Radar Fiscal não é um serviço oficial do governo.</p>
+          </details>
+          <details class="faq-item">
+            <summary>A situação da IE é atualizada em tempo real?<span class="faq-icon" aria-hidden="true">+</span></summary>
+            <p>Não. A situação exibida reflete a última atualização disponível na base pública, cuja data aparece em cada inscrição. Para validar a situação atual, use o link do portal da SEFAZ do estado correspondente.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Por que meu CNPJ não mostra nenhuma IE?<span class="faq-icon" aria-hidden="true">+</span></summary>
+            <p>MEIs, empresas que prestam apenas serviços e negócios recém-abertos podem não ter Inscrição Estadual, ou a inscrição pode ainda não constar na base pública. Vale confirmar diretamente no portal da SEFAZ do estado ou no SINTEGRA.</p>
+          </details>
+          <details class="faq-item">
+            <summary>O que significam os status do Monitor SEFAZ?<span class="faq-icon" aria-hidden="true">+</span></summary>
+            <p>Os estados mostram a disponibilidade dos webservices de NF-e, NFC-e e CT-e: <strong>Normal</strong> (até 2s), <strong>Lento</strong> (até 5s), <strong>Muito lento</strong> (até 30s), <strong>Sem resposta</strong> (timeout) e <strong>Erro</strong>. Os dados vêm do Monitor SEFAZ da TecnoSpeed e são atualizados automaticamente a cada minuto.</p>
+          </details>
+          <details class="faq-item">
+            <summary>A consulta é gratuita?<span class="faq-icon" aria-hidden="true">+</span></summary>
+            <p>Sim, é gratuita e não exige cadastro. As fontes públicas têm limites de requisições; se o limite for atingido, o site ainda exibe os dados cadastrais da Receita Federal e orienta a consulta direta à SEFAZ.</p>
+          </details>
+          <details class="faq-item">
+            <summary>O Radar Fiscal é um site oficial?<span class="faq-icon" aria-hidden="true">+</span></summary>
+            <p>Não. É um projeto independente, sem vínculo com a Receita Federal, SEFAZ ou qualquer órgão público. Os dados são públicos e informativos; confirme sempre nos canais oficiais antes de tomar decisões fiscais.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section">
+      <div class="container">
+        <div class="cta-inner" data-reveal>
+          <div>
+            <p class="eyebrow">Consulta gratuita</p>
+            <h2>Um CNPJ. Todos os estados.</h2>
+            <p>Descubra as inscrições estaduais e a situação fiscal da empresa em poucos segundos.</p>
+          </div>
+          <a class="btn btn--lime" href="#busca">Consultar agora
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <a class="brand brand--dark" href="./" aria-label="Radar Fiscal — início">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="30" height="30" fill="none">
+              <rect width="32" height="32" rx="9" fill="#0A1F17"/>
+              <circle cx="16" cy="16" r="9" stroke="#D9F36C" stroke-width="1.8"/>
+              <circle cx="16" cy="16" r="4.5" stroke="#D9F36C" stroke-width="1.8"/>
+              <path d="M16 16l6.5-6.5" stroke="#D9F36C" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="16" cy="16" r="1.8" fill="#D9F36C"/>
+              <circle cx="23.5" cy="8.5" r="1.8" fill="#D9F36C"/>
+            </svg>
+          </span>
+          <span class="brand-word">Radar<span>Fiscal</span></span>
+        </a>
+        <p>Consulta de CNPJ, Inscrição Estadual e situação na SEFAZ com dados públicos, em uma interface simples.</p>
+        <span class="footer-made">Feito para consultas rápidas do dia a dia.</span>
+      </div>
+      <div class="footer-col">
+        <h3>Navegação</h3>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#monitor">Monitor SEFAZ</a>
+        <a href="#portais">Portais SEFAZ</a>
+        <a href="#faq">Dúvidas frequentes</a>
+        <a href="#busca">Consultar CNPJ</a>
+      </div>
+      <div class="footer-col">
+        <h3>Fontes</h3>
+        <a href="https://brasilapi.com.br/docs" target="_blank" rel="noopener noreferrer">BrasilAPI</a>
+        <a href="https://publica.cnpj.ws/" target="_blank" rel="noopener noreferrer">publica.cnpj.ws</a>
+        <a href="https://monitor.tecnospeed.com.br/" target="_blank" rel="noopener noreferrer">Monitor SEFAZ · TecnoSpeed</a>
+        <a href="https://www.sintegra.gov.br/" target="_blank" rel="noopener noreferrer">SINTEGRA</a>
+        <a href="https://www.gov.br/receitafederal/" target="_blank" rel="noopener noreferrer">Receita Federal</a>
+      </div>
+      <div class="footer-col footer-col--note">
+        <h3>Importante</h3>
+        <p>Projeto independente, sem vínculo com órgãos públicos. Dados informativos, sujeitos a alteração. Valide sempre nos portais oficiais da SEFAZ e da Receita Federal.</p>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>© <span id="ano">2026</span> Radar Fiscal. Todos os direitos reservados.</p>
+      <p>Dados públicos · Consulta gratuita</p>
+    </div>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
