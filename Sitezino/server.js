@@ -369,9 +369,9 @@ async function getMonitorHistory(force = false) {
 }
 
 async function fetchMonitorDocument(doc) {
-  // Não fixar worker_id em SP: o parâmetro filtraria o retorno para um único worker/UF.
-  // Com stateStatus + doc, coletamos as UFs daquele documento e filtramos seus IDs abaixo.
-  const url = `${MONITOR_ORIGIN}/monitores?stateStatus=true&doc=${encodeURIComponent(doc)}`;
+  // A API do Monitor SEFAZ usa o worker de SP como referência ao devolver o quadro por UF.
+  // stateStatus=true fornece os status estaduais do documento selecionado.
+  const url = `${MONITOR_ORIGIN}/monitores?stateStatus=true&doc=${encodeURIComponent(doc)}&worker_id=sefaz_${doc}_envio_sp`;
   const payload = await fetchWithRetry(url, 2);
   if (!Array.isArray(payload)) throw new Error(`Formato inesperado para ${doc}`);
 
@@ -381,6 +381,9 @@ async function fetchMonitorDocument(doc) {
     if (!match || match[1] !== doc) continue;
     const value = Number.parseInt(item.status, 10);
     states[match[2].toUpperCase()] = Number.isFinite(value) ? value : 0;
+  }
+  if (Object.keys(states).length === 0) {
+    throw new Error(`A fonte não retornou status estaduais reconhecíveis para ${doc.toUpperCase()}`);
   }
   return states;
 }
