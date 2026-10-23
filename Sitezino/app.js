@@ -1406,7 +1406,7 @@ function renderMonitorMapDashboard() {
     const info = monitorStatus(value, present);
     const selected = monitor.mapUF === uf;
     const palette = MONITOR_MAP_PALETTE[info.tone] || MONITOR_MAP_PALETTE.unmonitored;
-    const statePaths = $("path", node);
+    const statePaths = $$("path", node);
     const stateText = $("text", node);
     node.classList.remove("tone-normal", "tone-slow", "tone-vslow", "tone-timeout", "tone-error", "tone-none", "tone-unmonitored");
     node.classList.add(`tone-${info.tone}`);
