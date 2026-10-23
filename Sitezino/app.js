@@ -1958,7 +1958,7 @@ $("#monitor-map-services")?.addEventListener("click", (event) => {
   selectMonitorDoc(button.dataset.mapDoc);
 });
 
-$("[data-history-period]").forEach((button) => {
+$$("[data-history-period]").forEach((button) => {
   button.addEventListener("click", () => {
     monitorHistoryFilters.period = ["24h", "7d", "30d"].includes(button.dataset.historyPeriod) ? button.dataset.historyPeriod : "7d";
     renderMonitorHistory();
