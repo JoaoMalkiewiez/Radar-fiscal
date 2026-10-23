@@ -1246,12 +1246,12 @@ const MONITOR_MAP_POSITIONS = {
 const MONITOR_DOCS = ["nfe", "nfce", "cte"];
 const MONITOR_DOC_LABELS = { nfe: "NF-e", nfce: "NFC-e", cte: "CT-e" };
 const MONITOR_STATUS = {
+  0: { label: "Agendado", tone: "none", desc: "Aguardando a próxima verificação" },
   1: { label: "Normal", tone: "normal", desc: "Tempo de resposta até 2s" },
   2: { label: "Lento", tone: "slow", desc: "Tempo de resposta até 5s" },
   3: { label: "Muito lento", tone: "vslow", desc: "Tempo de resposta até 30s" },
-  4: { label: "Sem resposta", tone: "timeout", desc: "Timeout acima de 30s" },
-  5: { label: "Erro", tone: "error", desc: "Retorno com erro" },
-  0: { label: "Sem dados", tone: "none", desc: "A fonte respondeu, mas não informou o status" },
+  4: { label: "Erro", tone: "error", desc: "Retorno com erro" },
+  5: { label: "Sem resposta", tone: "timeout", desc: "Timeout acima de 30s" },
 };
 
 const MONITOR_MAP_PALETTE = {
@@ -1406,7 +1406,7 @@ function renderMonitorMapDashboard() {
     const info = monitorStatus(value, present);
     const selected = monitor.mapUF === uf;
     const palette = MONITOR_MAP_PALETTE[info.tone] || MONITOR_MAP_PALETTE.unmonitored;
-    const statePath = $("path", node);
+    const statePaths = $("path", node);
     const stateText = $("text", node);
     node.classList.remove("tone-normal", "tone-slow", "tone-vslow", "tone-timeout", "tone-error", "tone-none", "tone-unmonitored");
     node.classList.add(`tone-${info.tone}`);
@@ -1415,14 +1415,20 @@ function renderMonitorMapDashboard() {
     node.setAttribute("aria-pressed", selected ? "true" : "false");
     node.setAttribute("aria-label", `${node.dataset.mapName || SEFAZ[uf]?.name || uf} (${uf}): ${info.label}`);
     node.setAttribute("title", `${node.dataset.mapName || SEFAZ[uf]?.name || uf} · ${info.label}`);
-    if (statePath) {
+    // Algumas UFs usam um caminho adicional para representar áreas pequenas no mapa.
+    // Todos os caminhos dentro do grupo recebem a cor do mesmo status/documento.
+    statePaths.forEach((statePath) => {
       statePath.style.setProperty("fill", palette.fill, "important");
       statePath.style.setProperty("stroke", selected ? "#e9fff7" : palette.stroke, "important");
       statePath.style.setProperty("stroke-width", selected ? "2.5" : "1.1", "important");
       statePath.style.setProperty("pointer-events", "visiblePainted", "important");
       statePath.style.setProperty("cursor", "pointer", "important");
-      statePath.style.setProperty("filter", selected ? `drop-shadow(0 0 6px ${palette.stroke}88)` : "none", "important");
-    }
+      if (selected) {
+        statePath.style.setProperty("filter", `drop-shadow(0 0 6px ${palette.stroke}88)`, "important");
+      } else {
+        statePath.style.removeProperty("filter");
+      }
+    });
     if (stateText) {
       stateText.style.setProperty("pointer-events", "none", "important");
       stateText.style.setProperty("user-select", "none", "important");
