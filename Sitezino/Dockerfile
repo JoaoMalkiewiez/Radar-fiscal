@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json start.js server.js index.html styles.css app.js ./
+COPY package.json start.js server.js index.html styles.css app.js privacidade.html ads.txt ./
 
 ENV NODE_ENV=production
 ENV PORT=5500
