@@ -3940,8 +3940,7 @@ section.monitor::before {
 .monitor #monitor-map-pins .monitor-map-state.tone-none,
 .monitor #monitor-map-pins .monitor-map-state.tone-unmonitored { --map-state-fill: #2d4358; }
 .monitor #monitor-map-pins .monitor-map-state:hover path {
-  fill: #168865 !important;
-  stroke: #8ce7c6 !important;
+  /* Realce sem sobrescrever a cor de status (normal/lento/erro/timeout). */
   filter: drop-shadow(0 0 3px rgba(67, 222, 170, .22));
 }
 .monitor #monitor-map-pins .monitor-map-state.is-selected path {
