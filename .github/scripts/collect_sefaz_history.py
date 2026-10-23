@@ -72,6 +72,20 @@ def fetch_doc_statuses(doc: str) -> dict[str, int]:
         if status not in {1, 2, 3, 4, 5}:
             continue
         statuses[match.group(2).upper()] = status
+
+    if not statuses:
+        sample = [
+            {
+                "id_worker": item.get("id_worker"),
+                "status": item.get("status"),
+                "keys": list(item.keys()),
+            }
+            for item in payload[:3]
+            if isinstance(item, dict)
+        ]
+        raise RuntimeError(
+            f"API retornou {len(payload)} registros, mas nenhum correspondeu ao padrão esperado; amostra={sample!r}"
+        )
     return statuses
 
 
