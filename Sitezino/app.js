@@ -1324,11 +1324,11 @@ function renderMonitorUpdated() {
   const docLabel = MONITOR_DOC_LABELS[monitor.doc] || monitor.doc.toUpperCase();
   const normal = entries.filter((entry) => entry.present && entry.value === 1).length;
   const alerts = entries.filter((entry) => entry.present && entry.value >= 2 && entry.value <= 5).length;
-  const noData = entries.filter((entry) => entry.present && entry.value === 0).length;
+  const scheduled = entries.filter((entry) => entry.present && entry.value === 0).length;
   const unmonitored = entries.filter((entry) => !entry.present).length;
   const time = monitorTime(monitor.data.updatedAt);
   const parts = ["<span class=\"live-dot\" aria-hidden=\"true\"></span>", `<span><strong>${docLabel}</strong> · <strong>${normal}</strong> normais · <strong>${alerts}</strong> com alerta`];
-  if (noData) parts.push(` · ${noData} sem dados`);
+  if (scheduled) parts.push(` · ${scheduled} agendado(s)`);
   if (unmonitored) parts.push(` · ${unmonitored} não monitorados`);
   if (time) parts.push(` · atualizado às ${time}`);
   if (monitor.data.errors?.[monitor.doc]) parts.push(" · fonte indisponível");
@@ -1346,7 +1346,8 @@ function monitorCountsForDocument(doc) {
     responding: present.filter((uf) => Number(states[uf]) >= 1 && Number(states[uf]) <= 5).length,
     normal: present.filter((uf) => Number(states[uf]) === 1).length,
     alert: present.filter((uf) => Number(states[uf]) >= 2 && Number(states[uf]) <= 5).length,
-    noData: ufs.length - present.length + present.filter((uf) => Number(states[uf]) === 0).length,
+    scheduled: present.filter((uf) => Number(states[uf]) === 0).length,
+    unmonitored: ufs.length - present.length,
   };
 }
 
