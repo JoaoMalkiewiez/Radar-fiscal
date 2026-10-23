@@ -18,6 +18,8 @@ const MONITOR_ORIGIN = "https://monitor.tecnospeed.com.br";
 const DOCUMENTS = ["nfe", "nfce", "cte"];
 
 const MONITOR_TTL = 60 * 1000;
+const MONITOR_HISTORY_URL = "https://raw.githubusercontent.com/JoaoMalkiewiez/Radar-fiscal/monitor-history/history.json";
+const MONITOR_HISTORY_TTL = 60 * 1000;
 const CNPJ_TTL = 10 * 60 * 1000;
 const CNPJ_PARTIAL_TTL = 2 * 60 * 1000;
 const CNPJ_STALE_TTL = 24 * 60 * 60 * 1000;
@@ -63,6 +65,7 @@ const SECURITY_HEADERS = {
 };
 
 let monitorCache = { data: null, at: 0 };
+let monitorHistoryCache = { data: null, at: 0 };
 let monitorInflight = null;
 const cnpjCache = new Map();
 const cnpjInflight = new Map();
@@ -320,6 +323,51 @@ async function getCompanyData(cnpj, force = false) {
   return pending;
 }
 
+
+async function getMonitorHistory(force = false) {
+  if (!force && monitorHistoryCache.data && Date.now() - monitorHistoryCache.at < MONITOR_HISTORY_TTL) {
+    return { ...monitorHistoryCache.data, cached: true };
+  }
+
+  try {
+    const cacheVersion = Math.floor(Date.now() / MONITOR_HISTORY_TTL);
+    const response = await fetch(`${MONITOR_HISTORY_URL}?v=${cacheVersion}`, {
+      headers: {
+        Accept: "application/json",
+        "Cache-Control": "no-cache",
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!response.ok) throw new Error(`Fonte do histórico respondeu HTTP ${response.status}`);
+
+    const payload = await response.json();
+    if (!payload || !Array.isArray(payload.incidents)) {
+      throw new Error("Formato inválido do histórico SEFAZ");
+    }
+
+    const safeData = {
+      schemaVersion: 1,
+      trackingSince: typeof payload.trackingSince === "string" ? payload.trackingSince : null,
+      updatedAt: typeof payload.updatedAt === "string" ? payload.updatedAt : null,
+      incidents: payload.incidents
+        .filter((item) => item && typeof item === "object")
+        .slice(-300),
+    };
+    monitorHistoryCache = { data: safeData, at: Date.now() };
+    return { ...safeData, cached: false };
+  } catch (error) {
+    if (monitorHistoryCache.data) {
+      return {
+        ...monitorHistoryCache.data,
+        cached: true,
+        stale: true,
+        warning: error.message,
+      };
+    }
+    throw error;
+  }
+}
+
 async function fetchMonitorDocument(doc) {
   const url = `${MONITOR_ORIGIN}/monitores?stateStatus=true&doc=${encodeURIComponent(doc)}&worker_id=sefaz_${doc}_envio_sp`;
   const payload = await fetchWithRetry(url, 2);
@@ -465,6 +513,20 @@ async function handleRequest(request, response) {
     } catch (error) {
       sendJSON(request, response, 502, {
         error: "Não foi possível consultar o Monitor SEFAZ agora.",
+        detail: error.message,
+      });
+    }
+    return;
+  }
+
+  if (pathname === "/api/sefaz-history") {
+    try {
+      const force = url.searchParams.get("force") === "1";
+      const data = await getMonitorHistory(force);
+      sendJSON(request, response, 200, data, { "Cache-Control": "no-store" });
+    } catch (error) {
+      sendJSON(request, response, 502, {
+        error: "Não foi possível carregar o histórico de instabilidades.",
         detail: error.message,
       });
     }
