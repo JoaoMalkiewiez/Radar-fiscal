@@ -368,20 +368,62 @@ async function getMonitorHistory(force = false) {
   }
 }
 
-async function fetchMonitorDocument(doc) {
-  // A API do Monitor SEFAZ usa o worker de SP como referência ao devolver o quadro por UF.
-  // stateStatus=true fornece os status estaduais do documento selecionado.
-  const url = `${MONITOR_ORIGIN}/monitores?stateStatus=true&doc=${encodeURIComponent(doc)}&worker_id=sefaz_${doc}_envio_sp`;
-  const payload = await fetchWithRetry(url, 2);
+const MONITOR_UFS = new Set([
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
+  "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
+  "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+]);
+
+function parseMonitorStates(payload, doc) {
   if (!Array.isArray(payload)) throw new Error(`Formato inesperado para ${doc}`);
 
   const states = {};
   for (const item of payload) {
-    const match = /^sefaz_(nfe|nfce|cte)_envio_([a-z]{2})$/.exec(String(item.id_worker || ""));
-    if (!match || match[1] !== doc) continue;
-    const value = Number.parseInt(item.status, 10);
-    states[match[2].toUpperCase()] = Number.isFinite(value) ? value : 0;
+    if (!item || typeof item !== "object") continue;
+
+    // A API não documenta publicamente um único campo para o identificador.
+    // Aceita os nomes usados pelo worker em snake_case/camelCase ou no próprio id.
+    const identifiers = [
+      item.id_worker,
+      item.worker_id,
+      item.workerId,
+      item.id,
+      item.slug,
+      item.name,
+    ].map((value) => String(value ?? "").trim().toLowerCase());
+
+    let match = null;
+    for (const identifier of identifiers) {
+      const candidate = /sefaz_(nfe|nfce|cte)_envio_([a-z]{2})(?:$|[^a-z])/i.exec(identifier);
+      if (candidate && candidate[1].toLowerCase() === doc.toLowerCase()) {
+        match = candidate;
+        break;
+      }
+    }
+
+    // Alguns retornos podem expor a UF em campo próprio em vez do sufixo do worker.
+    // Como a requisição já é filtrada por doc, esse fallback serve para esses registros.
+    const explicitUf = item.uf ?? item.uf_sigla ?? item.state_uf ?? item.sigla_uf;
+    const uf = String(match ? match[2] : explicitUf ?? "").trim().toUpperCase();
+    if (!MONITOR_UFS.has(uf)) continue;
+
+    const itemDoc = String(item.doc ?? item.document ?? item.documento ?? "").trim().toLowerCase();
+    if (!match && itemDoc && itemDoc !== doc.toLowerCase()) continue;
+
+    const rawStatus = item.status ?? item.status_code ?? item.stateStatus ?? item.state_status;
+    const value = Number.parseInt(rawStatus, 10);
+    states[uf] = Number.isFinite(value) ? value : 0;
   }
+
+  return states;
+}
+
+async function fetchMonitorDocument(doc) {
+  // O worker de SP é a referência usada pela API para retornar o quadro estadual
+  // do documento selecionado; a resposta pode listar registros com identificadores variados.
+  const url = `${MONITOR_ORIGIN}/monitores?stateStatus=true&doc=${encodeURIComponent(doc)}&worker_id=sefaz_${doc}_envio_sp`;
+  const payload = await fetchWithRetry(url, 2);
+  const states = parseMonitorStates(payload, doc);
   if (Object.keys(states).length === 0) {
     throw new Error(`A fonte não retornou status estaduais reconhecíveis para ${doc.toUpperCase()}`);
   }
@@ -619,5 +661,6 @@ if (require.main === module) {
 
 module.exports = {
   createServer,
+  parseMonitorStates,
   resetRateLimits: () => rateBuckets.clear(),
 };
