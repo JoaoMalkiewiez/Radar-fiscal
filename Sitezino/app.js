@@ -1343,31 +1343,38 @@ function monitorCountsForDocument(doc) {
 function renderMonitorSummary() {
   const target = $("#monitor-summary");
   if (!target) return;
-  if (!monitor.data) {
-    target.innerHTML = [
-      { label: "UFs monitoradas", value: "27", detail: "Cobertura nacional" },
-      { label: "Serviços normais", value: "—", detail: "Aguardando consulta" },
-      { label: "Com alerta", value: "—", detail: "Aguardando consulta" },
-      { label: "Dados atualizados", value: "—", detail: "Ainda sem leitura" },
-    ].map((item) => `<div class="monitor-summary-card"><span>${escapeHTML(item.label)}</span><strong>${escapeHTML(item.value)}</strong><small>${escapeHTML(item.detail)}</small></div>`).join("");
-    return;
-  }
 
-  const counts = monitorCountsForDocument(monitor.doc);
-  const updated = new Date(monitor.data.updatedAt);
-  const freshness = Number.isNaN(updated.getTime()) ? "Horário indisponível" : updated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  const cards = [
-    { label: "UFs com status", value: counts.responding, detail: `de ${counts.total} · ${MONITOR_DOC_LABELS[monitor.doc]}`, tone: "neutral" },
-    { label: "Serviços normais", value: counts.normal, detail: "Respondendo normalmente", tone: "normal" },
-    { label: "Com alerta", value: counts.alert, detail: "Lentos ou com falha", tone: counts.alert ? "alert" : "normal" },
-    { label: "Última atualização", value: freshness, detail: monitor.data.stale ? "Dados em cache" : "Fonte consultada", tone: monitor.data.stale ? "muted" : "neutral" },
-  ];
-  target.innerHTML = cards.map((item) => `
-    <div class="monitor-summary-card ${item.tone ? `tone-${item.tone}` : ""}">
-      <span>${escapeHTML(item.label)}</span>
-      <strong>${escapeHTML(String(item.value))}</strong>
-      <small>${escapeHTML(item.detail)}</small>
-    </div>`).join("");
+  target.innerHTML = MONITOR_DOCS.map((doc) => {
+    const counts = monitor.data ? monitorCountsForDocument(doc) : { total: 27, responding: 0, normal: 0, alert: 0 };
+    const selected = doc === monitor.doc;
+    const sourceError = Boolean(monitor.data?.errors?.[doc]);
+    let status = monitor.loading ? "Consultando status"
+      : !monitor.data ? "Aguardando consulta"
+      : sourceError ? "Fonte indisponível"
+      : counts.alert ? "Instabilidade detectada"
+      : counts.responding < counts.total ? "Dados parciais"
+      : "Operando normalmente";
+    const tone = !monitor.data || monitor.loading ? "muted"
+      : sourceError ? "error"
+      : counts.alert ? "alert"
+      : counts.responding < counts.total ? "muted"
+      : "normal";
+    const percent = monitor.data ? Math.round((counts.normal / Math.max(counts.total, 1)) * 100) : 0;
+
+    return `
+      <button type="button" class="monitor-summary-card tone-${tone} ${selected ? "is-active" : ""}" data-summary-doc="${doc}" aria-pressed="${selected ? "true" : "false"}">
+        <span class="monitor-summary-top">
+          <span class="monitor-summary-icon tone-${tone}" aria-hidden="true">${tone === "normal" ? "✓" : tone === "error" || tone === "alert" ? "!" : "…"}</span>
+          <span class="monitor-summary-copy">
+            <strong>${MONITOR_DOC_LABELS[doc]}</strong>
+            <small>${escapeHTML(status)}</small>
+          </span>
+          <span class="monitor-summary-chevron" aria-hidden="true">↗</span>
+        </span>
+        <span class="monitor-summary-numbers"><strong>${monitor.data ? counts.normal : "—"}/27 UFs</strong><span>${monitor.data ? `${counts.alert} com alerta` : "cobertura nacional"}</span></span>
+        <span class="monitor-summary-progress" aria-hidden="true"><i style="width:${percent}%"></i></span>
+      </button>`;
+  }).join("");
 }
 
 function renderMonitorMapDashboard() {
@@ -1411,6 +1418,27 @@ function renderMonitorMapDashboard() {
       selectedText.textContent = monitor.data
         ? "Selecione um estado no mapa para filtrar por UF."
         : "Aguardando a primeira leitura do Monitor SEFAZ.";
+    }
+  }
+
+  const alertTarget = $("#monitor-map-alert");
+  const incidentList = Array.isArray(monitorHistoryState.data?.incidents) ? monitorHistoryState.data.incidents : [];
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const recentIncidents = incidentList.filter((incident) => {
+    const detected = new Date(incident?.detectedAt || "").getTime();
+    return MONITOR_DOCS.includes(incident?.document) && /^[A-Z]{2}$/.test(String(incident?.uf || "")) && Number.isFinite(detected) && detected >= cutoff;
+  });
+  const activeIncidents = recentIncidents.filter((incident) => !incident.recoveredAt).length;
+  if (alertTarget) {
+    if (!monitorHistoryState.data) {
+      alertTarget.className = "monitor-map-alert is-neutral";
+      alertTarget.innerHTML = '<span class="monitor-map-alert-icon" aria-hidden="true">i</span><div><strong>Histórico de ocorrências</strong><p>Carregando os incidentes registrados nas últimas 24 horas.</p></div><a href="#monitor-history">Ver histórico</a>';
+    } else if (recentIncidents.length) {
+      alertTarget.className = "monitor-map-alert is-alert";
+      alertTarget.innerHTML = `<span class="monitor-map-alert-icon" aria-hidden="true">!</span><div><strong>${recentIncidents.length} ocorrência(s) nas últimas 24 horas</strong><p>${activeIncidents ? `${activeIncidents} ainda em andamento` : "Todas as ocorrências registradas nesse período estão normalizadas"}.</p></div><a href="#monitor-history">Ver histórico</a>`;
+    } else {
+      alertTarget.className = "monitor-map-alert is-ok";
+      alertTarget.innerHTML = '<span class="monitor-map-alert-icon" aria-hidden="true">✓</span><div><strong>Nenhuma instabilidade severa registrada</strong><p>Não há incidentes registrados nas últimas 24 horas de coleta.</p></div><a href="#monitor-history">Ver histórico</a>';
     }
   }
 
@@ -1832,6 +1860,7 @@ async function loadMonitorHistory(force = false) {
   } finally {
     monitorHistoryState.loading = false;
     renderMonitorHistory();
+    renderMonitorMapDashboard();
   }
 }
 
@@ -1962,6 +1991,12 @@ $("[data-map-reset]")?.addEventListener("click", () => {
   }
   monitor.mapUF = null;
   renderMonitor();
+});
+
+$("#monitor-summary")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-summary-doc]");
+  if (!button) return;
+  selectMonitorDoc(button.dataset.summaryDoc);
 });
 
 $("#monitor-map-services")?.addEventListener("click", (event) => {
