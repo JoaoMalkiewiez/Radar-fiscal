@@ -21,7 +21,7 @@ test("mapa SVG possui as 27 UFs, uma vez cada, com nome e área selecionável", 
     ...html.matchAll(
       /<g class="monitor-map-state [^"]*" data-map-uf="([A-Z]{2})" data-map-name="([^"]+)"[^>]*>([\s\S]*?)<\/g>/g
     ),
-  ].map((match) => ({ uf: match[1], name: match[2], markup: match[3] }));
+  ].map((match) => ({ uf: match[1], name: match[2], opening: match[0].slice(0, match[0].indexOf(">") + 1), markup: match[3] }));
 
   const counts = new Map();
   for (const item of mapGroups) counts.set(item.uf, (counts.get(item.uf) || 0) + 1);
@@ -50,8 +50,8 @@ test("mapa SVG possui as 27 UFs, uma vez cada, com nome e área selecionável", 
       new RegExp(`<text\\b[^>]*>\\s*${group.uf}\\s*<\\/text>`),
       `sigla visível incorreta para ${group.uf}`
     );
-    assert.match(group.markup, /role="button"/);
-    assert.match(group.markup, /tabindex="0"/);
+    assert.match(group.opening, /role="button"/);
+    assert.match(group.opening, /tabindex="0"/);
   }
 });
 
