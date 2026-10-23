@@ -1234,6 +1234,15 @@ const MONITOR_HISTORY_SEVERITY = {
 };
 
 const monitorHistoryState = { data: null, error: null, loading: false };
+const monitorHistoryFilters = { period: "7d", document: "all", uf: "all", state: "all" };
+const MONITOR_MAP_POSITIONS = {
+  AC: [24, 43], RO: [32, 52], AM: [38, 31], RR: [40, 13], AP: [65, 16],
+  PA: [60, 35], TO: [61, 51], MA: [70, 43], PI: [77, 49], CE: [85, 39],
+  RN: [92, 40], PB: [91, 44], PE: [88, 48], AL: [89, 53], SE: [87, 57],
+  BA: [77, 61], MT: [49, 61], MS: [54, 76], GO: [64, 65], DF: [68, 63],
+  MG: [77, 70], ES: [84, 73], RJ: [78, 79], SP: [70, 79], PR: [63, 85],
+  SC: [64, 91], RS: [59, 96],
+};
 const MONITOR_DOCS = ["nfe", "nfce", "cte"];
 const MONITOR_DOC_LABELS = { nfe: "NF-e", nfce: "NFC-e", cte: "CT-e" };
 const MONITOR_STATUS = {
@@ -1258,6 +1267,7 @@ const monitor = {
   doc: "nfe",
   query: "",
   filter: "all",
+  mapUF: null,
 };
 
 let currentResult = null;
@@ -1317,6 +1327,121 @@ function renderMonitorUpdated() {
   target.innerHTML = parts.join("");
 }
 
+function monitorCountsForDocument(doc) {
+  const states = monitor.data?.docs?.[doc] || {};
+  const ufs = Object.keys(SEFAZ);
+  const present = ufs.filter((uf) => monitorHasState(states, uf));
+  return {
+    total: ufs.length,
+    responding: present.filter((uf) => Number(states[uf]) >= 1 && Number(states[uf]) <= 5).length,
+    normal: present.filter((uf) => Number(states[uf]) === 1).length,
+    alert: present.filter((uf) => Number(states[uf]) >= 2 && Number(states[uf]) <= 5).length,
+    noData: ufs.length - present.length + present.filter((uf) => Number(states[uf]) === 0).length,
+  };
+}
+
+function renderMonitorSummary() {
+  const target = $("#monitor-summary");
+  if (!target) return;
+  if (!monitor.data) {
+    target.innerHTML = [
+      { label: "UFs monitoradas", value: "27", detail: "Cobertura nacional" },
+      { label: "Serviços normais", value: "—", detail: "Aguardando consulta" },
+      { label: "Com alerta", value: "—", detail: "Aguardando consulta" },
+      { label: "Dados atualizados", value: "—", detail: "Ainda sem leitura" },
+    ].map((item) => `<div class="monitor-summary-card"><span>${escapeHTML(item.label)}</span><strong>${escapeHTML(item.value)}</strong><small>${escapeHTML(item.detail)}</small></div>`).join("");
+    return;
+  }
+
+  const counts = monitorCountsForDocument(monitor.doc);
+  const updated = new Date(monitor.data.updatedAt);
+  const freshness = Number.isNaN(updated.getTime()) ? "Horário indisponível" : updated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const cards = [
+    { label: "UFs com status", value: counts.responding, detail: `de ${counts.total} · ${MONITOR_DOC_LABELS[monitor.doc]}`, tone: "neutral" },
+    { label: "Serviços normais", value: counts.normal, detail: "Respondendo normalmente", tone: "normal" },
+    { label: "Com alerta", value: counts.alert, detail: "Lentos ou com falha", tone: counts.alert ? "alert" : "normal" },
+    { label: "Última atualização", value: freshness, detail: monitor.data.stale ? "Dados em cache" : "Fonte consultada", tone: monitor.data.stale ? "muted" : "neutral" },
+  ];
+  target.innerHTML = cards.map((item) => `
+    <div class="monitor-summary-card ${item.tone ? `tone-${item.tone}` : ""}">
+      <span>${escapeHTML(item.label)}</span>
+      <strong>${escapeHTML(String(item.value))}</strong>
+      <small>${escapeHTML(item.detail)}</small>
+    </div>`).join("");
+}
+
+function renderMonitorMapDashboard() {
+  const pins = $("#monitor-map-pins");
+  const selectedText = $("#monitor-map-selected");
+  const serviceList = $("#monitor-map-services");
+  const caption = $("#monitor-map-caption");
+  if (!pins || !serviceList) return;
+
+  renderMonitorSummary();
+
+  if (!monitor.data) {
+    pins.innerHTML = Object.entries(MONITOR_MAP_POSITIONS).map(([uf, pos]) => `
+      <button type="button" class="monitor-map-pin tone-unmonitored" data-map-uf="${uf}" style="left:${pos[0]}%;top:${pos[1]}%" aria-label="${uf}: aguardando status" aria-pressed="false">
+        <span>${uf}</span>
+      </button>`).join("");
+    serviceList.innerHTML = '<div class="monitor-map-service-empty">Os status por serviço aparecerão após a consulta.</div>';
+    if (selectedText) selectedText.textContent = "Aguardando a primeira leitura do Monitor SEFAZ.";
+    if (caption) caption.textContent = "O mapa usa o status atual da fonte para o documento selecionado.";
+    return;
+  }
+
+  const states = monitor.data.docs?.[monitor.doc] || {};
+  const mapEntries = Object.keys(SEFAZ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  pins.innerHTML = mapEntries.map((uf) => {
+    const pos = MONITOR_MAP_POSITIONS[uf] || [50, 50];
+    const present = monitorHasState(states, uf);
+    const value = present ? Number(states[uf]) : null;
+    const info = monitorStatus(value, present);
+    const selected = monitor.mapUF === uf;
+    const stateName = SEFAZ[uf]?.name || uf;
+    return `
+      <button type="button" class="monitor-map-pin tone-${info.tone} ${selected ? "is-selected" : ""}" data-map-uf="${uf}" style="left:${pos[0]}%;top:${pos[1]}%" aria-label="${escapeHTML(stateName)} (${uf}): ${escapeHTML(info.label)}" aria-pressed="${selected ? "true" : "false"}" title="${escapeHTML(stateName)} · ${escapeHTML(info.label)}">
+        <span>${uf}</span>
+      </button>`;
+  }).join("");
+
+  if (caption) {
+    caption.textContent = monitor.mapUF
+      ? `UF selecionada: ${SEFAZ[monitor.mapUF]?.name || monitor.mapUF}. Clique em outro ponto para trocar.`
+      : `Situação de ${MONITOR_DOC_LABELS[monitor.doc]} por UF. Selecione um ponto para filtrar a grade.`;
+  }
+  if (selectedText) {
+    if (monitor.mapUF) {
+      const uf = monitor.mapUF;
+      const present = monitorHasState(states, uf);
+      const info = monitorStatus(present ? Number(states[uf]) : null, present);
+      selectedText.innerHTML = `<strong>${escapeHTML(SEFAZ[uf]?.name || uf)} (${uf})</strong><span class="monitor-map-selected-status tone-${info.tone}">${escapeHTML(info.label)}</span>`;
+    } else {
+      selectedText.textContent = "Selecione um ponto do mapa para filtrar o estado.";
+    }
+  }
+
+  serviceList.innerHTML = MONITOR_DOCS.map((doc) => {
+    const counts = monitorCountsForDocument(doc);
+    const active = doc === monitor.doc;
+    const updatedStatus = monitor.data.errors?.[doc] ? "Fonte indisponível" : monitor.data.stale ? "Dados em cache" : counts.alert ? "Atenção necessária" : counts.responding < 27 ? "Dados parciais" : "Operando normalmente";
+    const operationTone = monitor.data.errors?.[doc] ? "error" : counts.alert ? "alert" : counts.responding < 27 ? "muted" : "normal";
+    return `
+      <button type="button" class="monitor-map-service ${active ? "is-active" : ""}" data-map-doc="${doc}" aria-pressed="${active ? "true" : "false"}">
+        <span class="monitor-map-service-top">
+          <strong>${MONITOR_DOC_LABELS[doc]}</strong>
+          <span class="monitor-map-service-state tone-${operationTone}"><i aria-hidden="true"></i>${escapeHTML(updatedStatus)}</span>
+        </span>
+        <span class="monitor-map-service-counts">
+          <span><strong>${counts.normal}</strong> normais</span>
+          <span><strong>${counts.alert}</strong> alertas</span>
+          <span><strong>${counts.responding}/27</strong> com status</span>
+        </span>
+        <span class="monitor-map-service-bar" aria-hidden="true"><i style="width:${Math.round((counts.normal / Math.max(counts.total, 1)) * 100)}%"></i></span>
+      </button>`;
+  }).join("");
+}
+
 function renderMonitorControls() {
   $$(".monitor-filter-btn").forEach((button) => {
     const active = button.dataset.filter === monitor.filter;
@@ -1360,6 +1485,7 @@ function renderMonitor() {
   grid.setAttribute("aria-labelledby", `tab-${monitor.doc}`);
   renderMonitorUpdated();
   renderMonitorControls();
+  renderMonitorMapDashboard();
 
   if (!monitor.data && monitor.loading) {
     grid.innerHTML = Object.keys(SEFAZ).sort((a, b) => a.localeCompare(b, "pt-BR")).map(() => `
@@ -1474,16 +1600,117 @@ function monitorHistoryDuration(seconds) {
   return `${minutes} min`;
 }
 
+function ensureMonitorHistoryUFOptions() {
+  const select = $("#monitor-history-uf");
+  if (!select || select.dataset.ready === "true") return;
+  const options = Object.keys(SEFAZ)
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+    .map((uf) => `<option value="${escapeHTML(uf)}">${escapeHTML(uf)} — ${escapeHTML(SEFAZ[uf]?.name || uf)}</option>`)
+    .join("");
+  select.insertAdjacentHTML("beforeend", options);
+  select.dataset.ready = "true";
+}
+
+function monitorHistoryWindow(period, now = Date.now()) {
+  const duration = period === "24h" ? 24 * 60 * 60 * 1000 : period === "30d" ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+  return { start: now - duration, end: now, duration };
+}
+
+function filteredMonitorHistoryIncidents() {
+  const source = Array.isArray(monitorHistoryState.data?.incidents) ? monitorHistoryState.data.incidents : [];
+  const { start, end } = monitorHistoryWindow(monitorHistoryFilters.period);
+  return source
+    .filter((incident) => {
+      if (!incident || !MONITOR_DOCS.includes(incident.document) || !/^[A-Z]{2}$/.test(String(incident.uf || ""))) return false;
+      const detectedAt = new Date(incident.detectedAt || "").getTime();
+      if (!Number.isFinite(detectedAt) || detectedAt < start || detectedAt > end) return false;
+      if (monitorHistoryFilters.document !== "all" && incident.document !== monitorHistoryFilters.document) return false;
+      if (monitorHistoryFilters.uf !== "all" && incident.uf !== monitorHistoryFilters.uf) return false;
+      const active = !incident.recoveredAt;
+      if (monitorHistoryFilters.state === "open" && !active) return false;
+      if (monitorHistoryFilters.state === "resolved" && active) return false;
+      return true;
+    })
+    .sort((a, b) => new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime());
+}
+
+function renderMonitorHistoryChart(incidents) {
+  const chart = $("#monitor-history-chart");
+  const title = $("#monitor-history-chart-title");
+  const description = $("#monitor-history-chart-description");
+  if (!chart) return;
+
+  const now = Date.now();
+  const { start } = monitorHistoryWindow(monitorHistoryFilters.period, now);
+  const hourMode = monitorHistoryFilters.period === "24h";
+  const bucketCount = hourMode ? 25 : monitorHistoryFilters.period === "30d" ? 31 : 8;
+  const buckets = [];
+  if (hourMode) {
+    const startHour = new Date(start);
+    startHour.setMinutes(0, 0, 0);
+    for (let i = 0; i < bucketCount; i += 1) {
+      const date = new Date(startHour.getTime() + i * 60 * 60 * 1000);
+      buckets.push({ key: date.toISOString().slice(0, 13), label: date.toLocaleTimeString("pt-BR", { hour: "2-digit" }), count: 0 });
+    }
+  } else {
+    const startDay = new Date(start);
+    startDay.setHours(0, 0, 0, 0);
+    for (let i = 0; i < bucketCount; i += 1) {
+      const date = new Date(startDay.getTime() + i * 24 * 60 * 60 * 1000);
+      buckets.push({ key: date.toISOString().slice(0, 10), label: date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), count: 0 });
+    }
+  }
+
+  incidents.forEach((incident) => {
+    const detectedAt = new Date(incident.detectedAt || "");
+    if (Number.isNaN(detectedAt.getTime())) return;
+    const key = hourMode ? detectedAt.toISOString().slice(0, 13) : detectedAt.toISOString().slice(0, 10);
+    const bucket = buckets.find((item) => item.key === key);
+    if (bucket) bucket.count += 1;
+  });
+
+  const max = Math.max(1, ...buckets.map((bucket) => bucket.count));
+  if (title) title.textContent = hourMode ? "Ocorrências por hora" : "Ocorrências por dia";
+  if (description) description.textContent = `Incidentes detectados · ${MONITOR_DOC_LABELS[monitorHistoryFilters.document] || "todos os documentos"}`;
+  chart.style.gridTemplateColumns = `repeat(${buckets.length}, minmax(0, 1fr))`;
+  chart.innerHTML = buckets.map((bucket) => {
+    const height = bucket.count ? Math.max(8, Math.round((bucket.count / max) * 100)) : 2;
+    return `
+      <div class="monitor-chart-column" title="${escapeHTML(bucket.label)}: ${bucket.count} ocorrência(s)">
+        <div class="monitor-chart-bar-track"><i class="${bucket.count ? "has-data" : ""}" style="height:${height}%"></i></div>
+        <span>${escapeHTML(bucket.label)}</span>
+        <small>${bucket.count}</small>
+      </div>`;
+  }).join("");
+}
+
 function renderMonitorHistory() {
   const list = $("#monitor-history-list");
   const status = $("#monitor-history-status");
   const note = $("#monitor-history-note");
+  const summary = $("#monitor-history-summary");
+  const resultsCount = $("#monitor-history-results-count");
   if (!list || !status) return;
+  ensureMonitorHistoryUFOptions();
+
+  $$("[data-history-period]").forEach((button) => {
+    const active = button.dataset.historyPeriod === monitorHistoryFilters.period;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  const documentSelect = $("#monitor-history-document");
+  const ufSelect = $("#monitor-history-uf");
+  const stateSelect = $("#monitor-history-state");
+  if (documentSelect) documentSelect.value = monitorHistoryFilters.document;
+  if (ufSelect) ufSelect.value = monitorHistoryFilters.uf;
+  if (stateSelect) stateSelect.value = monitorHistoryFilters.state;
 
   const data = monitorHistoryState.data;
   if (monitorHistoryState.loading && !data) {
     status.textContent = "Consultando histórico…";
     list.innerHTML = '<div class="monitor-history-empty">Buscando as primeiras ocorrências registradas…</div>';
+    if (summary) summary.innerHTML = "";
+    if ($("#monitor-history-chart")) $("#monitor-history-chart").innerHTML = '<div class="monitor-history-chart-empty">Carregando gráfico…</div>';
     return;
   }
 
@@ -1495,33 +1722,55 @@ function renderMonitorHistory() {
         Tente novamente em instantes ou consulte o monitor original da TecnoSpeed.
         <div><button class="monitor-history-retry" type="button" data-action="monitor-history-retry">Tentar novamente</button></div>
       </div>`;
+    if (summary) summary.innerHTML = "";
+    if ($("#monitor-history-chart")) $("#monitor-history-chart").innerHTML = '<div class="monitor-history-chart-empty">Não foi possível montar o gráfico sem dados.</div>';
     return;
   }
-
   if (!data) return;
-  const incidents = (Array.isArray(data.incidents) ? data.incidents : [])
-    .filter((incident) => incident && MONITOR_DOCS.includes(incident.document) && /^[A-Z]{2}$/.test(String(incident.uf || "")))
-    .sort((a, b) => new Date(b.detectedAt || 0).getTime() - new Date(a.detectedAt || 0).getTime())
-    .slice(0, 8);
 
-  status.textContent = data.stale
-    ? "Último histórico disponível · cache"
-    : "Coleta automática · cerca de 5 min";
+  const allIncidents = (Array.isArray(data.incidents) ? data.incidents : [])
+    .filter((incident) => incident && MONITOR_DOCS.includes(incident.document) && /^[A-Z]{2}$/.test(String(incident.uf || "")));
+  const incidents = filteredMonitorHistoryIncidents();
+  const activeCount = incidents.filter((incident) => !incident.recoveredAt).length;
+  const resolvedCount = incidents.length - activeCount;
+  const durationSeconds = incidents.reduce((sum, incident) => sum + (Number(incident.durationSeconds) > 0 ? Number(incident.durationSeconds) : 0), 0);
+  const formattedDuration = monitorHistoryDuration(durationSeconds);
 
+  status.textContent = data.stale ? "Último histórico disponível · cache" : "Coleta automática · cerca de 5 min";
   if (note && data.trackingSince) {
     note.textContent = `Coleta ativa desde ${monitorHistoryDate(data.trackingSince)}. O histórico não recupera ocorrências anteriores à ativação; falhas muito curtas entre as coletas podem não aparecer.`;
+  }
+
+  if (summary) {
+    summary.innerHTML = [
+      { label: "Ocorrências", value: incidents.length, tone: "neutral" },
+      { label: "Em andamento", value: activeCount, tone: activeCount ? "alert" : "normal" },
+      { label: "Normalizadas", value: resolvedCount, tone: "normal" },
+      { label: "Duração observada", value: formattedDuration, tone: "neutral" },
+    ].map((item) => `<div class="monitor-history-metric tone-${item.tone}"><span>${escapeHTML(item.label)}</span><strong>${escapeHTML(String(item.value))}</strong></div>`).join("");
+  }
+  renderMonitorHistoryChart(incidents);
+  if (resultsCount) resultsCount.textContent = `${incidents.length} ocorrência(s) no filtro atual`;
+
+  if (!allIncidents.length) {
+    list.innerHTML = `
+      <div class="monitor-history-empty">
+        <strong>Nenhuma instabilidade severa registrada ainda.</strong>
+        As primeiras ocorrências aparecerão aqui quando a coleta observar um serviço em estado Muito lento, Sem resposta ou Erro.
+      </div>`;
+    return;
   }
 
   if (!incidents.length) {
     list.innerHTML = `
       <div class="monitor-history-empty">
-        <strong>Nenhuma instabilidade severa registrada ainda.</strong>
-        As primeiras ocorrências aparecerão aqui quando o monitoramento observar um serviço em estado Muito lento, Sem resposta ou Erro.
+        <strong>Nenhuma ocorrência encontrada para estes filtros.</strong>
+        Tente ampliar o período ou limpar algum filtro.
       </div>`;
     return;
   }
 
-  list.innerHTML = incidents.map((incident) => {
+  list.innerHTML = incidents.slice(0, 50).map((incident) => {
     const documentLabel = MONITOR_DOC_LABELS[incident.document] || String(incident.document || "").toUpperCase();
     const uf = String(incident.uf).toUpperCase();
     const stateName = SEFAZ[uf]?.name || uf;
@@ -1532,7 +1781,6 @@ function renderMonitorHistory() {
     const duration = incident.recoveredAt && Number.isFinite(Number(incident.durationSeconds))
       ? monitorHistoryDuration(incident.durationSeconds)
       : "";
-
     return `
       <article class="monitor-history-item" role="listitem">
         <div class="monitor-history-main">
@@ -1656,6 +1904,7 @@ $$(".monitor-tab").forEach((tab) => {
 
 $("#monitor-search")?.addEventListener("input", (event) => {
   monitor.query = event.target.value;
+  monitor.mapUF = null;
   renderMonitor();
 });
 
@@ -1667,6 +1916,78 @@ $$(".monitor-filter-btn").forEach((button) => {
 });
 
 $("#monitor-refresh")?.addEventListener("click", () => loadMonitor(true));
+
+$("#monitor-map-pins")?.addEventListener("click", (event) => {
+  const pin = event.target.closest("[data-map-uf]");
+  if (!pin) return;
+  const uf = pin.dataset.mapUf;
+  if (!MONITOR_MAP_POSITIONS[uf]) return;
+  monitor.mapUF = uf;
+  monitor.query = uf;
+  monitor.filter = "all";
+  const search = $("#monitor-search");
+  if (search) search.value = uf;
+  renderMonitor();
+  $("#monitor-grid")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+
+$("#monitor-map-pins")?.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  monitor.mapUF = null;
+  if (monitor.query && MONITOR_MAP_POSITIONS[monitor.query.toUpperCase()]) {
+    monitor.query = "";
+    const search = $("#monitor-search");
+    if (search) search.value = "";
+  }
+  renderMonitor();
+});
+
+$("[data-map-reset]")?.addEventListener("click", () => {
+  if (monitor.mapUF && monitor.query === monitor.mapUF) {
+    monitor.query = "";
+    const search = $("#monitor-search");
+    if (search) search.value = "";
+  }
+  monitor.mapUF = null;
+  renderMonitor();
+});
+
+$("#monitor-map-services")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-map-doc]");
+  if (!button) return;
+  selectMonitorDoc(button.dataset.mapDoc);
+});
+
+$("[data-history-period]").forEach((button) => {
+  button.addEventListener("click", () => {
+    monitorHistoryFilters.period = ["24h", "7d", "30d"].includes(button.dataset.historyPeriod) ? button.dataset.historyPeriod : "7d";
+    renderMonitorHistory();
+  });
+});
+
+$("#monitor-history-document")?.addEventListener("change", (event) => {
+  monitorHistoryFilters.document = ["all", ...MONITOR_DOCS].includes(event.target.value) ? event.target.value : "all";
+  renderMonitorHistory();
+});
+
+$("#monitor-history-uf")?.addEventListener("change", (event) => {
+  const value = event.target.value;
+  monitorHistoryFilters.uf = value === "all" || Object.prototype.hasOwnProperty.call(SEFAZ, value) ? value : "all";
+  renderMonitorHistory();
+});
+
+$("#monitor-history-state")?.addEventListener("change", (event) => {
+  monitorHistoryFilters.state = ["all", "open", "resolved"].includes(event.target.value) ? event.target.value : "all";
+  renderMonitorHistory();
+});
+
+$("[data-history-reset]")?.addEventListener("click", () => {
+  monitorHistoryFilters.period = "7d";
+  monitorHistoryFilters.document = "all";
+  monitorHistoryFilters.uf = "all";
+  monitorHistoryFilters.state = "all";
+  renderMonitorHistory();
+});
 
 $("#monitor-history-list")?.addEventListener("click", (event) => {
   if (event.target.closest('[data-action="monitor-history-retry"]')) loadMonitorHistory(true);
