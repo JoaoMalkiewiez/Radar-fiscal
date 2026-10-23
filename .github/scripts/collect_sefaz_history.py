@@ -100,7 +100,10 @@ def main() -> int:
     for doc in DOCS:
         try:
             statuses = fetch_doc_statuses(doc)
+            if not statuses:
+                raise RuntimeError("A fonte não retornou status reconhecíveis para nenhuma UF")
             successful_docs += 1
+            print(f"{doc.upper()}: {len(statuses)} UFs com status recebidos")
         except (urllib.error.URLError, TimeoutError, RuntimeError, json.JSONDecodeError) as error:
             print(f"AVISO: consulta de {doc} falhou: {error}", file=sys.stderr)
             continue
