@@ -1924,6 +1924,7 @@ $("#monitor-map-pins")?.addEventListener("click", (event) => {
   if (!MONITOR_MAP_POSITIONS[uf]) return;
   monitor.mapUF = uf;
   monitor.query = uf;
+  monitor.filter = "all";
   const search = $("#monitor-search");
   if (search) search.value = uf;
   renderMonitor();
