@@ -1293,12 +1293,13 @@ function renderMonitorUpdated() {
   }
 
   const entries = monitorStateEntries();
+  const docLabel = MONITOR_DOC_LABELS[monitor.doc] || monitor.doc.toUpperCase();
   const normal = entries.filter((entry) => entry.present && entry.value === 1).length;
   const alerts = entries.filter((entry) => entry.present && entry.value >= 2 && entry.value <= 5).length;
   const noData = entries.filter((entry) => entry.present && entry.value === 0).length;
   const unmonitored = entries.filter((entry) => !entry.present).length;
   const time = monitorTime(monitor.data.updatedAt);
-  const parts = ["<span class=\"live-dot\" aria-hidden=\"true\"></span>", `<span><strong>${normal}</strong> normais · <strong>${alerts}</strong> com alerta`];
+  const parts = ["<span class=\"live-dot\" aria-hidden=\"true\"></span>", `<span><strong>${docLabel}</strong> · <strong>${normal}</strong> normais · <strong>${alerts}</strong> com alerta`];
   if (noData) parts.push(` · ${noData} sem dados`);
   if (unmonitored) parts.push(` · ${unmonitored} não monitorados`);
   if (time) parts.push(` · atualizado às ${time}`);
@@ -1344,6 +1345,7 @@ function renderMonitor() {
 
   $$(".monitor-tab").forEach((tab) => {
     const selected = tab.dataset.doc === monitor.doc;
+    tab.classList.toggle("is-active", selected);
     tab.setAttribute("aria-selected", selected ? "true" : "false");
     tab.setAttribute("tabindex", selected ? "0" : "-1");
   });
@@ -1400,7 +1402,11 @@ function renderMonitor() {
 }
 
 function selectMonitorDoc(doc) {
-  if (!MONITOR_DOCS.includes(doc) || doc === monitor.doc) return;
+  if (!MONITOR_DOCS.includes(doc)) return;
+  if (doc === monitor.doc) {
+    renderMonitor();
+    return;
+  }
   monitor.doc = doc;
   renderMonitor();
 }
