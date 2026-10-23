@@ -369,7 +369,9 @@ async function getMonitorHistory(force = false) {
 }
 
 async function fetchMonitorDocument(doc) {
-  const url = `${MONITOR_ORIGIN}/monitores?stateStatus=true&doc=${encodeURIComponent(doc)}&worker_id=sefaz_${doc}_envio_sp`;
+  // Não fixar worker_id em SP: o parâmetro filtraria o retorno para um único worker/UF.
+  // Com stateStatus + doc, coletamos as UFs daquele documento e filtramos seus IDs abaixo.
+  const url = `${MONITOR_ORIGIN}/monitores?stateStatus=true&doc=${encodeURIComponent(doc)}`;
   const payload = await fetchWithRetry(url, 2);
   if (!Array.isArray(payload)) throw new Error(`Formato inesperado para ${doc}`);
 
