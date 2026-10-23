@@ -144,6 +144,10 @@ def main() -> int:
     if successful_docs == 0:
         raise RuntimeError("As três consultas à TecnoSpeed falharam; o histórico foi preservado.")
 
+    if not history.get("trackingSince"):
+        history["trackingSince"] = iso(now)
+        updated = True
+
     if not updated:
         print("Nenhuma mudança de instabilidade detectada; histórico preservado sem novo commit.")
         return 0
