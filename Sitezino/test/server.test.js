@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { createServer, resetRateLimits } = require("../server");
+const { createServer, parseMonitorStates, resetRateLimits } = require("../server");
 
 async function withServer(callback) {
   resetRateLimits();
@@ -21,6 +21,28 @@ async function withServer(callback) {
     await new Promise((resolve) => server.close(resolve));
   }
 }
+
+test("normaliza IDs estaduais da TecnoSpeed sem perder SP por diferença de caixa/campo", () => {
+  const result = parseMonitorStates([
+    { id_worker: "SEFAZ_NFE_ENVIO_SP", status: "1" },
+    { worker_id: "sefaz_nfe_envio_rj", status: "2" },
+    { workerId: "sefaz_nfce_envio_sp", status: "3" },
+    { id: "sefaz_nfe_envio_sc", status: "5" },
+    { id_worker: "sefaz_nfe_envio_svrs", status: "1" },
+  ], "nfe");
+
+  assert.deepEqual(result, { SP: 1, RJ: 2, SC: 5 });
+});
+
+test("aceita a UF em campo próprio quando o worker não vem no identificador", () => {
+  const result = parseMonitorStates([
+    { uf: "sp", doc: "nfe", status: 1 },
+    { uf: "XX", doc: "nfe", status: 1 },
+    { uf: "RJ", doc: "nfce", status: 2 },
+  ], "nfe");
+
+  assert.deepEqual(result, { SP: 1 });
+});
 
 test("serve a página inicial com segurança e gzip", async () => {
   await withServer(async (base) => {
