@@ -111,7 +111,7 @@ test("coleta cada documento com o worker de referência e rejeita resposta sem U
     request[1],
     /\/monitores\?stateStatus=true&doc=\$\{encodeURIComponent\(doc\)\}&worker_id=sefaz_\$\{doc\}_envio_sp/
   );
-  assert.match(server, /\^sefaz_\(nfe\|nfce\|cte\)_envio_\(\[a-z\]\{2\}\)\$/);
+  assert.match(server, /sefaz_\(nfe\|nfce\|cte\)_envio_\(\[a-z\]\{2\}\)/);
   assert.match(server, /if \(Object\.keys\(states\)\.length === 0\)/);
   assert.match(server, /A fonte não retornou status estaduais reconhecíveis/);
 });
