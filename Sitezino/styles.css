@@ -3436,9 +3436,9 @@ a.source-tag:hover { border-color: var(--green-400); color: var(--green-700); }
 .monitor-map-reset:hover { border-color: var(--green-400); }
 .monitor-map-stage {
   position: relative;
-  width: 100%;
-  max-width: 390px;
-  height: 390px;
+  width: min(100%, 340px);
+  aspect-ratio: 320 / 420;
+  height: auto;
   margin: 10px auto 0;
   color: #267a56;
   isolation: isolate;
@@ -3450,9 +3450,10 @@ a.source-tag:hover { border-color: var(--green-400); color: var(--green-700); }
   height: 100%;
   color: #75a88b;
   opacity: .68;
-  z-index: -1;
+  z-index: 0;
+  pointer-events: none;
 }
-.monitor-map-pins { position: absolute; inset: 0; }
+.monitor-map-pins { position: absolute; inset: 0; z-index: 1; }
 .monitor-map-pin {
   position: absolute;
   display: grid;
@@ -3748,14 +3749,14 @@ html[data-theme="dark"] .monitor-history-controls { background: var(--surface-so
 
 @media (max-width: 820px) {
   .monitor-map-dashboard { grid-template-columns: minmax(0, 1fr); }
-  .monitor-map-stage { max-width: 340px; height: 365px; }
+  .monitor-map-stage { width: min(100%, 320px); height: auto; }
 }
 @media (max-width: 620px) {
   .monitor-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   .monitor-summary-card { padding: 11px; }
   .monitor-summary-card > strong { font-size: 20px; }
   .monitor-map-card { padding: 13px; }
-  .monitor-map-stage { height: 340px; }
+  .monitor-map-stage { width: min(100%, 300px); height: auto; }
   .monitor-map-pin { width: 22px; height: 21px; font-size: 7px; border-radius: 6px; }
   .monitor-history-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .monitor-history-controls { align-items: stretch; }
