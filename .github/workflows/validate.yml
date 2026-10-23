@@ -1,0 +1,28 @@
+name: Validate Radar Fiscal
+
+on:
+  push:
+    branches:
+      - main
+      - feat/sefaz-incident-history
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check Sitezino/server.js
+          node --check Sitezino/app.js
+
+      - name: Check Python collector syntax
+        run: python -m py_compile .github/scripts/collect_sefaz_history.py
