@@ -32,17 +32,20 @@ const RATE_LIMITS = {
 
 const STATIC_FILES = {
   "/index.html": "text/html; charset=utf-8",
+  "/privacidade.html": "text/html; charset=utf-8",
   "/styles.css": "text/css; charset=utf-8",
   "/app.js": "text/javascript; charset=utf-8",
+  "/ads.txt": "text/plain; charset=utf-8",
 };
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data:",
-  "connect-src 'self' https://brasilapi.com.br https://publica.cnpj.ws https://fonts.googleapis.com https://fonts.gstatic.com",
+  "img-src 'self' data: https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com",
+  "connect-src 'self' https://brasilapi.com.br https://publica.cnpj.ws https://fonts.googleapis.com https://fonts.gstatic.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com",
+  "frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
@@ -522,6 +525,7 @@ async function handleRequest(request, response) {
   }
 
   if (pathname === "/") pathname = "/index.html";
+  if (pathname === "/privacidade") pathname = "/privacidade.html";
   serveStatic(request, response, pathname);
 }
 
