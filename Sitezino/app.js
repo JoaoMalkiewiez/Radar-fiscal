@@ -1424,8 +1424,8 @@ function renderMonitorMapDashboard() {
   serviceList.innerHTML = MONITOR_DOCS.map((doc) => {
     const counts = monitorCountsForDocument(doc);
     const active = doc === monitor.doc;
-    const updatedStatus = monitor.data.errors?.[doc] ? "Fonte indisponível" : monitor.data.stale ? "Dados em cache" : (counts.alert ? "Atenção necessária" : "Operando normalmente");
-    const operationTone = monitor.data.errors?.[doc] ? "error" : counts.alert ? "alert" : "normal";
+    const updatedStatus = monitor.data.errors?.[doc] ? "Fonte indisponível" : monitor.data.stale ? "Dados em cache" : counts.alert ? "Atenção necessária" : counts.responding < 27 ? "Dados parciais" : "Operando normalmente";
+    const operationTone = monitor.data.errors?.[doc] ? "error" : counts.alert ? "alert" : counts.responding < 27 ? "muted" : "normal";
     return `
       <button type="button" class="monitor-map-service ${active ? "is-active" : ""}" data-map-doc="${doc}" aria-pressed="${active ? "true" : "false"}">
         <span class="monitor-map-service-top">
@@ -1642,19 +1642,20 @@ function renderMonitorHistoryChart(incidents) {
 
   const now = Date.now();
   const { start } = monitorHistoryWindow(monitorHistoryFilters.period, now);
-  const dayCount = monitorHistoryFilters.period === "24h" ? 24 : monitorHistoryFilters.period === "30d" ? 30 : 7;
+  const hourMode = monitorHistoryFilters.period === "24h";
+  const bucketCount = hourMode ? 25 : monitorHistoryFilters.period === "30d" ? 31 : 8;
   const buckets = [];
-  if (dayCount === 24) {
+  if (hourMode) {
     const startHour = new Date(start);
     startHour.setMinutes(0, 0, 0);
-    for (let i = 0; i < 24; i += 1) {
+    for (let i = 0; i < bucketCount; i += 1) {
       const date = new Date(startHour.getTime() + i * 60 * 60 * 1000);
       buckets.push({ key: date.toISOString().slice(0, 13), label: date.toLocaleTimeString("pt-BR", { hour: "2-digit" }), count: 0 });
     }
   } else {
     const startDay = new Date(start);
     startDay.setHours(0, 0, 0, 0);
-    for (let i = 0; i < dayCount; i += 1) {
+    for (let i = 0; i < bucketCount; i += 1) {
       const date = new Date(startDay.getTime() + i * 24 * 60 * 60 * 1000);
       buckets.push({ key: date.toISOString().slice(0, 10), label: date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), count: 0 });
     }
@@ -1663,13 +1664,13 @@ function renderMonitorHistoryChart(incidents) {
   incidents.forEach((incident) => {
     const detectedAt = new Date(incident.detectedAt || "");
     if (Number.isNaN(detectedAt.getTime())) return;
-    const key = dayCount === 24 ? detectedAt.toISOString().slice(0, 13) : detectedAt.toISOString().slice(0, 10);
+    const key = hourMode ? detectedAt.toISOString().slice(0, 13) : detectedAt.toISOString().slice(0, 10);
     const bucket = buckets.find((item) => item.key === key);
     if (bucket) bucket.count += 1;
   });
 
   const max = Math.max(1, ...buckets.map((bucket) => bucket.count));
-  if (title) title.textContent = dayCount === 24 ? "Ocorrências por hora" : "Ocorrências por dia";
+  if (title) title.textContent = hourMode ? "Ocorrências por hora" : "Ocorrências por dia";
   if (description) description.textContent = `Incidentes detectados · ${MONITOR_DOC_LABELS[monitorHistoryFilters.document] || "todos os documentos"}`;
   chart.style.gridTemplateColumns = `repeat(${buckets.length}, minmax(0, 1fr))`;
   chart.innerHTML = buckets.map((bucket) => {
@@ -1722,7 +1723,7 @@ function renderMonitorHistory() {
         <div><button class="monitor-history-retry" type="button" data-action="monitor-history-retry">Tentar novamente</button></div>
       </div>`;
     if (summary) summary.innerHTML = "";
-    if ($("#monitor-history-chart")) $("#monitor-history-chart").innerHTML = '<div class="monitor-history-chart-empty">Não foi possível montar o gráfico sem dados.';
+    if ($("#monitor-history-chart")) $("#monitor-history-chart").innerHTML = '<div class="monitor-history-chart-empty">Não foi possível montar o gráfico sem dados.</div>';
     return;
   }
   if (!data) return;
