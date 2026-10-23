@@ -1671,6 +1671,7 @@ function renderMonitorHistoryChart(incidents) {
   const max = Math.max(1, ...buckets.map((bucket) => bucket.count));
   if (title) title.textContent = dayCount === 24 ? "Ocorrências por hora" : "Ocorrências por dia";
   if (description) description.textContent = `Incidentes detectados · ${MONITOR_DOC_LABELS[monitorHistoryFilters.document] || "todos os documentos"}`;
+  chart.style.gridTemplateColumns = `repeat(${buckets.length}, minmax(0, 1fr))`;
   chart.innerHTML = buckets.map((bucket) => {
     const height = bucket.count ? Math.max(8, Math.round((bucket.count / max) * 100)) : 2;
     return `
@@ -1902,6 +1903,7 @@ $$(".monitor-tab").forEach((tab) => {
 
 $("#monitor-search")?.addEventListener("input", (event) => {
   monitor.query = event.target.value;
+  monitor.mapUF = null;
   renderMonitor();
 });
 
