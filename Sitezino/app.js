@@ -1521,11 +1521,21 @@ function renderMonitorControls() {
 function filteredMonitorEntries() {
   const entries = monitorStateEntries();
   const query = monitor.query.trim().toLowerCase();
+  const selectedUF = monitor.mapUF && Object.prototype.hasOwnProperty.call(SEFAZ, monitor.mapUF)
+    ? monitor.mapUF
+    : null;
+
   return entries.filter((entry) => {
-    if (query) {
+    // O clique no mapa deve filtrar pela UF exata, não por trechos do nome.
+    // Ex.: "TO" não pode incluir "Distrito Federal", "Espírito Santo" ou "Mato Grosso".
+    if (selectedUF && entry.uf !== selectedUF) return false;
+
+    // A busca textual continua aceitando sigla ou parte do nome digitado.
+    if (query && !selectedUF) {
       const name = SEFAZ[entry.uf]?.name || entry.uf;
       if (!entry.uf.toLowerCase().includes(query) && !name.toLowerCase().includes(query)) return false;
     }
+
     if (monitor.filter === "alert") {
       return entry.present && entry.value >= 2 && entry.value <= 5;
     }
