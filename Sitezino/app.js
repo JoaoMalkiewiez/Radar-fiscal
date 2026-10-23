@@ -1254,6 +1254,16 @@ const MONITOR_STATUS = {
   0: { label: "Sem dados", tone: "none", desc: "A fonte respondeu, mas não informou o status" },
 };
 
+const MONITOR_MAP_PALETTE = {
+  normal: { fill: "#139b70", stroke: "#54e4b2", label: "#f2fff9" },
+  slow: { fill: "#d5a43d", stroke: "#ffdc78", label: "#fffaf0" },
+  vslow: { fill: "#df793b", stroke: "#ffb476", label: "#fff7f0" },
+  timeout: { fill: "#4e7898", stroke: "#94c5e7", label: "#f2f9ff" },
+  error: { fill: "#c94757", stroke: "#ff929b", label: "#fff4f5" },
+  none: { fill: "#74869a", stroke: "#becbda", label: "#ffffff" },
+  unmonitored: { fill: "#536a80", stroke: "#91a6b9", label: "#f5f9fc" },
+};
+
 const MONITOR_MISSING = {
   label: "Não monitorado",
   tone: "unmonitored",
@@ -1395,12 +1405,29 @@ function renderMonitorMapDashboard() {
     const value = present ? Number(states[uf]) : null;
     const info = monitorStatus(value, present);
     const selected = monitor.mapUF === uf;
+    const palette = MONITOR_MAP_PALETTE[info.tone] || MONITOR_MAP_PALETTE.unmonitored;
+    const statePath = $("path", node);
+    const stateText = $("text", node);
     node.classList.remove("tone-normal", "tone-slow", "tone-vslow", "tone-timeout", "tone-error", "tone-none", "tone-unmonitored");
     node.classList.add(`tone-${info.tone}`);
     node.classList.toggle("is-selected", selected);
+    node.style.cursor = "pointer";
     node.setAttribute("aria-pressed", selected ? "true" : "false");
     node.setAttribute("aria-label", `${node.dataset.mapName || SEFAZ[uf]?.name || uf} (${uf}): ${info.label}`);
     node.setAttribute("title", `${node.dataset.mapName || SEFAZ[uf]?.name || uf} · ${info.label}`);
+    if (statePath) {
+      statePath.style.setProperty("fill", palette.fill, "important");
+      statePath.style.setProperty("stroke", selected ? "#e9fff7" : palette.stroke, "important");
+      statePath.style.setProperty("stroke-width", selected ? "2.5" : "1.1", "important");
+      statePath.style.setProperty("pointer-events", "visiblePainted", "important");
+      statePath.style.setProperty("cursor", "pointer", "important");
+      statePath.style.setProperty("filter", selected ? `drop-shadow(0 0 6px ${palette.stroke}88)` : "none", "important");
+    }
+    if (stateText) {
+      stateText.style.setProperty("pointer-events", "none", "important");
+      stateText.style.setProperty("user-select", "none", "important");
+      stateText.style.setProperty("fill", "#f4f8fc", "important");
+    }
   });
 
   if (caption) {
@@ -1954,7 +1981,7 @@ $("#monitor-refresh")?.addEventListener("click", () => loadMonitor(true));
 
 $("#monitor-map-pins")?.addEventListener("click", (event) => {
   const state = event.target.closest(".monitor-map-state[data-map-uf]");
-  if (!state) return;
+  if (!state || !event.target.closest("path")) return;
   const uf = state.dataset.mapUf;
   if (!SEFAZ[uf]) return;
   monitor.mapUF = uf;
