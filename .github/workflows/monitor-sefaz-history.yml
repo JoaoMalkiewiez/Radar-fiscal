@@ -36,6 +36,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Validar scripts
+        run: |
+          node --check source/Sitezino/server.js
+          node --check source/Sitezino/app.js
+          python -m py_compile source/.github/scripts/collect_sefaz_history.py
+
       - name: Consultar status e registrar instabilidades
         env:
           HISTORY_FILE: ${{ github.workspace }}/data/history.json
