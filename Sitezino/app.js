@@ -1371,61 +1371,67 @@ function renderMonitorSummary() {
 }
 
 function renderMonitorMapDashboard() {
+  const map = $("#monitor-brazil-map");
   const pins = $("#monitor-map-pins");
   const selectedText = $("#monitor-map-selected");
   const serviceList = $("#monitor-map-services");
   const caption = $("#monitor-map-caption");
-  if (!pins || !serviceList) return;
+  if (!map || !pins || !serviceList) return;
 
   renderMonitorSummary();
+  const states = monitor.data?.docs?.[monitor.doc] || {};
+  const stateNodes = $$(".monitor-map-state[data-map-uf]", pins);
 
-  if (!monitor.data) {
-    pins.innerHTML = Object.entries(MONITOR_MAP_POSITIONS).map(([uf, pos]) => `
-      <button type="button" class="monitor-map-pin tone-unmonitored" data-map-uf="${uf}" style="left:${pos[0]}%;top:${pos[1]}%" aria-label="${uf}: aguardando status" aria-pressed="false">
-        <span>${uf}</span>
-      </button>`).join("");
-    serviceList.innerHTML = '<div class="monitor-map-service-empty">Os status por serviço aparecerão após a consulta.</div>';
-    if (selectedText) selectedText.textContent = "Aguardando a primeira leitura do Monitor SEFAZ.";
-    if (caption) caption.textContent = "O mapa usa o status atual da fonte para o documento selecionado.";
-    return;
-  }
-
-  const states = monitor.data.docs?.[monitor.doc] || {};
-  const mapEntries = Object.keys(SEFAZ).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  pins.innerHTML = mapEntries.map((uf) => {
-    const pos = MONITOR_MAP_POSITIONS[uf] || [50, 50];
-    const present = monitorHasState(states, uf);
+  stateNodes.forEach((node) => {
+    const uf = node.dataset.mapUf;
+    const present = Boolean(monitor.data) && monitorHasState(states, uf);
     const value = present ? Number(states[uf]) : null;
     const info = monitorStatus(value, present);
     const selected = monitor.mapUF === uf;
-    const stateName = SEFAZ[uf]?.name || uf;
-    return `
-      <button type="button" class="monitor-map-pin tone-${info.tone} ${selected ? "is-selected" : ""}" data-map-uf="${uf}" style="left:${pos[0]}%;top:${pos[1]}%" aria-label="${escapeHTML(stateName)} (${uf}): ${escapeHTML(info.label)}" aria-pressed="${selected ? "true" : "false"}" title="${escapeHTML(stateName)} · ${escapeHTML(info.label)}">
-        <span>${uf}</span>
-      </button>`;
-  }).join("");
+    node.classList.remove("tone-normal", "tone-slow", "tone-vslow", "tone-timeout", "tone-error", "tone-none", "tone-unmonitored");
+    node.classList.add(`tone-${info.tone}`);
+    node.classList.toggle("is-selected", selected);
+    node.setAttribute("aria-pressed", selected ? "true" : "false");
+    node.setAttribute("aria-label", `${node.dataset.mapName || SEFAZ[uf]?.name || uf} (${uf}): ${info.label}`);
+    node.setAttribute("title", `${node.dataset.mapName || SEFAZ[uf]?.name || uf} · ${info.label}`);
+  });
 
   if (caption) {
     caption.textContent = monitor.mapUF
-      ? `UF selecionada: ${SEFAZ[monitor.mapUF]?.name || monitor.mapUF}. Clique em outro ponto para trocar.`
-      : `Situação de ${MONITOR_DOC_LABELS[monitor.doc]} por UF. Selecione um ponto para filtrar a grade.`;
+      ? `UF selecionada: ${SEFAZ[monitor.mapUF]?.name || monitor.mapUF}. Clique em outro estado para trocar.`
+      : `Situação de ${MONITOR_DOC_LABELS[monitor.doc]} por UF. Selecione um estado para filtrar a grade abaixo.`;
   }
   if (selectedText) {
     if (monitor.mapUF) {
       const uf = monitor.mapUF;
-      const present = monitorHasState(states, uf);
+      const present = Boolean(monitor.data) && monitorHasState(states, uf);
       const info = monitorStatus(present ? Number(states[uf]) : null, present);
       selectedText.innerHTML = `<strong>${escapeHTML(SEFAZ[uf]?.name || uf)} (${uf})</strong><span class="monitor-map-selected-status tone-${info.tone}">${escapeHTML(info.label)}</span>`;
     } else {
-      selectedText.textContent = "Selecione um ponto do mapa para filtrar o estado.";
+      selectedText.textContent = monitor.data
+        ? "Selecione um estado no mapa para filtrar por UF."
+        : "Aguardando a primeira leitura do Monitor SEFAZ.";
     }
+  }
+
+  if (!monitor.data) {
+    serviceList.innerHTML = '<div class="monitor-map-service-empty">Consultando o status atual dos serviços…</div>';
+    return;
   }
 
   serviceList.innerHTML = MONITOR_DOCS.map((doc) => {
     const counts = monitorCountsForDocument(doc);
     const active = doc === monitor.doc;
-    const updatedStatus = monitor.data.errors?.[doc] ? "Fonte indisponível" : monitor.data.stale ? "Dados em cache" : counts.alert ? "Atenção necessária" : counts.responding < 27 ? "Dados parciais" : "Operando normalmente";
-    const operationTone = monitor.data.errors?.[doc] ? "error" : counts.alert ? "alert" : counts.responding < 27 ? "muted" : "normal";
+    const docError = Boolean(monitor.data.errors?.[doc]);
+    const updatedStatus = docError ? "Fonte indisponível"
+      : monitor.data.stale ? "Dados em cache"
+      : counts.alert ? "Atenção necessária"
+      : counts.responding < 27 ? "Dados parciais"
+      : "Operando normalmente";
+    const operationTone = docError ? "error"
+      : counts.alert ? "alert"
+      : counts.responding < 27 ? "muted"
+      : "normal";
     return `
       <button type="button" class="monitor-map-service ${active ? "is-active" : ""}" data-map-doc="${doc}" aria-pressed="${active ? "true" : "false"}">
         <span class="monitor-map-service-top">
@@ -1918,10 +1924,10 @@ $$(".monitor-filter-btn").forEach((button) => {
 $("#monitor-refresh")?.addEventListener("click", () => loadMonitor(true));
 
 $("#monitor-map-pins")?.addEventListener("click", (event) => {
-  const pin = event.target.closest("[data-map-uf]");
-  if (!pin) return;
-  const uf = pin.dataset.mapUf;
-  if (!MONITOR_MAP_POSITIONS[uf]) return;
+  const state = event.target.closest(".monitor-map-state[data-map-uf]");
+  if (!state) return;
+  const uf = state.dataset.mapUf;
+  if (!SEFAZ[uf]) return;
   monitor.mapUF = uf;
   monitor.query = uf;
   monitor.filter = "all";
@@ -1932,9 +1938,15 @@ $("#monitor-map-pins")?.addEventListener("click", (event) => {
 });
 
 $("#monitor-map-pins")?.addEventListener("keydown", (event) => {
+  const state = event.target.closest(".monitor-map-state[data-map-uf]");
+  if (state && (event.key === "Enter" || event.key === " ")) {
+    event.preventDefault();
+    state.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    return;
+  }
   if (event.key !== "Escape") return;
   monitor.mapUF = null;
-  if (monitor.query && MONITOR_MAP_POSITIONS[monitor.query.toUpperCase()]) {
+  if (monitor.query && SEFAZ[monitor.query.toUpperCase()]) {
     monitor.query = "";
     const search = $("#monitor-search");
     if (search) search.value = "";
