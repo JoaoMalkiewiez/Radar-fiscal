@@ -4208,3 +4208,23 @@ html[data-theme="dark"] section.monitor { background-color: #061321; }
   .monitor .monitor-map-alert { grid-template-columns: 28px minmax(0,1fr); }
   .monitor .monitor-map-alert a { grid-column: 2; justify-self: start; }
 }
+
+
+/* Explicit map colors and reliable SVG hit areas. */
+.monitor #monitor-map-pins .monitor-map-state { cursor: pointer; pointer-events: visiblePainted; }
+.monitor #monitor-map-pins .monitor-map-state path {
+  pointer-events: visiblePainted !important;
+  cursor: pointer !important;
+}
+.monitor #monitor-map-pins .monitor-map-state text {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+.monitor #monitor-map-pins .monitor-map-state.tone-normal path { fill: #139b70 !important; }
+.monitor #monitor-map-pins .monitor-map-state.tone-slow path { fill: #d5a43d !important; }
+.monitor #monitor-map-pins .monitor-map-state.tone-vslow path { fill: #df793b !important; }
+.monitor #monitor-map-pins .monitor-map-state.tone-timeout path { fill: #4e7898 !important; }
+.monitor #monitor-map-pins .monitor-map-state.tone-error path { fill: #c94757 !important; }
+.monitor #monitor-map-pins .monitor-map-state.tone-none path { fill: #74869a !important; }
+.monitor #monitor-map-pins .monitor-map-state.tone-unmonitored path { fill: #536a80 !important; }
+.monitor #monitor-map-pins .monitor-map-state.is-selected path { stroke: #e9fff7 !important; stroke-width: 2.5 !important; }
