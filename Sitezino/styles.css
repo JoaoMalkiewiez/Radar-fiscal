@@ -3768,3 +3768,302 @@ html[data-theme="dark"] .monitor-history-controls { background: var(--surface-so
   .monitor-history-chart { gap: 2px; }
   .monitor-chart-column span { font-size: 6px; }
 }
+
+
+/* ===================== SEFAZ dark dashboard (Model 1 + Model 4) ===================== */
+section.monitor {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  color: #dce8f5;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(18, 88, 108, .22), transparent 38%),
+    radial-gradient(ellipse at 94% 8%, rgba(11, 111, 83, .16), transparent 33%),
+    linear-gradient(180deg, #061321 0%, #081728 52%, #061321 100%);
+}
+section.monitor::before {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(91, 177, 202, .42), transparent);
+  content: "";
+}
+.monitor .section-head h2 { color: #eef6ff; }
+.monitor .section-head p:not(.eyebrow) { color: #9eb2c7; }
+.monitor .eyebrow.eyebrow--dark { color: #68e0b2; }
+.monitor .monitor-live {
+  border: 1px solid #1b3a51;
+  border-radius: 12px;
+  background: rgba(8, 27, 44, .88);
+  padding: 12px 14px;
+}
+.monitor .monitor-live span:not(.live-dot) { color: #7f9bb2; }
+.monitor .monitor-live strong { color: #d9e7f5; }
+.monitor .monitor-live .live-dot { background: #19c98e; box-shadow: 0 0 12px rgba(25, 201, 142, .35); }
+
+.monitor .monitor-panel,
+.monitor .monitor-history,
+.monitor .monitor-map-card {
+  border-color: #1a354c;
+  background: rgba(7, 23, 39, .94);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .16), inset 0 1px 0 rgba(255,255,255,.018);
+}
+.monitor .monitor-panel { border-radius: 14px; }
+.monitor .monitor-bar { border-color: #172f44; background: #091b2d; }
+.monitor .monitor-tools,
+.monitor .monitor-foot {
+  border-color: #172f44;
+  background: #081a2b;
+  color: #94a9bd;
+}
+.monitor .monitor-tabs,
+.monitor .monitor-filter {
+  border-color: #203d53;
+  background: #0c2135;
+}
+.monitor .monitor-tab { color: #a6bbce; }
+.monitor .monitor-tab:hover { color: #ecf7ff; }
+.monitor .monitor-tab.is-active,
+.monitor .monitor-tab[aria-selected="true"],
+.monitor .monitor-filter-btn.is-active {
+  color: #06211d;
+  background: #5ce0af;
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(92,224,175,.22), 0 3px 10px rgba(0,0,0,.15);
+}
+.monitor .monitor-updated { color: #9bb0c3; }
+.monitor .monitor-updated .live-dot { background: #21d19a; }
+.monitor .monitor-search,
+.monitor .monitor-history-select select,
+.monitor .monitor-map-reset {
+  color: #cad9e8;
+  border-color: #234057;
+  background: #0b2033;
+}
+.monitor .monitor-search input { color: #e4effa; }
+.monitor .monitor-search input::placeholder { color: #7893ab; }
+.monitor .monitor-search:focus-within { border-color: #43b994; box-shadow: 0 0 0 3px rgba(45, 194, 148, .12); }
+.monitor .monitor-filter-btn { color: #9fb4c7; }
+.monitor .monitor-refresh {
+  color: #65dbb1;
+  border-color: #20513f;
+  background: #0b2a2b;
+}
+.monitor .monitor-refresh:hover { border-color: #2d8b6d; background: #103638; }
+.monitor .monitor-source-link { color: #63d8af; }
+.monitor .monitor-legend { color: #9bb0c3; }
+
+.monitor .tone-normal { --tone: #35d6a0; --tone-bg: #0a302c; --tone-border: #145b4a; }
+.monitor .tone-slow { --tone: #f1c45c; --tone-bg: #362c19; --tone-border: #6a5124; }
+.monitor .tone-vslow { --tone: #ffab61; --tone-bg: #3a281c; --tone-border: #724427; }
+.monitor .tone-timeout { --tone: #a8bfd5; --tone-bg: #1a2d40; --tone-border: #354f67; }
+.monitor .tone-error { --tone: #ff747d; --tone-bg: #3b1e2a; --tone-border: #78313f; }
+.monitor .tone-none { --tone: #8fa3b6; --tone-bg: #182737; --tone-border: #314354; }
+.monitor .tone-unmonitored { --tone: #8299ad; --tone-bg: #142436; --tone-border: #2b4155; }
+.monitor .monitor-state { box-shadow: inset 0 1px 0 rgba(255,255,255,.02); }
+.monitor .monitor-state .uf { color: #e1edf9; }
+.monitor .monitor-state .status { color: var(--tone); }
+.monitor .monitor-state.tone-unmonitored {
+  background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(190,211,232,.025) 6px 12px);
+}
+.monitor .monitor-grid { background: transparent; }
+.monitor .monitor-error { color: #ffccd0; border-color: #653343; background: #2c1a29; }
+.monitor .monitor-error strong { color: #fff0f1; }
+.monitor .monitor-empty { color: #95abc0; }
+.monitor .monitor-empty strong { color: #e8f2fc; }
+
+.monitor .monitor-summary { margin: 14px 0; gap: 10px; }
+.monitor .monitor-summary-card {
+  gap: 7px;
+  padding: 14px 15px;
+  border-color: #1a394f;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #0b2135, #091a2c);
+}
+.monitor .monitor-summary-card > span { color: #8fa9bf; }
+.monitor .monitor-summary-card > strong { color: #edf6ff; font-size: clamp(20px, 2.2vw, 27px); }
+.monitor .monitor-summary-card > small { color: #7692a9; }
+.monitor .monitor-summary-card.tone-normal { border-color: #145643; }
+.monitor .monitor-summary-card.tone-alert { border-color: #6a3b3f; }
+
+.monitor .monitor-map-dashboard { align-items: stretch; gap: 13px; margin-bottom: 16px; }
+.monitor .monitor-map-card { border-radius: 13px; padding: 16px; }
+.monitor .monitor-map-card-heading h3 { color: #e8f3ff; font-size: 15px; }
+.monitor .monitor-map-card-heading p:not(.eyebrow) { color: #829cb2; }
+.monitor .monitor-map-reset { color: #67d9b1; font-size: 9px; }
+.monitor .monitor-map-reset:hover { border-color: #319b78; background: #102b3b; }
+.monitor .monitor-map-stage {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 465px;
+  height: auto;
+  aspect-ratio: 450 / 460;
+  margin: 10px auto 0;
+  overflow: visible;
+  border: 1px solid #142f46;
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse at 52% 50%, rgba(16, 78, 86, .16), transparent 58%),
+    linear-gradient(145deg, rgba(9, 30, 49, .92), rgba(6, 22, 37, .75));
+  color: #7da2b6;
+}
+.monitor .monitor-brazil-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 460px;
+  overflow: visible;
+}
+.monitor #monitor-map-pins .monitor-map-state {
+  cursor: pointer;
+  outline: none;
+  pointer-events: auto;
+}
+.monitor #monitor-map-pins .monitor-map-state path {
+  fill: var(--map-state-fill, #34485c) !important;
+  stroke: #243e54 !important;
+  stroke-width: 1.15 !important;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: fill .16s ease, stroke .16s ease, filter .16s ease;
+}
+.monitor #monitor-map-pins .monitor-map-state.tone-normal { --map-state-fill: #087856; }
+.monitor #monitor-map-pins .monitor-map-state.tone-slow { --map-state-fill: #9d711c; }
+.monitor #monitor-map-pins .monitor-map-state.tone-vslow { --map-state-fill: #b86528; }
+.monitor #monitor-map-pins .monitor-map-state.tone-timeout { --map-state-fill: #455d76; }
+.monitor #monitor-map-pins .monitor-map-state.tone-error { --map-state-fill: #b34252; }
+.monitor #monitor-map-pins .monitor-map-state.tone-none,
+.monitor #monitor-map-pins .monitor-map-state.tone-unmonitored { --map-state-fill: #2d4358; }
+.monitor #monitor-map-pins .monitor-map-state:hover path {
+  fill: #168865 !important;
+  stroke: #8ce7c6 !important;
+  filter: drop-shadow(0 0 3px rgba(67, 222, 170, .22));
+}
+.monitor #monitor-map-pins .monitor-map-state.is-selected path {
+  stroke: #8cf7d0 !important;
+  stroke-width: 2.2 !important;
+  filter: drop-shadow(0 0 5px rgba(67, 222, 170, .42));
+}
+.monitor #monitor-map-pins .monitor-map-state:focus-visible path { stroke: #f0d27b !important; stroke-width: 2.4 !important; }
+.monitor #monitor-map-pins .monitor-map-state text {
+  fill: #e6f2fd !important;
+  font-family: Inter, sans-serif !important;
+  font-weight: 700;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: rgba(5, 18, 31, .55);
+  stroke-width: .7px;
+  stroke-linejoin: round;
+}
+.monitor .monitor-map-legend {
+  gap: 8px 12px;
+  margin-top: 11px;
+  padding-top: 12px;
+  border-color: #1b354b;
+  color: #a0b5c8;
+}
+.monitor .monitor-map-legend .legend-dot { width: 7px; height: 7px; }
+.monitor .monitor-map-footnote { color: #708ba2; }
+.monitor .monitor-map-selected {
+  border-color: #203d53;
+  background: #0b2033;
+  color: #8da8bd;
+}
+.monitor .monitor-map-selected strong { color: #e3effa; }
+.monitor .monitor-map-service {
+  border-color: #1b3a51;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #0c2338, #091b2e);
+}
+.monitor .monitor-map-service:hover { border-color: #347e71; }
+.monitor .monitor-map-service.is-active {
+  border-color: #278a6c;
+  background: #0c2b32;
+  box-shadow: 0 0 0 1px rgba(50, 192, 146, .12);
+}
+.monitor .monitor-map-service-top > strong { color: #eaf4fe; font-size: 11px; }
+.monitor .monitor-map-service-state,
+.monitor .monitor-map-selected-status {
+  border-color: var(--tone-border);
+  background: var(--tone-bg);
+  color: var(--tone);
+}
+.monitor .monitor-map-service-counts { color: #8ca7bd; }
+.monitor .monitor-map-service-counts strong { color: #dceafa; }
+.monitor .monitor-map-service-bar { background: #173147; }
+.monitor .monitor-map-service-bar i { background: linear-gradient(90deg, #0f9c72, #49e2af); }
+.monitor .monitor-map-service-note { color: #6f8ba3; }
+.monitor .monitor-map-service-empty,
+.monitor .monitor-map-service-loading {
+  border-color: #243e54;
+  color: #91a8bd;
+  background: #0a1e31;
+}
+.monitor .monitor-history { padding: 18px; }
+.monitor .monitor-history-heading h3 { color: #edf6ff; }
+.monitor .monitor-history-heading > p:last-child { color: #869fb5; }
+.monitor .monitor-history-collection {
+  color: #92aabe;
+  border-color: #203d53;
+  background: #0b2033;
+}
+.monitor .monitor-history-controls {
+  border-color: #1c384e;
+  background: #091b2d;
+}
+.monitor .monitor-history-period { border-color: #1f3b52; background: #0b2135; }
+.monitor .monitor-history-period button { color: #93acc0; }
+.monitor .monitor-history-period button.is-active { color: #05221c; background: #5ce0af; }
+.monitor .monitor-history-select { color: #91a9bd; }
+.monitor .monitor-history-select select { color: #dceafa; border-color: #244259; background: #0c2237; }
+.monitor .monitor-history-metric {
+  border-color: #1b3a50;
+  background: linear-gradient(145deg, #0c2236, #091b2d);
+}
+.monitor .monitor-history-metric > span { color: #8ba6bc; }
+.monitor .monitor-history-metric > strong { color: #edf6ff; }
+.monitor .monitor-history-chart-wrap {
+  border-color: #1b3a50;
+  background: #091b2d;
+}
+.monitor .monitor-history-chart-heading strong { color: #e8f3ff; }
+.monitor .monitor-history-chart-heading span { color: #829cb2; }
+.monitor .monitor-chart-bar-track { background: #10283d; }
+.monitor .monitor-chart-bar-track i { background: #243c53; }
+.monitor .monitor-chart-bar-track i.has-data { background: linear-gradient(180deg, #f5bb55, #da7540); }
+.monitor .monitor-chart-column span { color: #7e9bb1; }
+.monitor .monitor-chart-column small { color: #dae8f6; }
+.monitor .monitor-history-results { color: #8aa4ba; }
+.monitor .monitor-history-results strong { color: #e1eefb; }
+.monitor .monitor-history-item {
+  border-color: #1c394f;
+  background: #0b2033;
+}
+.monitor .monitor-history-title { color: #e6f2fd; }
+.monitor .monitor-history-meta { color: #8ba5bb; }
+.monitor .monitor-history-duration { color: #c6d9e9; }
+.monitor .monitor-history-empty { color: #8ca6bc; border-color: #294258; background: #0b2033; }
+.monitor .monitor-history-empty strong { color: #e8f3ff; }
+.monitor .monitor-history-note,
+.monitor .monitor-note { color: #6f8ba3; }
+.monitor .monitor-history-state.is-open { color: #ff8a90; border-color: #753843; background: #381e2b; }
+.monitor .monitor-history-state.is-resolved { color: #54dcb0; border-color: #1b604c; background: #0b302b; }
+html[data-theme="dark"] section.monitor { background-color: #061321; }
+
+@media (max-width: 820px) {
+  .monitor .monitor-map-dashboard { grid-template-columns: minmax(0, 1fr); }
+  .monitor .monitor-map-stage { max-width: 450px; }
+}
+@media (max-width: 620px) {
+  .monitor .monitor-map-card { padding: 12px; }
+  .monitor .monitor-map-stage { width: 100%; }
+  .monitor .monitor-summary-card > strong { font-size: 20px; }
+  .monitor .monitor-history { padding: 12px; }
+  .monitor .monitor-history-chart { overflow-x: auto; }
+  .monitor .monitor-history-controls { background: #091b2d; }
+}
