@@ -1226,6 +1226,14 @@ window.addEventListener("popstate", () => {
 
 const MONITOR_API = "/api/sefaz-status";
 const MONITOR_URL = "https://monitor.tecnospeed.com.br/";
+const MONITOR_HISTORY_API = "/api/sefaz-history";
+const MONITOR_HISTORY_SEVERITY = {
+  3: { label: "Muito lento", tone: "vslow" },
+  4: { label: "Sem resposta", tone: "timeout" },
+  5: { label: "Erro", tone: "error" },
+};
+
+const monitorHistoryState = { data: null, error: null, loading: false };
 const MONITOR_DOCS = ["nfe", "nfce", "cte"];
 const MONITOR_DOC_LABELS = { nfe: "NF-e", nfce: "NFC-e", cte: "CT-e" };
 const MONITOR_STATUS = {
@@ -1441,6 +1449,138 @@ async function loadMonitor(force = false) {
 
 /* ------------------------------------------------- SEFAZ status in result */
 
+function monitorHistoryDate(value) {
+  if (!value) return "Horário não informado";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Horário não informado";
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function monitorHistoryDuration(seconds) {
+  const total = Math.max(0, Math.round(Number(seconds) || 0));
+  if (total < 60) return "menos de 1 minuto";
+  const minutes = Math.floor(total / 60);
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  const remainder = minutes % 60;
+  if (days) return `${days} d ${hours} h`;
+  if (hours) return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
+  return `${minutes} min`;
+}
+
+function renderMonitorHistory() {
+  const list = $("#monitor-history-list");
+  const status = $("#monitor-history-status");
+  const note = $("#monitor-history-note");
+  if (!list || !status) return;
+
+  const data = monitorHistoryState.data;
+  if (monitorHistoryState.loading && !data) {
+    status.textContent = "Consultando histórico…";
+    list.innerHTML = '<div class="monitor-history-empty">Buscando as primeiras ocorrências registradas…</div>';
+    return;
+  }
+
+  if (!data && monitorHistoryState.error) {
+    status.textContent = "Histórico temporariamente indisponível";
+    list.innerHTML = `
+      <div class="monitor-history-empty">
+        <strong>Não foi possível carregar o histórico agora.</strong>
+        Tente novamente em instantes ou consulte o monitor original da TecnoSpeed.
+        <div><button class="monitor-history-retry" type="button" data-action="monitor-history-retry">Tentar novamente</button></div>
+      </div>`;
+    return;
+  }
+
+  if (!data) return;
+  const incidents = (Array.isArray(data.incidents) ? data.incidents : [])
+    .filter((incident) => incident && MONITOR_DOCS.includes(incident.document) && /^[A-Z]{2}$/.test(String(incident.uf || "")))
+    .sort((a, b) => new Date(b.detectedAt || 0).getTime() - new Date(a.detectedAt || 0).getTime())
+    .slice(0, 8);
+
+  status.textContent = data.stale
+    ? "Último histórico disponível · cache"
+    : "Coleta automática · cerca de 5 min";
+
+  if (note && data.trackingSince) {
+    note.textContent = `Coleta ativa desde ${monitorHistoryDate(data.trackingSince)}. O histórico não recupera ocorrências anteriores à ativação; falhas muito curtas entre as coletas podem não aparecer.`;
+  }
+
+  if (!incidents.length) {
+    list.innerHTML = `
+      <div class="monitor-history-empty">
+        <strong>Nenhuma instabilidade severa registrada ainda.</strong>
+        As primeiras ocorrências aparecerão aqui quando o monitoramento observar um serviço em estado Muito lento, Sem resposta ou Erro.
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = incidents.map((incident) => {
+    const documentLabel = MONITOR_DOC_LABELS[incident.document] || String(incident.document || "").toUpperCase();
+    const uf = String(incident.uf).toUpperCase();
+    const stateName = SEFAZ[uf]?.name || uf;
+    const active = !incident.recoveredAt;
+    const severity = MONITOR_HISTORY_SEVERITY[Number(incident.maxSeverity)] || { label: "Instabilidade", tone: "none" };
+    const detected = monitorHistoryDate(incident.detectedAt);
+    const recovered = incident.recoveredAt ? monitorHistoryDate(incident.recoveredAt) : "";
+    const duration = incident.recoveredAt && Number.isFinite(Number(incident.durationSeconds))
+      ? monitorHistoryDuration(incident.durationSeconds)
+      : "";
+
+    return `
+      <article class="monitor-history-item" role="listitem">
+        <div class="monitor-history-main">
+          <div class="monitor-history-title">
+            <span>${escapeHTML(documentLabel)} · ${escapeHTML(uf)} — ${escapeHTML(stateName)}</span>
+            <span class="monitor-history-severity tone-${severity.tone}">${escapeHTML(severity.label)} · pico</span>
+          </div>
+          <div class="monitor-history-meta">
+            <span>Primeira detecção: ${escapeHTML(detected)}</span>
+            ${recovered ? `<span>Normalizado: ${escapeHTML(recovered)}</span>` : "<span>Sem normalização confirmada</span>"}
+          </div>
+          ${duration ? `<div class="monitor-history-duration">Tempo observado até normalizar: ${escapeHTML(duration)}</div>` : ""}
+        </div>
+        <span class="monitor-history-state ${active ? "is-open" : "is-resolved"}">${active ? "Em andamento" : "Normalizado"}</span>
+      </article>`;
+  }).join("");
+}
+
+async function loadMonitorHistory(force = false) {
+  if (monitorHistoryState.loading) return;
+  monitorHistoryState.loading = true;
+  monitorHistoryState.error = null;
+  renderMonitorHistory();
+
+  try {
+    const response = await fetch(`${MONITOR_HISTORY_API}${force ? "?force=1" : ""}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const body = await response.json();
+        detail = body?.detail || body?.error || "";
+      } catch { /* resposta sem JSON */ }
+      throw new Error(detail || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    if (!data || !Array.isArray(data.incidents)) throw new Error("Resposta inválida do histórico");
+    monitorHistoryState.data = data;
+    monitorHistoryState.error = null;
+  } catch (error) {
+    monitorHistoryState.error = error;
+  } finally {
+    monitorHistoryState.loading = false;
+    renderMonitorHistory();
+  }
+}
+
 function companyStates(result) {
   const map = new Map();
   (result.ies || []).forEach((ie) => {
@@ -1527,6 +1667,10 @@ $$(".monitor-filter-btn").forEach((button) => {
 });
 
 $("#monitor-refresh")?.addEventListener("click", () => loadMonitor(true));
+
+$("#monitor-history-list")?.addEventListener("click", (event) => {
+  if (event.target.closest('[data-action="monitor-history-retry"]')) loadMonitorHistory(true);
+});
 
 $("#monitor-grid")?.addEventListener("click", (event) => {
   if (event.target.closest('[data-action="monitor-retry"]')) {
@@ -1657,11 +1801,18 @@ function init() {
   validateInput("");
   renderMonitor();
   loadMonitor();
+  loadMonitorHistory();
   setInterval(() => {
     if (!document.hidden) loadMonitor();
   }, 60_000);
+  setInterval(() => {
+    if (!document.hidden) loadMonitorHistory();
+  }, 120_000);
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) loadMonitor();
+    if (!document.hidden) {
+      loadMonitor();
+      loadMonitorHistory();
+    }
   });
 
   const params = new URLSearchParams(window.location.search);
