@@ -321,7 +321,7 @@ async function getCompanyData(cnpj, force = false) {
 }
 
 async function fetchMonitorDocument(doc) {
-  const url = `${MONITOR_ORIGIN}/monitores?stateStatus=true&doc=${encodeURIComponent(doc)}&worker_id=sefaz_${doc}_envio_sp`;
+  const url = `${MONITOR_ORIGIN}/monitores?stateStatus=true&doc=${encodeURIComponent(doc)}`;
   const payload = await fetchWithRetry(url, 2);
   if (!Array.isArray(payload)) throw new Error(`Formato inesperado para ${doc}`);
 
