@@ -495,8 +495,7 @@ async function handleRequest(request, response) {
     const body = [
       "User-agent: *",
       "Allow: /",
-      "Disallow: /api/",
-      `Sitemap: ${siteOrigin(request)}/sitemap.xml`,
+      `Sitemap: https://radar-fiscal-iyn3.onrender.com/sitemap.xml`,
       "",
     ].join("\n");
     sendText(request, response, 200, body);
