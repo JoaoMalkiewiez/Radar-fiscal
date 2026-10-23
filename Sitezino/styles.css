@@ -2381,10 +2381,13 @@ html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 
 .monitor-tab:hover { color: var(--ink); }
 
+.monitor-tab.is-active,
 .monitor-tab[aria-selected="true"] {
   background: var(--ink-surface);
   color: var(--lime);
   box-shadow: 0 2px 8px rgba(10, 31, 23, 0.18);
+  outline: 1px solid var(--lime);
+  outline-offset: -1px;
 }
 
 .monitor-tab:focus-visible { outline-offset: 1px; }
