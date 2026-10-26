@@ -88,8 +88,9 @@ test("publica robots.txt e sitemap.xml", async () => {
     const robots = await fetch(`${base}/robots.txt`);
     assert.equal(robots.status, 200);
     const robotsBody = await robots.text();
-    assert.match(robotsBody, /Disallow: \/api\//);
-    assert.match(robotsBody, /Sitemap: http:\/\/127\.0\.0\.1:\d+\/sitemap\.xml/);
+    assert.match(robotsBody, /User-agent: \\*/);
+    assert.match(robotsBody, /Allow: \/\\//);
+    assert.match(robotsBody, /Sitemap: https:\/\/radar-fiscal-iyn3\.onrender\.com\/sitemap\.xml/);
 
     const sitemap = await fetch(`${base}/sitemap.xml`);
     assert.equal(sitemap.status, 200);
@@ -97,6 +98,17 @@ test("publica robots.txt e sitemap.xml", async () => {
     const sitemapBody = await sitemap.text();
     assert.match(sitemapBody, /<urlset/);
     assert.match(sitemapBody, /<loc>http:\/\/127\.0\.0\.1:\d+\/<\/loc>/);
+  });
+});
+
+test("gera URL HTTPS canônica no sitemap do domínio Render", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/sitemap.xml`, {
+      headers: { host: "radar-fiscal-iyn3.onrender.com" },
+    });
+    assert.equal(response.status, 200);
+    const body = await response.text();
+    assert.match(body, /<loc>https:\/\/radar-fiscal-iyn3\.onrender\.com\/<\/loc>/);
   });
 });
 
