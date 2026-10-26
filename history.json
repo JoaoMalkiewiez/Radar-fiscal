@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-10-25T23:57:36Z",
+  "updatedAt": "2026-10-26T13:57:42Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -24,6 +24,17 @@
       "durationSeconds": 16665,
       "maxSeverity": 5,
       "statusLabel": "erro"
+    },
+    {
+      "id": "cte-MT-20261026T135742Z",
+      "key": "cte:MT",
+      "document": "cte",
+      "uf": "MT",
+      "detectedAt": "2026-10-26T13:57:42Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
     }
   ]
 }
