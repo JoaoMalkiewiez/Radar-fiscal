@@ -487,12 +487,18 @@ async function getMonitorData(force = false) {
 
 function siteOrigin(request) {
   if (PUBLIC_URL) return PUBLIC_URL;
+
+  const rawHost = String(request.headers.host || "localhost");
+  const host = /^[a-z0-9.:-]+$/i.test(rawHost) ? rawHost : "localhost";
+
+  // Render terminates HTTPS before forwarding requests to the Node server over HTTP.
+  // Keep this service's public sitemap URLs canonical even when TRUST_PROXY is disabled.
+  if (host === "radar-fiscal-iyn3.onrender.com") return `https://${host}`;
+
   const forwardedProto = TRUST_PROXY
     ? String(request.headers["x-forwarded-proto"] || "").split(",")[0].trim()
     : "";
   const protocol = forwardedProto === "https" || request.socket.encrypted ? "https" : "http";
-  const rawHost = String(request.headers.host || "localhost");
-  const host = /^[a-z0-9.:-]+$/i.test(rawHost) ? rawHost : "localhost";
   return `${protocol}://${host}`;
 }
 
