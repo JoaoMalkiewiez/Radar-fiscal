@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-10-27T16:21:05Z",
+  "updatedAt": "2026-10-27T20:48:51Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -64,8 +64,8 @@
       "document": "cte",
       "uf": "AL",
       "detectedAt": "2026-10-27T16:21:05Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-10-27T20:48:51Z",
+      "durationSeconds": 16066,
       "maxSeverity": 3,
       "statusLabel": "muito_lento"
     },
@@ -75,8 +75,8 @@
       "document": "cte",
       "uf": "PA",
       "detectedAt": "2026-10-27T16:21:05Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-10-27T20:48:51Z",
+      "durationSeconds": 16066,
       "maxSeverity": 3,
       "statusLabel": "muito_lento"
     },
@@ -86,8 +86,8 @@
       "document": "cte",
       "uf": "PB",
       "detectedAt": "2026-10-27T16:21:05Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-10-27T20:48:51Z",
+      "durationSeconds": 16066,
       "maxSeverity": 3,
       "statusLabel": "muito_lento"
     },
@@ -97,8 +97,8 @@
       "document": "cte",
       "uf": "SE",
       "detectedAt": "2026-10-27T16:21:05Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-10-27T20:48:51Z",
+      "durationSeconds": 16066,
       "maxSeverity": 3,
       "statusLabel": "muito_lento"
     }
