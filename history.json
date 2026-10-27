@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-10-27T00:35:53Z",
+  "updatedAt": "2026-10-27T16:21:05Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -55,6 +55,50 @@
       "detectedAt": "2026-10-26T21:17:42Z",
       "recoveredAt": "2026-10-27T00:35:53Z",
       "durationSeconds": 11891,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
+    },
+    {
+      "id": "cte-AL-20261027T162105Z",
+      "key": "cte:AL",
+      "document": "cte",
+      "uf": "AL",
+      "detectedAt": "2026-10-27T16:21:05Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
+    },
+    {
+      "id": "cte-PA-20261027T162105Z",
+      "key": "cte:PA",
+      "document": "cte",
+      "uf": "PA",
+      "detectedAt": "2026-10-27T16:21:05Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
+    },
+    {
+      "id": "cte-PB-20261027T162105Z",
+      "key": "cte:PB",
+      "document": "cte",
+      "uf": "PB",
+      "detectedAt": "2026-10-27T16:21:05Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
+    },
+    {
+      "id": "cte-SE-20261027T162105Z",
+      "key": "cte:SE",
+      "document": "cte",
+      "uf": "SE",
+      "detectedAt": "2026-10-27T16:21:05Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
       "maxSeverity": 3,
       "statusLabel": "muito_lento"
     }
