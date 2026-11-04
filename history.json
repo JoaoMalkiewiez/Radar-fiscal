@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-11-04T03:17:26Z",
+  "updatedAt": "2026-11-04T18:40:22Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -163,6 +163,39 @@
       "document": "nfe",
       "uf": "AM",
       "detectedAt": "2026-11-04T03:17:26Z",
+      "recoveredAt": "2026-11-04T18:40:22Z",
+      "durationSeconds": 55376,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-MA-20261104T184022Z",
+      "key": "nfce:MA",
+      "document": "nfce",
+      "uf": "MA",
+      "detectedAt": "2026-11-04T18:40:22Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-RR-20261104T184022Z",
+      "key": "nfce:RR",
+      "document": "nfce",
+      "uf": "RR",
+      "detectedAt": "2026-11-04T18:40:22Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
+    },
+    {
+      "id": "nfce-SC-20261104T184022Z",
+      "key": "nfce:SC",
+      "document": "nfce",
+      "uf": "SC",
+      "detectedAt": "2026-11-04T18:40:22Z",
       "recoveredAt": null,
       "durationSeconds": null,
       "maxSeverity": 5,
