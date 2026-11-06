@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-11-05T14:30:15Z",
+  "updatedAt": "2026-11-06T21:32:58Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -220,6 +220,28 @@
       "detectedAt": "2026-11-04T23:56:49Z",
       "recoveredAt": "2026-11-05T14:30:15Z",
       "durationSeconds": 52406,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfe-MT-20261106T213258Z",
+      "key": "nfe:MT",
+      "document": "nfe",
+      "uf": "MT",
+      "detectedAt": "2026-11-06T21:32:58Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
+    },
+    {
+      "id": "nfce-MT-20261106T213258Z",
+      "key": "nfce:MT",
+      "document": "nfce",
+      "uf": "MT",
+      "detectedAt": "2026-11-06T21:32:58Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
       "maxSeverity": 5,
       "statusLabel": "erro"
     }
