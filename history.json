@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-11-07T22:20:37Z",
+  "updatedAt": "2026-11-08T01:36:42Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -625,8 +625,8 @@
       "document": "cte",
       "uf": "AP",
       "detectedAt": "2026-11-07T22:20:37Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-08T01:36:42Z",
+      "durationSeconds": 11765,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -636,8 +636,8 @@
       "document": "cte",
       "uf": "SP",
       "detectedAt": "2026-11-07T22:20:37Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-08T01:36:42Z",
+      "durationSeconds": 11765,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -647,8 +647,8 @@
       "document": "cte",
       "uf": "RR",
       "detectedAt": "2026-11-07T22:20:37Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-08T01:36:42Z",
+      "durationSeconds": 11765,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -658,8 +658,8 @@
       "document": "cte",
       "uf": "PE",
       "detectedAt": "2026-11-07T22:20:37Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-08T01:36:42Z",
+      "durationSeconds": 11765,
       "maxSeverity": 5,
       "statusLabel": "erro"
     }
