@@ -119,6 +119,7 @@ test("serve a página de CPF e seus arquivos sem consultar dados pessoais", asyn
     const html = await page.text();
     assert.match(html, /Consulta de CPF/);
     assert.match(html, /sem enviar o número a nenhum servidor/);
+    assert.match(html, /ConsultaSituacao\/ConsultaPublica\.asp/);
     for (const asset of ["/cpf.js", "/cpf.css"]) {
       const response = await fetch(`${base}${asset}`);
       assert.equal(response.status, 200);
@@ -137,6 +138,8 @@ test("serve Radar Jurídico e mantém as três ferramentas isoladas", async () =
     assert.match(html, /Processos judiciais/);
     assert.match(html, /Investigação empresarial/);
     assert.match(html, /Análise documental/);
+    assert.match(html, /id="tribunal-link"/);
+    assert.match(html, /id="copy-process"/);
     for (const asset of ["/juridico.js", "/juridico.css"]) {
       const response = await fetch(`${base}${asset}`);
       assert.equal(response.status, 200);
