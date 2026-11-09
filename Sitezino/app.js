@@ -959,6 +959,7 @@ function renderResult(result, options = {}) {
             <time datetime="${new Date(result.fetchedAt).toISOString()}">${formatDateTime(result.fetchedAt)}</time>
           </p>
           <div class="result-actions">
+            <button class="btn btn--outline report-export" type="button" data-action="print" title="Imprimir ou salvar o relatório em PDF pelo navegador">Relatório PDF / Imprimir</button>
             <button class="btn btn--outline" type="button" data-action="refresh" data-cnpj="${escapeHTML(result.cnpj)}" title="Consultar as fontes novamente">
               <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8a5 5 0 11-1.5-3.5M13 2v3.5H9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Atualizar
@@ -999,6 +1000,12 @@ function renderResult(result, options = {}) {
           <div class="services-list" data-services></div>
         </section>
         ${renderExtras(company)}
+        <div class="report-metadata" aria-label="Identificação do relatório">
+          <strong>Radar Fiscal · Relatório informativo de CNPJ</strong>
+          <span>Gerado em ${escapeHTML(formatDateTime(Date.now()))} · Dados obtidos em ${escapeHTML(formatDateTime(result.fetchedAt))}</span>
+          <span>Fonte cadastral: ${escapeHTML(result.source)} · IE: ${result.ieSource === "ok" ? "publica.cnpj.ws" : "não confirmada"}.</span>
+          <span>Este documento não equivale a certidão oficial. Dados sujeitos a alteração.</span>
+        </div>
         <div class="result-note">
           <p>
             Fontes: ${escapeHTML(result.source)}${result.ieSource === "ok" ? " + publica.cnpj.ws (inscrições estaduais)" : ""}.
@@ -1200,6 +1207,13 @@ els.results.addEventListener("click", (event) => {
   const trigger = event.target.closest("[data-action]");
   if (!trigger) return;
   const action = trigger.dataset.action;
+
+  if (action === "print") {
+    // Expande as seções societárias e atividades para incluí-las no PDF impresso.
+    els.results.querySelectorAll("details.extra").forEach((item) => { item.open = true; });
+    window.print();
+    return;
+  }
 
   if (action === "new") {
     resetView();
