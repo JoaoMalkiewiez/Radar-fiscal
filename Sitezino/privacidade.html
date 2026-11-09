@@ -22,14 +22,19 @@
     <a class="privacy-back" href="/">← Voltar ao Radar Fiscal</a>
     <p class="eyebrow">Transparência</p>
     <h1>Política de Privacidade</h1>
-    <p>Última atualização: 23 de outubro de 2026.</p>
+    <p>Última atualização: 9 de novembro de 2026.</p>
     <p>Esta política explica como o Radar Fiscal trata informações quando você acessa o site e utiliza as consultas disponíveis. O Radar Fiscal é um projeto independente e não representa a Receita Federal, a SEFAZ ou outro órgão público.</p>
 
     <h2>1. Informações consultadas</h2>
     <p>Quando você envia um CNPJ para consulta, o número informado é enviado pelo servidor do Radar Fiscal a serviços externos que fornecem dados públicos, incluindo BrasilAPI e publica.cnpj.ws. O site também consulta o Monitor SEFAZ da TecnoSpeed para exibir informações de disponibilidade dos serviços fiscais. Esses provedores possuem suas próprias políticas e condições de uso.</p>
 
+    <h2>1.1. Consulta CPF oficial contratada (acesso restrito)</h2>
+    <p>A validação matemática gratuita de CPF é processada localmente no navegador e não envia o número ao nosso servidor. Separadamente, quando houver contratação, credenciais e autorização administrativa, a ferramenta poderá oferecer consulta cadastral pela API Consulta CPF v3 do Serpro. Nesse caso, o operador informa CPF e data de nascimento, que são enviados ao backend do Radar Fiscal e transmitidos ao Serpro via conexão HTTPS exclusivamente para realizar a consulta solicitada.</p>
+    <p>O módulo opcional pode retornar nome, nome social e situação cadastral, conforme disponibilidade da fonte. Não oferece endereço, telefone nem informações de patrimônio. Esse módulo não armazena CPF, nascimento, finalidade declarada ou resposta em banco de dados, histórico local ou cache da aplicação. Dados podem ser processados e registrados pelos serviços e infraestruturas de terceiros segundo seus contratos e políticas. A aplicação aplica autenticação administrativa e limites de requisição, mas não substitui as verificações jurídicas e contratuais exigidas para produção comercial.</p>
+    <p>Somente pessoas habilitadas e com finalidade legítima podem utilizar o módulo contratado. A declaração de finalidade no formulário não é, isoladamente, autorização para consultar terceiros. Antes de disponibilizar o módulo ao público, será necessário implementar contas individuais, auditoria adequada, transparência sobre o controlador e as medidas de conformidade previstas na LGPD.</p>
+
     <h2>2. Armazenamento e funcionamento</h2>
-    <p>O site pode usar o armazenamento local do navegador para guardar preferências de interface, como o tema claro ou escuro e consultas recentes, conforme a funcionalidade disponível. O servidor pode manter temporariamente resultados em cache e aplicar limites de requisições para manter o serviço estável. Não é necessário criar uma conta para usar as consultas.</p>
+    <p>O site pode usar o armazenamento local do navegador para guardar preferências de interface, como o tema claro ou escuro e consultas recentes, conforme a funcionalidade disponível. O servidor pode manter temporariamente resultados em cache e aplicar limites de requisições para manter o serviço estável. As consultas públicas de CNPJ e a validação local de CPF não exigem conta; o módulo Serpro, quando ativado, exige acesso administrativo restrito.</p>
 
     <h2>3. Cookies e publicidade</h2>
     <p>O Radar Fiscal pode utilizar o Google AdSense para exibir anúncios. O Google e seus parceiros podem usar cookies ou tecnologias semelhantes para fornecer, personalizar, limitar ou medir anúncios, conforme as configurações do usuário, a região e as opções disponibilizadas pelo Google. A publicidade pode envolver o tratamento de dados técnicos, como identificadores de cookies, endereço IP, informações do navegador e interações com anúncios.</p>
