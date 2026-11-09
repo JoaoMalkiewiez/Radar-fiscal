@@ -35,7 +35,7 @@
           <p class="eyebrow">Radar Fiscal · Consulta de documentos</p>
           <h1>Consulta de <span>CPF</span></h1>
           <p>Verifique se um CPF possui dígitos verificadores válidos, com resultado imediato e sem enviar o número a nenhum servidor.</p>
-          <p class="cpf-privacy">O resultado matemático não confirma existência, titularidade ou regularidade. Para esses dados, utilize o serviço oficial abaixo.</p>
+          <p class="cpf-privacy">O resultado matemático não confirma existência, titularidade ou regularidade. Consultas cadastrais oficiais exigem os canais da Receita ou um acesso contratado autorizado.</p>
         </div>
         <div class="cpf-panel">
           <h2>Validar CPF</h2>
@@ -57,6 +57,35 @@
             <p id="copy-feedback" class="cpf-feedback" role="status" aria-live="polite"></p>
             <p class="cpf-official-note">Não utilizamos bancos de dados privados nem prometemos identificar terceiros. Consulte somente com finalidade legítima.</p>
           </div>
+        </div>
+      </div>
+    </section>
+    <section class="cpf-serpro-section" aria-labelledby="cpf-serpro-title">
+      <div class="container cpf-serpro-layout">
+        <div class="cpf-serpro-intro">
+          <p class="eyebrow">Consulta cadastral contratada · Serpro</p>
+          <h2 id="cpf-serpro-title">Dados oficiais do CPF</h2>
+          <p>Integração preparada com a <strong>API Consulta CPF v3 do Serpro</strong>, que pode retornar nome, nome social e situação cadastral quando houver contrato habilitado e acesso autorizado.</p>
+          <p>Este serviço exige <strong>CPF e data de nascimento</strong>. Não retorna endereços, telefones, imóveis ou veículos. O acesso não é público e as consultas podem ser cobradas pelo fornecedor.</p>
+          <a href="https://apicenter.estaleiro.serpro.gov.br/documentacao/consulta-cpf/pt/como_contratar/" target="_blank" rel="noopener noreferrer">Como contratar a API oficial ↗</a>
+        </div>
+        <div class="cpf-serpro-box">
+          <h3>Consulta Serpro · Acesso profissional</h3>
+          <p id="cpf-api-status" class="cpf-api-status" role="status">Verificando disponibilidade da integração…</p>
+          <form id="cpf-api-form" autocomplete="off" hidden>
+            <label for="cpf-api-number">CPF</label>
+            <input id="cpf-api-number" inputmode="numeric" spellcheck="false" maxlength="14" placeholder="000.000.000-00" required>
+            <label for="cpf-api-birth">Data de nascimento</label>
+            <input type="date" id="cpf-api-birth" required>
+            <label for="cpf-api-key">Chave de acesso de operador</label>
+            <input id="cpf-api-key" type="password" autocomplete="off" placeholder="Chave privada do administrador" required>
+            <label for="cpf-api-purpose">Finalidade da consulta</label>
+            <input id="cpf-api-purpose" maxlength="180" placeholder="Descreva a finalidade legítima (mín. 10 caracteres)" required>
+            <label class="cpf-api-consent"><input id="cpf-api-confirmation" type="checkbox" required><span>Confirmo que tenho autorização ou outra base legal aplicável para esta consulta e observarei as condições do Serpro.</span></label>
+            <button type="submit" id="cpf-api-submit">Consultar cadastro oficial</button>
+            <p class="cpf-api-warning">Os dados informados são enviados ao backend e ao Serpro somente após a confirmação. A chave de operador não é armazenada no navegador.</p>
+          </form>
+          <div id="cpf-api-result" class="cpf-api-result" role="status" aria-live="polite" hidden></div>
         </div>
       </div>
     </section>
