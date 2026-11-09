@@ -27,18 +27,74 @@ function validCNJ(value) {
   for (const ch of base+"00") rem = (rem*10+Number(ch))%97;
   return Number(d.slice(7,9)) === 98-rem;
 }
+const BRANCHES = {
+  1: "Supremo Tribunal Federal", 2: "Conselho Nacional de Justiça",
+  3: "Superior Tribunal de Justiça", 4: "Justiça Federal",
+  5: "Justiça do Trabalho", 6: "Justiça Eleitoral",
+  7: "Justiça Militar da União", 8: "Justiça Estadual",
+  9: "Justiça Militar Estadual"
+};
+const STATES = {
+  "01":"Acre", "02":"Alagoas", "03":"Amapá", "04":"Amazonas",
+  "05":"Bahia", "06":"Ceará", "07":"Distrito Federal e Territórios",
+  "08":"Espírito Santo", "09":"Goiás", "10":"Maranhão",
+  "11":"Mato Grosso", "12":"Mato Grosso do Sul", "13":"Minas Gerais",
+  "14":"Pará", "15":"Paraíba", "16":"Paraná", "17":"Pernambuco",
+  "18":"Piauí", "19":"Rio de Janeiro", "20":"Rio Grande do Norte",
+  "21":"Rio Grande do Sul", "22":"Rondônia", "23":"Roraima",
+  "24":"Santa Catarina", "25":"Sergipe", "26":"São Paulo",
+  "27":"Tocantins"
+};
+const COURT_DIRECTORY = "https://www.cnj.jus.br/poder-judiciario/tribunais/";
+const PUBLIC_PORTALS = {
+  "8.24": { label:"Consulta processual — TJSC (eproc)", url:"https://www.tjsc.jus.br/web/processo-eletronico-eproc" },
+  "8.26": { label:"Consulta processual — TJSP (e-SAJ)", url:"https://esaj.tjsp.jus.br/esaj?servico=190090" },
+  "8.16": { label:"Consulta processual — TJPR (Projudi)", url:"https://consulta.tjpr.jus.br/projudi_consulta/processo/consultaPublica.do?actionType=iniciar" },
+  "4.04": { label:"Consulta processual — TRF4", url:"https://www.trf4.jus.br/trf4/controlador.php?acao=pagina_visualizar&id_pagina=3929" }
+};
+function processDestination(d) {
+  const branch = d[13], courtCode = d.slice(14,16);
+  const region = branch === "8" && STATES[courtCode]
+    ? "Tribunal de Justiça de " + STATES[courtCode]
+    : branch === "4"
+      ? "Tribunal Regional Federal da " + Number(courtCode) + "ª Região"
+      : branch === "5"
+        ? "Tribunal Regional do Trabalho da " + Number(courtCode) + "ª Região"
+        : branch === "6" ? "Tribunal Regional Eleitoral (código " + courtCode + ")" : "Código do tribunal: " + courtCode;
+  return { name:region, portal:PUBLIC_PORTALS[branch+"."+courtCode] || {label:"Localizar o tribunal no CNJ",url:COURT_DIRECTORY} };
+}
 const processInput=$("process-number");
-processInput.addEventListener("input",()=>{processInput.value=formatCNJ(processInput.value);$("process-result").hidden=true;});
+const processActions=$("process-actions");
+const tribunalLink=$("tribunal-link");
+const processResult=$("process-result");
+processInput.addEventListener("input",()=>{
+ processInput.value=formatCNJ(processInput.value);
+ processResult.hidden=true;
+ processActions.hidden=true;
+ $("process-copy-status").textContent="";
+});
 $("process-form").addEventListener("submit",(e)=>{
  e.preventDefault();
- const d=digits(processInput.value), result=$("process-result");
- result.hidden=false;
- result.classList.toggle("is-error",!validCNJ(d));
- if(d.length!==20) {result.textContent="Informe os 20 dígitos do número CNJ.";return;}
- if(!validCNJ(d)) {result.textContent="Número CNJ inválido: confira os dígitos verificadores. Nenhuma consulta ao tribunal foi realizada.";return;}
- const segments={1:"Supremo Tribunal Federal",2:"Conselho Nacional de Justiça",3:"Superior Tribunal de Justiça",4:"Justiça Federal",5:"Justiça do Trabalho",6:"Justiça Eleitoral",7:"Justiça Militar da União",8:"Justiça Estadual",9:"Justiça Militar Estadual"};
- const branch=d[13],year=d.slice(9,13);
- result.textContent="Número CNJ válido (verificação matemática).\nAno: "+year+"\nSegmento: "+(segments[branch]||"Não identificado")+"\nPara consultar movimentações e partes, acesse o tribunal competente pelos links oficiais abaixo. A validação não comprova que o processo existe.";
+ const d=digits(processInput.value), valid=validCNJ(d);
+ processResult.hidden=false;
+ processResult.classList.toggle("is-error",!valid);
+ processActions.hidden=!valid;
+ if(d.length!==20){processResult.textContent="Informe os 20 dígitos do número CNJ.";return;}
+ if(!valid){processResult.textContent="Número CNJ inválido: confira os dígitos verificadores. Nenhuma consulta ao tribunal foi realizada.";return;}
+ const destination=processDestination(d);
+ processResult.textContent="Número CNJ matematicamente válido.\nAno: "+d.slice(9,13)+"\nRamo: "+(BRANCHES[d[13]]||"Não identificado")+"\nTribunal de origem: "+destination.name+"\n\nIsso não comprova a existência do processo nem seu andamento. Acesse a consulta oficial para verificar.";
+ tribunalLink.textContent=destination.portal.label+" ↗";
+ tribunalLink.href=destination.portal.url;
+});
+$("copy-process").addEventListener("click",async()=>{
+ if(!validCNJ(processInput.value))return;
+ try {
+   await navigator.clipboard.writeText(formatCNJ(processInput.value));
+   $("process-copy-status").textContent="Número copiado para preencher a consulta oficial.";
+ } catch {
+   processInput.focus();processInput.select();
+   $("process-copy-status").textContent="Selecione e copie o número acima.";
+ }
 });
 $("company-cnpj").addEventListener("input",(e)=>{
  const d=digits(e.target.value).slice(0,14);
