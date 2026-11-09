@@ -20,9 +20,13 @@ function isValidCPF(value) {
 }
 const input = document.getElementById("cpf-input");
 const result = document.getElementById("cpf-result");
+const copyButton = document.getElementById("copy-cpf");
+const copyFeedback = document.getElementById("copy-feedback");
 input.addEventListener("input", () => {
   input.value = formatCPF(input.value);
   result.hidden = true;
+  copyButton.disabled = !isValidCPF(input.value);
+  copyFeedback.textContent = "";
 });
 document.getElementById("cpf-form").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -30,9 +34,21 @@ document.getElementById("cpf-form").addEventListener("submit", (event) => {
   result.hidden = false;
   const valid = isValidCPF(d);
   result.className = "cpf-result " + (valid ? "is-valid" : "is-invalid");
+  copyButton.disabled = !valid;
   result.textContent = d.length !== 11 ? "Digite um CPF com 11 dígitos." : valid
     ? "CPF matematicamente válido. Isso não confirma existência, titularidade ou situação cadastral."
     : "CPF inválido: os dígitos verificadores não conferem.";
+});
+copyButton.addEventListener("click", async () => {
+  if (!isValidCPF(input.value)) return;
+  try {
+    await navigator.clipboard.writeText(formatCPF(input.value));
+    copyFeedback.textContent = "CPF copiado. Cole o número no formulário oficial da Receita Federal.";
+  } catch {
+    input.focus();
+    input.select();
+    copyFeedback.textContent = "Selecione e copie o CPF acima para preencher a consulta oficial.";
+  }
 });
 document.getElementById("ano").textContent = new Date().getFullYear();
 const toggle = document.getElementById("menu-toggle");
