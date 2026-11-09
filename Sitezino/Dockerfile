@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json start.js server.js index.html styles.css app.js privacidade.html ads.txt cpf.html cpf.css cpf.js juridico.html juridico.css juridico.js patrimonio.html patrimonio.css patrimonio.js ./
+COPY package.json start.js server.js serpro-cpf.js index.html styles.css app.js privacidade.html ads.txt cpf.html cpf.css cpf.js juridico.html juridico.css juridico.js patrimonio.html patrimonio.css patrimonio.js ./
 
 ENV NODE_ENV=production
 ENV PORT=5500
