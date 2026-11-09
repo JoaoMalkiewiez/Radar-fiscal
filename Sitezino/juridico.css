@@ -33,3 +33,11 @@
 .legal-footer{padding:28px 0;border-top:1px solid var(--line);color:var(--muted)}
 .legal-footer .container{display:flex;justify-content:space-between;gap:15px}
 @media(max-width:700px){.legal-hero{padding-top:125px}.legal-panel{padding:23px}.legal-form-row{flex-direction:column}.legal-tab{flex:1 1 100%;text-align:left}.legal-footer .container{flex-direction:column}}
+
+/* Navegação para o portal oficial do tribunal, sem alterar o design system */
+.legal-process-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:16px}
+.legal-process-actions a,.legal-process-actions button{padding:13px 17px;border-radius:11px;font-weight:700;font-size:13px}
+.legal-process-actions a{display:inline-flex;background:#0a1f17;color:#d9f36c;text-decoration:none}
+.legal-process-actions a:hover{background:#16412f;color:#d9f36c}
+.legal-process-actions button{background:var(--surface-input);color:var(--ink);border:1px solid var(--line)}
+@media(max-width:560px){.legal-process-actions>*{flex:1 1 100%;justify-content:center;text-align:center}}
