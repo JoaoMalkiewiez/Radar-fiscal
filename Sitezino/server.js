@@ -34,6 +34,9 @@ const RATE_LIMITS = {
 
 const STATIC_FILES = {
   "/index.html": "text/html; charset=utf-8",
+  "/cpf.html": "text/html; charset=utf-8",
+  "/cpf.css": "text/css; charset=utf-8",
+  "/cpf.js": "text/javascript; charset=utf-8",
   "/privacidade.html": "text/html; charset=utf-8",
   "/styles.css": "text/css; charset=utf-8",
   "/app.js": "text/javascript; charset=utf-8",
@@ -628,6 +631,9 @@ async function handleRequest(request, response) {
       "    <changefreq>weekly</changefreq>",
       "    <priority>1.0</priority>",
       "  </url>",
+      "  <url>",
+      `    <loc>${siteOrigin(request)}/cpf</loc>`,
+      "  </url>",
       "</urlset>",
       "",
     ].join("\n");
@@ -639,6 +645,7 @@ async function handleRequest(request, response) {
   }
 
   if (pathname === "/") pathname = "/index.html";
+  if (pathname === "/cpf" || pathname === "/cpf/") pathname = "/cpf.html";
   if (pathname === "/privacidade") pathname = "/privacidade.html";
   serveStatic(request, response, pathname);
 }
