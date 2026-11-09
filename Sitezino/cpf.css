@@ -1,0 +1,29 @@
+/* CPF page — shares the main Radar Fiscal design system. */
+.cpf-hero{min-height:680px;padding:175px 0 115px;background:radial-gradient(700px 400px at 85% 10%,rgba(217,243,108,.12),transparent),#0a1f17;color:#f7f4ec}
+.cpf-layout{display:grid;grid-template-columns:1fr minmax(320px,460px);align-items:center;gap:72px}
+.cpf-intro h1{font:600 clamp(2.8rem,5vw,4.5rem)/1.1 var(--font-display);letter-spacing:-.045em;margin:22px 0}
+.cpf-intro h1 span{color:#d9f36c}
+.cpf-intro>p:not(.eyebrow){max-width:560px;color:#c0cec5;line-height:1.8;font-size:16px}
+.cpf-intro .cpf-privacy{margin-top:22px;font-size:13px!important;color:#a5b9ac!important}
+.cpf-panel{padding:32px;background:var(--card);color:var(--ink);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.28)}
+.cpf-panel h2{font:600 24px var(--font-display)}
+.cpf-panel>p{margin:8px 0 25px;color:var(--muted)}
+.cpf-panel label{display:block;font-size:13px;font-weight:600;margin-bottom:9px}
+.cpf-panel input{width:100%;border:1px solid var(--line);border-radius:12px;background:var(--surface-input);color:var(--ink);font:500 20px var(--font-mono);padding:15px;outline-offset:3px}
+.cpf-panel #cpf-hint{font-size:12px;color:var(--muted);margin:9px 0 22px}
+.cpf-submit{width:100%;background:#d9f36c;color:#0a1f17;border-radius:12px;padding:15px;font-weight:700}
+.cpf-submit:hover{background:#c9e94f}
+.cpf-result{padding:16px;border-radius:12px;margin-top:18px;line-height:1.6;font-size:14px}
+.cpf-result.is-valid{background:var(--green-100);color:var(--green-700)}
+.cpf-result.is-invalid{background:var(--surface-danger);color:var(--rust)}
+.cpf-details{padding:75px 0 90px}
+.cpf-details h2{font:600 28px var(--font-display);margin-bottom:28px}
+.cpf-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.cpf-cards article{padding:26px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+.cpf-cards h3{font:600 17px var(--font-display);margin-bottom:12px}
+.cpf-cards p{color:var(--muted);line-height:1.65;font-size:14px}
+.cpf-cards a{display:inline-block;color:var(--green-700);text-decoration:underline;margin-top:16px;font-size:13px;font-weight:600}
+.cpf-footer{padding:28px 0;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.cpf-footer .container{display:flex;justify-content:space-between;gap:16px}
+@media(max-width:900px){.cpf-layout{grid-template-columns:1fr;gap:35px}.cpf-hero{padding:140px 0 80px}.cpf-cards{grid-template-columns:1fr}.cpf-panel{max-width:600px}}
+@media(max-width:560px){.cpf-panel{padding:24px}.cpf-footer .container{flex-direction:column}}
