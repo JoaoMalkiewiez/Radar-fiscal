@@ -70,3 +70,100 @@ themeButton.addEventListener("click", () => {
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem("radarfiscal:theme", next); } catch (_) {}
 });
+
+
+/* Consulta contratada: só aparece quando Serpro e acesso de operador estão configurados. */
+const cpfApiForm = document.getElementById("cpf-api-form");
+const cpfApiStatus = document.getElementById("cpf-api-status");
+const cpfApiResult = document.getElementById("cpf-api-result");
+const cpfApiButton = document.getElementById("cpf-api-submit");
+const cpfApiNumber = document.getElementById("cpf-api-number");
+const cpfApiBirth = document.getElementById("cpf-api-birth");
+cpfApiNumber.addEventListener("input", () => {
+  cpfApiNumber.value = formatCPF(cpfApiNumber.value);
+  cpfApiResult.hidden = true;
+});
+cpfApiBirth.max = new Date().toISOString().slice(0, 10);
+function printCpfApiResult(data) {
+  cpfApiResult.replaceChildren();
+  const heading = document.createElement("strong");
+  heading.textContent = "Consulta oficial concluída";
+  cpfApiResult.appendChild(heading);
+  const rows = [
+    ["Nome", data.nome],
+    ["Nome social", data.nomeSocial],
+    ["Situação cadastral", data.situacao],
+    ["Fonte", data.fonte],
+    ["Consultado em", data.consultadoEm ? new Date(data.consultadoEm).toLocaleString("pt-BR") : null],
+  ];
+  for (const [label, value] of rows) {
+    if (!value) continue;
+    const row = document.createElement("p");
+    const name = document.createElement("b");
+    name.textContent = label + ": ";
+    row.append(name, document.createTextNode(String(value)));
+    cpfApiResult.append(row);
+  }
+  if (data.parcial) {
+    const note = document.createElement("p");
+    note.textContent = "A fonte retornou dados parciais.";
+    cpfApiResult.append(note);
+  }
+}
+async function checkCpfApiStatus() {
+  try {
+    const response = await fetch("/api/cpf/status", { credentials: "same-origin", cache: "no-store" });
+    if (!response.ok) throw new Error("Status indisponível");
+    const info = await response.json();
+    if (info.serproDisponivel === true) {
+      cpfApiStatus.textContent = "Integração configurada. Acesso exclusivo de operador autorizado.";
+      cpfApiForm.hidden = false;
+    } else {
+      cpfApiStatus.textContent = "Integração ainda não ativada. A consulta cadastral real depende de contrato e credenciais do Serpro; por enquanto, use o serviço da Receita Federal acima.";
+      cpfApiForm.hidden = true;
+    }
+  } catch {
+    cpfApiStatus.textContent = "Não foi possível verificar a disponibilidade da integração. A consulta gratuita de CPF continua funcionando.";
+    cpfApiForm.hidden = true;
+  }
+}
+void checkCpfApiStatus();
+cpfApiForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const cpf = digits(cpfApiNumber.value);
+  const nascimento = cpfApiBirth.value;
+  const accessKey = document.getElementById("cpf-api-key").value;
+  const finalidade = document.getElementById("cpf-api-purpose").value.trim();
+  const confirmacao = document.getElementById("cpf-api-confirmation").checked;
+  cpfApiResult.hidden = false;
+  cpfApiResult.replaceChildren();
+  cpfApiResult.classList.remove("is-error");
+  if (!isValidCPF(cpf) || !nascimento || !confirmacao || finalidade.length < 10 || !accessKey) {
+    cpfApiResult.textContent = "Informe CPF válido, nascimento, chave de operador e finalidade legítima confirmada.";
+    cpfApiResult.classList.add("is-error");
+    return;
+  }
+  cpfApiButton.disabled = true;
+  cpfApiButton.textContent = "Consultando Serpro…";
+  cpfApiResult.textContent = "Consultando a fonte oficial. Esta operação pode ser cobrada pelo fornecedor.";
+  // A chave é mantida somente na variável local durante esta chamada, sem localStorage.
+  document.getElementById("cpf-api-key").value = "";
+  try {
+    const response = await fetch("/api/cpf/consulta", {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + accessKey },
+      body: JSON.stringify({ cpf, nascimento, finalidade, confirmacao }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "A consulta oficial não foi concluída.");
+    printCpfApiResult(data);
+  } catch (error) {
+    cpfApiResult.classList.add("is-error");
+    cpfApiResult.textContent = error.message || "Não foi possível consultar o Serpro.";
+  } finally {
+    cpfApiButton.disabled = false;
+    cpfApiButton.textContent = "Consultar cadastro oficial";
+  }
+});
