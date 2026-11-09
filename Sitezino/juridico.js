@@ -36,7 +36,7 @@ $("process-form").addEventListener("submit",(e)=>{
  result.classList.toggle("is-error",!validCNJ(d));
  if(d.length!==20) {result.textContent="Informe os 20 dígitos do número CNJ.";return;}
  if(!validCNJ(d)) {result.textContent="Número CNJ inválido: confira os dígitos verificadores. Nenhuma consulta ao tribunal foi realizada.";return;}
- const segments={1:"Justiça Estadual",2:"Justiça Federal",3:"Justiça do Trabalho",4:"Justiça Eleitoral",5:"Justiça Militar da União",6:"Justiça Militar Estadual",7:"Tribunais Superiores",8:"Justiça Estadual",9:"Conselhos"};
+ const segments={1:"Supremo Tribunal Federal",2:"Conselho Nacional de Justiça",3:"Superior Tribunal de Justiça",4:"Justiça Federal",5:"Justiça do Trabalho",6:"Justiça Eleitoral",7:"Justiça Militar da União",8:"Justiça Estadual",9:"Justiça Militar Estadual"};
  const branch=d[13],year=d.slice(9,13);
  result.textContent="Número CNJ válido (verificação matemática).\nAno: "+year+"\nSegmento: "+(segments[branch]||"Não identificado")+"\nPara consultar movimentações e partes, acesse o tribunal competente pelos links oficiais abaixo. A validação não comprova que o processo existe.";
 });
