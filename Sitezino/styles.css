@@ -4227,3 +4227,35 @@ html[data-theme="dark"] section.monitor { background-color: #061321; }
 .monitor #monitor-map-pins .monitor-map-state.tone-none path { fill: #74869a !important; }
 .monitor #monitor-map-pins .monitor-map-state.tone-unmonitored path { fill: #536a80 !important; }
 .monitor #monitor-map-pins .monitor-map-state.is-selected path { stroke: #e9fff7 !important; stroke-width: 2.5 !important; }
+
+
+/* Global three-line navigation menu (desktop and mobile). */
+.site-header .menu-toggle { display: inline-flex; }
+.site-header .mobile-nav:not([hidden]) {
+  display: grid;
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  left: auto;
+  width: min(320px, 100%);
+  z-index: 50;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid rgba(217,243,108,.22);
+  border-radius: 14px;
+  background: #0a1f17;
+  box-shadow: 0 24px 50px rgba(6,20,14,.35);
+}
+.site-header .mobile-nav a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 8px;
+  color: rgba(247,244,236,.82);
+  font-size: 13px;
+  font-weight: 500;
+}
+.site-header .mobile-nav a:hover,
+.site-header .mobile-nav a:focus-visible { background: rgba(255,255,255,.07); color: #fff; }
+@media(max-width:900px) { .site-header .mobile-nav:not([hidden]) { left: 0; right: 0; width: auto; } }
