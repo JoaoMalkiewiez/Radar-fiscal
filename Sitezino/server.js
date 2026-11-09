@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const https = require("https");
 const zlib = require("zlib");
+const { createSerproCpfClient, validCpf, birthToSerpro } = require("./serpro-cpf");
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 5500;
@@ -80,6 +81,8 @@ const cnpjCache = new Map();
 const cnpjInflight = new Map();
 const rateBuckets = new Map();
 const compressionCache = new Map();
+const serproCpf = createSerproCpfClient();
+let cpfHourlyBucket = { start: Date.now(), count: 0 };
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -117,6 +120,35 @@ function checkRateLimit(request, response, scope, limit) {
     retryAfter,
   }, { "Retry-After": String(retryAfter) });
   return false;
+}
+
+function allowCpfGlobalBudget(request, response) {
+  const now = Date.now();
+  if (now - cpfHourlyBucket.start >= 60 * 60 * 1000) cpfHourlyBucket = { start: now, count: 0 };
+  if (cpfHourlyBucket.count >= 20) {
+    sendJSON(request, response, 429, { error: "Limite de consultas contratadas por hora atingido." }, { "Retry-After": "3600" });
+    return false;
+  }
+  cpfHourlyBucket.count++;
+  return true;
+}
+function readSmallJSON(request) {
+  return new Promise((resolve, reject) => {
+    const declared = Number(request.headers["content-length"] || 0);
+    if (declared > 1024) { reject(new Error("request_too_large")); return; }
+    let data = "";
+    request.on("data", (chunk) => {
+      data += chunk.toString("utf8");
+      if (Buffer.byteLength(data, "utf8") > 1024) {
+        request.destroy();
+        reject(new Error("request_too_large"));
+      }
+    });
+    request.on("end", () => {
+      try { resolve(JSON.parse(data)); } catch { reject(new Error("invalid_json")); }
+    });
+    request.on("error", reject);
+  });
 }
 
 function acceptsGzip(request) {
@@ -548,6 +580,67 @@ async function handleRequest(request, response) {
     pathname = decodeURIComponent(url.pathname);
   } catch {
     sendText(request, response, 400, "Bad request");
+    return;
+  }
+
+  // Endpoint privado opcional. Inativo por padrão, sem dados nos parâmetros da URL.
+  if (pathname === "/api/cpf/status") {
+    if (request.method !== "GET") {
+      sendJSON(request, response, 405, { error: "Método não permitido." });
+      return;
+    }
+    sendJSON(request, response, 200, { serproDisponivel: serproCpf.configured(), fonte: "Serpro Consulta CPF v3" });
+    return;
+  }
+
+  if (pathname === "/api/cpf/consulta") {
+    if (request.method !== "POST") {
+      sendJSON(request, response, 405, { error: "Utilize POST para consulta privada." });
+      return;
+    }
+    if (!serproCpf.configured()) {
+      sendJSON(request, response, 503, { error: "Consulta Serpro não contratada ou não habilitada no Radar Fiscal." });
+      return;
+    }
+    // Acesso administrativo apenas: não é endpoint público nem substitui autenticação de usuários.
+    const auth = String(request.headers.authorization || "");
+    const candidate = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    if (!serproCpf.authorized(candidate)) {
+      sendJSON(request, response, 401, { error: "Acesso administrativo não autorizado." });
+      return;
+    }
+    if (!/^application\/json(?:;|$)/i.test(String(request.headers["content-type"] || ""))) {
+      sendJSON(request, response, 415, { error: "Envie JSON no corpo da requisição." });
+      return;
+    }
+    let body;
+    try {
+      body = await readSmallJSON(request);
+    } catch {
+      if (!response.writableEnded && !response.destroyed) sendJSON(request, response, 400, { error: "JSON inválido ou maior que o limite." });
+      return;
+    }
+    if (!body || typeof body !== "object" || Array.isArray(body) ||
+        typeof body.cpf !== "string" || typeof body.nascimento !== "string" ||
+        typeof body.finalidade !== "string" || body.finalidade.trim().length < 10 ||
+        body.finalidade.length > 180 || body.confirmacao !== true) {
+      sendJSON(request, response, 400, { error: "Informe CPF, nascimento e finalidade legítima confirmada." });
+      return;
+    }
+    if (!validCpf(body.cpf) || !birthToSerpro(body.nascimento)) {
+      sendJSON(request, response, 400, { error: "CPF ou data de nascimento inválidos." });
+      return;
+    }
+    if (!checkRateLimit(request, response, "cpf-private", 3)) return;
+    if (!allowCpfGlobalBudget(request, response)) return;
+    try {
+      // Não armazenamos CPF, nascimento, finalidade ou resultado em disco, cache e logs.
+      const data = await serproCpf.lookup(body.cpf, body.nascimento);
+      sendJSON(request, response, 200, data);
+    } catch (error) {
+      const status = error.status === 404 ? 404 : 502;
+      sendJSON(request, response, status, { error: error.message || "Não foi possível consultar o Serpro." });
+    }
     return;
   }
 
