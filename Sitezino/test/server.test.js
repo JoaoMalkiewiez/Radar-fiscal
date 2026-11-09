@@ -158,8 +158,13 @@ test("serve Pesquisa Patrimonial, arquivos e referências oficiais sem API pesso
       assert.match(html, /Pesquisa Patrimonial/);
       assert.match(html, /ridigital\.org\.br/);
       assert.match(html, /gov\.br\/pt-br\/servicos\/consultar-online-dados-de-seus-veiculos/);
-      assert.match(html, /id="asset-document"/);
-      assert.match(html, /id="asset-consent"/);
+      assert.match(html, /id="tab-imoveis"/);
+      assert.match(html, /id="tab-veiculos"/);
+      assert.match(html, /Pesquisa Nacional de Bens/);
+      assert.match(html, /Pesquisa Qualificada/);
+      assert.doesNotMatch(html, /id="asset-form"/);
+      assert.doesNotMatch(html, /id="asset-consent"/);
+      assert.doesNotMatch(html, /id="asset-document"/);
     }
     for (const asset of ["/patrimonio.js", "/patrimonio.css"]) {
       const response = await fetch(base + asset);
@@ -167,6 +172,8 @@ test("serve Pesquisa Patrimonial, arquivos e referências oficiais sem API pesso
     }
     const script = await (await fetch(base + "/patrimonio.js")).text();
     assert.doesNotMatch(script, /fetch\(/);
+    assert.doesNotMatch(script, /asset-document|asset-form|asset-consent/);
+    assert.match(script, /activateTab/);
     const sitemap = await (await fetch(base + "/sitemap.xml")).text();
     assert.match(sitemap, /\/patrimonio<\/loc>/);
   });
