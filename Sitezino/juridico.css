@@ -41,3 +41,5 @@
 .legal-process-actions a:hover{background:#16412f;color:#d9f36c}
 .legal-process-actions button{background:var(--surface-input);color:var(--ink);border:1px solid var(--line)}
 @media(max-width:560px){.legal-process-actions>*{flex:1 1 100%;justify-content:center;text-align:center}}
+
+.legal-process-actions[hidden]{display:none!important}
