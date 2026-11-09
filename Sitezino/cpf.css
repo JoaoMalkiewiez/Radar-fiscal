@@ -41,3 +41,29 @@
 .cpf-feedback{min-height:16px;margin:10px 0 0!important}
 .cpf-official-note{margin-top:8px!important}
 @media(max-width:560px){.cpf-official-actions>*{flex:1 1 100%}}
+
+
+/* Integração opcional Serpro: habilitada somente após contratação e credenciamento. */
+.cpf-serpro-section{padding:76px 0;background:var(--surface-soft);border-bottom:1px solid var(--line)}
+.cpf-serpro-layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:36px;align-items:start}
+.cpf-serpro-intro h2{font:600 clamp(1.7rem,3vw,2.4rem) var(--font-display);margin:15px 0 18px}
+.cpf-serpro-intro>p:not(.eyebrow){font-size:14px;color:var(--muted);line-height:1.8;margin-top:12px}
+.cpf-serpro-intro>a{display:inline-flex;margin-top:22px;font-weight:700;color:var(--green-700);font-size:13px;text-decoration:underline}
+.cpf-serpro-box{padding:28px;border:1px solid var(--line);background:var(--card);border-radius:20px}
+.cpf-serpro-box h3{font:600 19px var(--font-display);margin-bottom:12px}
+.cpf-api-status{color:var(--muted);font-size:13px;line-height:1.7}
+#cpf-api-form{display:grid;gap:11px;margin-top:22px}
+#cpf-api-form[hidden]{display:none!important}
+#cpf-api-form>label:not(.cpf-api-consent){font-size:13px;font-weight:600;margin-top:5px}
+#cpf-api-form>input{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--surface-input);color:var(--ink);padding:13px;font:500 14px var(--font-body)}
+#cpf-api-form>input:focus-visible{outline:2px solid var(--green-700);outline-offset:2px}
+.cpf-api-consent{display:flex!important;gap:10px;align-items:flex-start;line-height:1.6;font-size:12px;font-weight:400!important;color:var(--muted)}
+.cpf-api-consent input{width:auto!important;margin-top:4px;accent-color:#0c6b49}
+#cpf-api-submit{background:#d9f36c;color:#0a1f17;border-radius:11px;padding:14px;font-weight:700;margin-top:7px}
+#cpf-api-submit:disabled{opacity:.6;cursor:wait}
+.cpf-api-warning{color:var(--muted);font-size:11px;line-height:1.6}
+.cpf-api-result{background:var(--surface-input);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:20px;font-size:13px;line-height:1.7}
+.cpf-api-result p{margin-top:7px}
+.cpf-api-result.is-error{color:var(--rust);border-color:var(--rust)}
+@media(max-width:900px){.cpf-serpro-layout{grid-template-columns:1fr}}
+@media(max-width:560px){.cpf-serpro-section{padding:52px 0}.cpf-serpro-box{padding:22px}}
