@@ -149,6 +149,39 @@ test("serve Radar Jurídico e mantém as três ferramentas isoladas", async () =
   });
 });
 
+test("serve Pesquisa Patrimonial, arquivos e referências oficiais sem API pessoal", async () => {
+  await withServer(async (base) => {
+    for (const route of ["/patrimonio", "/patrimonio/"]) {
+      const response = await fetch(base + route);
+      assert.equal(response.status, 200);
+      const html = await response.text();
+      assert.match(html, /Pesquisa Patrimonial/);
+      assert.match(html, /ridigital\.org\.br/);
+      assert.match(html, /gov\.br\/pt-br\/servicos\/consultar-online-dados-de-seus-veiculos/);
+      assert.match(html, /id="asset-document"/);
+      assert.match(html, /id="asset-consent"/);
+    }
+    for (const asset of ["/patrimonio.js", "/patrimonio.css"]) {
+      const response = await fetch(base + asset);
+      assert.equal(response.status, 200);
+    }
+    const script = await (await fetch(base + "/patrimonio.js")).text();
+    assert.doesNotMatch(script, /fetch\(/);
+    const sitemap = await (await fetch(base + "/sitemap.xml")).text();
+    assert.match(sitemap, /\/patrimonio<\/loc>/);
+  });
+});
+
+test("publica o relatório de CNPJ com opção de impressão em PDF", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(base + "/app.js");
+    const source = await response.text();
+    assert.match(source, /data-action="print"/);
+    assert.match(source, /Relatório informativo de CNPJ/);
+    assert.match(source, /window\.print\(\)/);
+  });
+});
+
 test("não expõe arquivos do servidor", async () => {
   await withServer(async (base) => {
     const response = await fetch(`${base}/server.js`);
