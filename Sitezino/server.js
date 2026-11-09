@@ -37,6 +37,9 @@ const STATIC_FILES = {
   "/cpf.html": "text/html; charset=utf-8",
   "/cpf.css": "text/css; charset=utf-8",
   "/cpf.js": "text/javascript; charset=utf-8",
+  "/juridico.html": "text/html; charset=utf-8",
+  "/juridico.css": "text/css; charset=utf-8",
+  "/juridico.js": "text/javascript; charset=utf-8",
   "/privacidade.html": "text/html; charset=utf-8",
   "/styles.css": "text/css; charset=utf-8",
   "/app.js": "text/javascript; charset=utf-8",
@@ -634,6 +637,9 @@ async function handleRequest(request, response) {
       "  <url>",
       `    <loc>${siteOrigin(request)}/cpf</loc>`,
       "  </url>",
+      "  <url>",
+      `    <loc>${siteOrigin(request)}/juridico</loc>`,
+      "  </url>",
       "</urlset>",
       "",
     ].join("\n");
@@ -646,6 +652,7 @@ async function handleRequest(request, response) {
 
   if (pathname === "/") pathname = "/index.html";
   if (pathname === "/cpf" || pathname === "/cpf/") pathname = "/cpf.html";
+  if (pathname === "/juridico" || pathname === "/juridico/") pathname = "/juridico.html";
   if (pathname === "/privacidade") pathname = "/privacidade.html";
   serveStatic(request, response, pathname);
 }
