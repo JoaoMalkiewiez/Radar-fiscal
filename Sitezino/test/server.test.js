@@ -128,6 +128,24 @@ test("serve a página de CPF e seus arquivos sem consultar dados pessoais", asyn
   });
 });
 
+test("serve Radar Jurídico e mantém as três ferramentas isoladas", async () => {
+  await withServer(async (base) => {
+    const page = await fetch(`${base}/juridico`);
+    assert.equal(page.status, 200);
+    const html = await page.text();
+    assert.match(html, /Radar Jurídico/);
+    assert.match(html, /Processos judiciais/);
+    assert.match(html, /Investigação empresarial/);
+    assert.match(html, /Análise documental/);
+    for (const asset of ["/juridico.js", "/juridico.css"]) {
+      const response = await fetch(`${base}${asset}`);
+      assert.equal(response.status, 200);
+    }
+    const sitemap = await (await fetch(`${base}/sitemap.xml`)).text();
+    assert.match(sitemap, /\/juridico<\/loc>/);
+  });
+});
+
 test("não expõe arquivos do servidor", async () => {
   await withServer(async (base) => {
     const response = await fetch(`${base}/server.js`);
