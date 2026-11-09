@@ -112,6 +112,22 @@ test("gera URL HTTPS canônica no sitemap do domínio Render", async () => {
   });
 });
 
+test("serve a página de CPF e seus arquivos sem consultar dados pessoais", async () => {
+  await withServer(async (base) => {
+    const page = await fetch(`${base}/cpf`);
+    assert.equal(page.status, 200);
+    const html = await page.text();
+    assert.match(html, /Consulta de CPF/);
+    assert.match(html, /sem enviar o número a nenhum servidor/);
+    for (const asset of ["/cpf.js", "/cpf.css"]) {
+      const response = await fetch(`${base}${asset}`);
+      assert.equal(response.status, 200);
+    }
+    const sitemap = await (await fetch(`${base}/sitemap.xml`)).text();
+    assert.match(sitemap, /<loc>http:\/\/127\.0\.0\.1:\d+\/cpf<\/loc>/);
+  });
+});
+
 test("não expõe arquivos do servidor", async () => {
   await withServer(async (base) => {
     const response = await fetch(`${base}/server.js`);
