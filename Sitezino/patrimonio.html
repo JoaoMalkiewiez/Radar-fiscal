@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pesquisa Patrimonial — Imóveis e Veículos | Radar Fiscal</title>
-<meta name="description" content="Central de orientação para pesquisa patrimonial: registros de imóveis no RI Digital e serviços oficiais de veículos da Senatran. Sem acesso a dados pessoais restritos.">
+<meta name="description" content="Acesse serviços oficiais para pesquisa de registros de imóveis e veículos, sem enviar CPF ou CNPJ ao Radar Fiscal. Informação sobre custos, acesso e cobertura.">
 <meta name="robots" content="index,follow"><meta name="theme-color" content="#0A1F17">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
@@ -20,9 +20,9 @@
 </div></header>
 <main id="conteudo">
 <section class="asset-hero"><div class="container">
-<p class="eyebrow">Radar Fiscal · Ferramentas profissionais</p>
+<p class="eyebrow">Radar Fiscal · Fontes oficiais</p>
 <h1>Pesquisa <span>Patrimonial</span></h1>
-<p class="asset-subtitle">Organize a preparação de pesquisas de imóveis e veículos e acesse as fontes oficiais. O Radar Fiscal não consulta, armazena nem exibe bens de terceiros nesta versão.</p>
+<p class="asset-subtitle">Encontre o serviço oficial adequado para pesquisar registros imobiliários e dados de veículos. Sem formulários desnecessários: a consulta é realizada diretamente no órgão responsável.</p>
 <div class="asset-tabs" role="tablist" aria-label="Tipo de pesquisa">
 <button type="button" role="tab" class="asset-tab" id="tab-imoveis" aria-controls="panel-imoveis" aria-selected="true" data-tab="imoveis">Imóveis</button>
 <button type="button" role="tab" class="asset-tab" id="tab-veiculos" aria-controls="panel-veiculos" aria-selected="false" tabindex="-1" data-tab="veiculos">Veículos</button>
@@ -30,29 +30,38 @@
 </div></section>
 <section class="asset-workspace"><div class="container">
 <div class="asset-panel" role="tabpanel" id="panel-imoveis" aria-labelledby="tab-imoveis">
-<div class="asset-section-header"><p class="eyebrow">01 · Registros imobiliários</p><h2>Pesquisa de imóveis</h2><p>Prepare o documento e abra a fonte oficial para realizar uma pesquisa, conforme os requisitos de acesso, abrangência e custo do serviço.</p></div>
-<div class="asset-layout"><div class="asset-card">
-<form id="asset-form" novalidate><label for="asset-document">CPF ou CNPJ</label><input id="asset-document" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="000.000.000-00 ou 00.000.000/0000-00" aria-describedby="asset-privacy"><p class="asset-field-note" id="asset-privacy">Validação local. O documento não é enviado ao Radar Fiscal, gravado ou incluído na URL.</p>
-<label for="asset-state">Estado de interesse</label><select id="asset-state" required><option value="">Selecione um estado</option><option value="AC">AC — Acre</option><option value="AL">AL — Alagoas</option><option value="AP">AP — Amapá</option><option value="AM">AM — Amazonas</option><option value="BA">BA — Bahia</option><option value="CE">CE — Ceará</option><option value="DF">DF — Distrito Federal</option><option value="ES">ES — Espírito Santo</option><option value="GO">GO — Goiás</option><option value="MA">MA — Maranhão</option><option value="MT">MT — Mato Grosso</option><option value="MS">MS — Mato Grosso do Sul</option><option value="MG">MG — Minas Gerais</option><option value="PA">PA — Pará</option><option value="PB">PB — Paraíba</option><option value="PR">PR — Paraná</option><option value="PE">PE — Pernambuco</option><option value="PI">PI — Piauí</option><option value="RJ">RJ — Rio de Janeiro</option><option value="RN">RN — Rio Grande do Norte</option><option value="RS">RS — Rio Grande do Sul</option><option value="RO">RO — Rondônia</option><option value="RR">RR — Roraima</option><option value="SC">SC — Santa Catarina</option><option value="SP">SP — São Paulo</option><option value="SE">SE — Sergipe</option><option value="TO">TO — Tocantins</option></select>
-<label for="asset-purpose">Finalidade da pesquisa</label><select id="asset-purpose" required><option value="">Selecione uma finalidade</option><option value="proprios">Consulta de dados próprios</option><option value="autorizacao">Consulta com autorização do titular</option><option value="direitos">Exercício regular de direitos em procedimento legítimo</option><option value="outra">Outra finalidade legalmente fundamentada</option></select>
-<label class="asset-check"><input type="checkbox" id="asset-consent"><span>Declaro que tenho uma finalidade legítima e observarei as condições da fonte oficial e a legislação aplicável.</span></label>
-<button type="submit" class="asset-button">Preparar pesquisa</button></form>
-<div id="asset-result" class="asset-result" hidden aria-live="polite" role="status"></div>
+<div class="asset-section-header"><p class="eyebrow">01 · Registros imobiliários</p><h2>Onde pesquisar imóveis?</h2><p>Escolha o tipo de pesquisa e abra o portal RI Digital, do Operador Nacional do Registro Eletrônico de Imóveis. Informe o CPF ou CNPJ <strong>somente no serviço oficial</strong>, respeitando suas condições de acesso.</p></div>
+<div class="asset-service-grid">
+<article class="asset-source">
+<div class="asset-source-top"><span class="asset-source-label">RI DIGITAL · PESQUISA PRÉVIA</span><span class="asset-stage">Portal oficial</span></div>
+<h3>Pesquisa Nacional de Bens</h3>
+<p>Localiza matrículas associadas a um CPF ou CNPJ nos cartórios atendidos pelo serviço. O vínculo pode envolver proprietário, ex-proprietário, fiador ou outros participantes e não comprova titularidade atual.</p>
+<div class="asset-info-line"><span>Resultado</span><strong>Referência a matrículas</strong></div>
+<div class="asset-info-line"><span>Custo</span><strong>Consulte os créditos do portal</strong></div>
+<a class="asset-direct-link" href="https://ridigital.org.br/PO/DefaultPO.aspx?from=menu" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Abrir Pesquisa Nacional de Bens <span aria-hidden="true">↗</span></a>
+</article>
+<article class="asset-source">
+<div class="asset-source-top"><span class="asset-source-label">RI DIGITAL · PESQUISA QUALIFICADA</span><span class="asset-stage">Portal oficial</span></div>
+<h3>Pesquisa Qualificada</h3>
+<p>Solicita uma busca específica de imóveis e direitos reais. O serviço indica os requisitos de estado, município e cartórios, e pode envolver pagamento de emolumentos.</p>
+<div class="asset-info-line"><span>Resultado</span><strong>Pesquisa conforme cartório</strong></div>
+<div class="asset-info-line"><span>Custo</span><strong>Conforme serviço e cartório</strong></div>
+<a class="asset-direct-link" href="https://ridigital.org.br/CE/ListagemPesquisasCE.aspx" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Abrir Pesquisa Qualificada <span aria-hidden="true">↗</span></a>
+</article>
 </div>
-<div class="asset-side"><article class="asset-source"><span class="asset-source-label">FONTE OFICIAL · RI DIGITAL / ONR</span><h3>Pesquisa Nacional de Bens</h3><p>Identifica matrículas com associação ao CPF ou CNPJ conforme o serviço. Um vínculo na matrícula <strong>não comprova propriedade atual</strong>.</p><a href="https://ridigital.org.br/PO/DefaultPO.aspx?from=menu" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Abrir Pesquisa Nacional de Bens ↗</a></article>
-<article class="asset-source"><span class="asset-source-label">CONSULTA COMPLEMENTAR</span><h3>Pesquisa Qualificada</h3><p>Para aprofundar a identificação de direitos e vínculos nos registros, consulte a disponibilidade e os valores diretamente no portal.</p><a href="https://ridigital.org.br/CE/DefaultCE.aspx?from=menu" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Abrir Pesquisa Qualificada ↗</a></article></div></div>
-<div class="asset-notice"><strong>Importante sobre cobertura e custos</strong><p>A disponibilidade depende do estado, cartório e modalidade. Serviços podem ser pagos. O resultado deve ser confirmado por certidão ou matrícula quando necessário. O Radar Fiscal não recebe os resultados do RI Digital.</p></div>
+<div class="asset-notice"><strong>O Radar Fiscal não realizou uma busca de imóveis.</strong><p>Os links abrem o portal oficial. É possível que ele exija cadastro, identificação e pagamento. Para confirmar titularidade atual, avalie a matrícula ou uma certidão atualizada. Nenhum CPF ou CNPJ é coletado nesta página.</p></div>
 </div>
 <div class="asset-panel" role="tabpanel" id="panel-veiculos" aria-labelledby="tab-veiculos" hidden>
-<div class="asset-section-header"><p class="eyebrow">02 · Registros de veículos</p><h2>Pesquisa de veículos</h2><p>A consulta de veículos em nome de uma pessoa exige autenticação do titular ou uma fonte devidamente autorizada. Aqui centralizamos as rotas oficiais disponíveis.</p></div>
-<div class="asset-vehicle-grid">
-<article class="asset-source"><span class="asset-source-label">SENATRAN · ACESSO DO TITULAR</span><h3>Consultar meus veículos</h3><p>O cidadão autenticado no serviço oficial pode consultar os veículos registrados em seu próprio nome. Não permite listar veículos de terceiros apenas digitando um CPF.</p><a href="https://www.gov.br/pt-br/servicos/consultar-online-dados-de-seus-veiculos" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Acessar serviço oficial ↗</a></article>
-<article class="asset-source"><span class="asset-source-label">SENATRAN · RENAVAM</span><h3>Consultar dados de veículo</h3><p>Conforme as regras do serviço, a consulta exige placa, Renavam e documento do proprietário, além da autenticação e de limites de acesso.</p><a href="https://www.gov.br/pt-br/servicos/consultar-dados-de-veiculo-na-base-renavam" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Consultar requisitos oficiais ↗</a></article>
-<article class="asset-source"><span class="asset-source-label">INTEGRAÇÕES EMPRESARIAIS</span><h3>Acesso autorizado à Senatran</h3><p>A integração para entidades privadas depende de solicitação, aprovação e condições contratuais. Ainda não está conectada ao Radar Fiscal.</p><a href="https://www.gov.br/pt-br/servicos/acessar-os-sistemas-informatizados-de-propriedade-do-denatran" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Ver critérios de autorização ↗</a></article>
+<div class="asset-section-header"><p class="eyebrow">02 · Serviços de trânsito</p><h2>Onde consultar veículos?</h2><p>A Senatran disponibiliza serviços autenticados. Não existe nesta página uma busca livre que liste todos os veículos de um terceiro apenas pelo CPF.</p></div>
+<div class="asset-service-grid asset-vehicles">
+<article class="asset-source"><div class="asset-source-top"><span class="asset-source-label">SENATRAN · DADOS PRÓPRIOS</span><span class="asset-stage">Acesso autenticado</span></div><h3>Meus veículos</h3><p>O titular autenticado no Portal de Serviços da Senatran consulta veículos registrados em seu nome e informações relacionadas.</p><div class="asset-info-line"><span>Requisito</span><strong>Identificação no serviço</strong></div><a class="asset-direct-link" href="https://www.gov.br/pt-br/servicos/consultar-online-dados-de-seus-veiculos" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Consultar meus veículos <span aria-hidden="true">↗</span></a></article>
+<article class="asset-source"><div class="asset-source-top"><span class="asset-source-label">SENATRAN · RENAVAM</span><span class="asset-stage">Acesso condicionado</span></div><h3>Dados de um veículo</h3><p>Consulta informações de veículos na base RENAVAM, mediante requisitos próprios, como autenticação e dados de identificação.</p><div class="asset-info-line"><span>Requisito</span><strong>Consultar condições da Senatran</strong></div><a class="asset-direct-link" href="https://www.gov.br/pt-br/servicos/consultar-dados-de-veiculo-na-base-renavam" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Consultar serviço RENAVAM <span aria-hidden="true">↗</span></a></article>
+<article class="asset-source"><div class="asset-source-top"><span class="asset-source-label">SENATRAN · INTEGRAÇÃO</span><span class="asset-stage">Ainda não integrada</span></div><h3>Acesso para entidades</h3><p>Acessos empresariais e volumes maiores exigem avaliação, autorização e eventual contratação. Não estão conectados ao Radar Fiscal.</p><div class="asset-info-line"><span>Disponibilidade</span><strong>Mediante autorização</strong></div><a class="asset-direct-link" href="https://www.gov.br/transportes/pt-br/assuntos/transito/senatran/servicos-senatran" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Ver serviços da Senatran <span aria-hidden="true">↗</span></a></article>
 </div>
+<div class="asset-notice"><strong>Dados de veículos e privacidade</strong><p>Consultar os próprios veículos é diferente de pesquisar patrimônio de terceiros. Para acesso de terceiros é necessário um canal permitido e a base jurídica aplicável.</p></div>
 </div>
 </div></section>
-<section class="asset-bottom"><div class="container"><h2>Relatórios e consultas com transparência</h2><p>Esta versão oferece preparação local e links para serviços oficiais; não há pesquisa automatizada de patrimônio, histórico de consultas pessoais nem cobrança pelo Radar Fiscal. As consultas externas seguem as regras de cada órgão.</p><a href="/juridico">Acessar Radar Jurídico ↗</a></div></section>
+<section class="asset-bottom"><div class="container"><h2>Uma central, sem simular resultados</h2><p>Esta página reúne fontes oficiais verificadas, mas não transmite dados pessoais, não exibe resultados patrimoniais e não cobra por consultas. Cada órgão informa seus próprios requisitos, abrangência e valores.</p><a href="/juridico">Conhecer o Radar Jurídico ↗</a></div></section>
 </main>
 <footer class="asset-footer"><div class="container"><p>© <span id="ano">2026</span> Radar Fiscal · Ferramenta independente</p><a href="/privacidade">Política de Privacidade</a></div></footer>
 <script src="/patrimonio.js" defer></script>
