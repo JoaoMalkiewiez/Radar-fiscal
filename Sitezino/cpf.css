@@ -27,3 +27,17 @@
 .cpf-footer .container{display:flex;justify-content:space-between;gap:16px}
 @media(max-width:900px){.cpf-layout{grid-template-columns:1fr;gap:35px}.cpf-hero{padding:140px 0 80px}.cpf-cards{grid-template-columns:1fr}.cpf-panel{max-width:600px}}
 @media(max-width:560px){.cpf-panel{padding:24px}.cpf-footer .container{flex-direction:column}}
+
+/* Consulta oficial CPF: paleta atual do Radar Fiscal */
+.cpf-official{border-top:1px solid var(--line);margin-top:26px;padding-top:24px}
+.cpf-official h3{font:600 17px var(--font-display);margin-bottom:10px}
+.cpf-official>p{color:var(--muted);font-size:13px;line-height:1.7}
+.cpf-official-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.cpf-official-link,.cpf-copy{display:inline-flex;justify-content:center;align-items:center;padding:12px 14px;border-radius:11px;font-size:13px;font-weight:700}
+.cpf-official-link{background:#0a1f17;color:#d9f36c;text-align:center;text-decoration:none}
+.cpf-official-link:hover{background:#16412f;color:#d9f36c}
+.cpf-copy{background:var(--surface-input);color:var(--ink);border:1px solid var(--line)}
+.cpf-copy:disabled{opacity:.5;cursor:not-allowed}
+.cpf-feedback{min-height:16px;margin:10px 0 0!important}
+.cpf-official-note{margin-top:8px!important}
+@media(max-width:560px){.cpf-official-actions>*{flex:1 1 100%}}
