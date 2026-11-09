@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consulta de CPF — Radar Fiscal</title>
+  <meta name="description" content="Valide os dígitos verificadores de um CPF gratuitamente, sem enviar o número a servidores.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0A1F17">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230A1F17'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%23D9F36C' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/cpf.css">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem("radarfiscal:theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="Radar Fiscal — início"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="34" height="34" fill="none"><rect width="32" height="32" rx="9" fill="#D9F36C"/><circle cx="16" cy="16" r="9" stroke="#0A1F17" stroke-width="1.8"/><circle cx="16" cy="16" r="4.5" stroke="#0A1F17" stroke-width="1.8"/><path d="M16 16l6.5-6.5" stroke="#0A1F17" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="brand-word">Radar<span>Fiscal</span></span></a>
+      <nav class="main-nav" aria-label="Navegação principal"><a href="/">Consulta CNPJ</a><a href="/cpf" aria-current="page">Consulta CPF</a><a href="/#monitor">Monitor SEFAZ</a></nav>
+      <div class="header-actions">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Alternar tema" title="Alternar tema"><svg class="icon-moon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M15.4 12.5A6.6 6.6 0 0 1 7.5 4.6a6.5 6.5 0 1 0 7.9 7.9Z" stroke="currentColor" stroke-width="1.5"/></svg><svg class="icon-sun" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="3.4" stroke="currentColor" stroke-width="1.5"/></svg></button>
+        <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-menu"><span class="menu-toggle-box" aria-hidden="true"><span></span><span></span><span></span></span></button>
+      </div>
+      <nav class="mobile-nav" id="mobile-menu" aria-label="Menu de consultas" hidden><a href="/">Consulta CNPJ</a><a href="/cpf" aria-current="page">Consulta CPF</a><a href="/#monitor">Monitor SEFAZ</a><a href="/#portais">Portais oficiais</a></nav>
+    </div>
+  </header>
+  <main id="conteudo">
+    <section class="cpf-hero">
+      <div class="container cpf-layout">
+        <div class="cpf-intro">
+          <p class="eyebrow">Radar Fiscal · Consulta de documentos</p>
+          <h1>Consulta de <span>CPF</span></h1>
+          <p>Verifique se um CPF possui dígitos verificadores válidos, com resultado imediato e sem enviar o número a nenhum servidor.</p>
+          <p class="cpf-privacy">Validação matemática não confirma que o CPF existe, pertence a alguém ou está regular na Receita Federal.</p>
+        </div>
+        <div class="cpf-panel">
+          <h2>Validar CPF</h2>
+          <p>Informe os 11 dígitos do CPF.</p>
+          <form id="cpf-form" novalidate>
+            <label for="cpf-input">CPF</label>
+            <input id="cpf-input" name="cpf" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="14" placeholder="000.000.000-00" aria-describedby="cpf-hint">
+            <p id="cpf-hint">O número é processado somente neste navegador.</p>
+            <button class="cpf-submit" type="submit">Validar CPF</button>
+          </form>
+          <div id="cpf-result" class="cpf-result" role="status" aria-live="polite" hidden></div>
+        </div>
+      </div>
+    </section>
+    <section class="cpf-details">
+      <div class="container">
+        <h2>O que esta consulta informa?</h2>
+        <div class="cpf-cards">
+          <article><h3>Validação de CPF</h3><p>Confere o formato e os dígitos verificadores do número informado.</p></article>
+          <article><h3>Situação cadastral</h3><p>Não é consultada nesta ferramenta. A regularidade deve ser verificada nos canais oficiais da Receita Federal.</p><a href="https://www.gov.br/receitafederal/pt-br/assuntos/meu-cpf" target="_blank" rel="noopener noreferrer">Consultar canais oficiais da Receita Federal</a></article>
+          <article><h3>Dados dos sócios</h3><p>O CPF completo de sócios não é disponibilizado por esta ferramenta. Consulte os dados públicos das empresas na página de CNPJ.</p><a href="/">Consultar CNPJ</a></article>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="cpf-footer"><div class="container"><p>© <span id="ano">2026</span> Radar Fiscal · Ferramenta independente</p><a href="/privacidade">Política de Privacidade</a></div></footer>
+  <script src="/cpf.js" defer></script>
+</body>
+</html>
