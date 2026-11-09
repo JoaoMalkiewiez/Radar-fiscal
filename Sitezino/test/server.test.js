@@ -129,6 +129,39 @@ test("serve a página de CPF e seus arquivos sem consultar dados pessoais", asyn
   });
 });
 
+test("consulta contratada de CPF permanece bloqueada sem chaves do Serpro", async () => {
+  await withServer(async (base) => {
+    const status = await fetch(base + "/api/cpf/status");
+    assert.equal(status.status, 200);
+    const info = await status.json();
+    assert.equal(typeof info.serproDisponivel, "boolean");
+    if (!info.serproDisponivel) {
+      const response = await fetch(base + "/api/cpf/consulta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cpf: "52998224725", nascimento: "1996-11-05", finalidade: "Consulta autorizada", confirmacao: true }),
+      });
+      assert.equal(response.status, 503);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      const payload = await response.json();
+      assert.match(payload.error, /não contratada|não habilitada/);
+    }
+  });
+});
+
+test("consulta de CPF expõe formulário de operador sem chaves no HTML", async () => {
+  await withServer(async (base) => {
+    const page = await fetch(base + "/cpf");
+    const html = await page.text();
+    assert.match(html, /id="cpf-api-form"/);
+    assert.match(html, /id="cpf-api-key"/);
+    assert.match(html, /Consulta CPF v3/);
+    const script = await (await fetch(base + "/cpf.js")).text();
+    assert.match(script, /\/api\/cpf\/status/);
+    assert.match(script, /\/api\/cpf\/consulta/);
+  });
+});
+
 test("serve Radar Jurídico e mantém as três ferramentas isoladas", async () => {
   await withServer(async (base) => {
     const page = await fetch(`${base}/juridico`);
