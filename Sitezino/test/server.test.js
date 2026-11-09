@@ -88,8 +88,8 @@ test("publica robots.txt e sitemap.xml", async () => {
     const robots = await fetch(`${base}/robots.txt`);
     assert.equal(robots.status, 200);
     const robotsBody = await robots.text();
-    assert.match(robotsBody, /User-agent: \\*/);
-    assert.match(robotsBody, /Allow: \/\\//);
+    assert.match(robotsBody, /User-agent: \*/);
+    assert.match(robotsBody, /Allow: \//);
     assert.match(robotsBody, /Sitemap: https:\/\/radar-fiscal-iyn3\.onrender\.com\/sitemap\.xml/);
 
     const sitemap = await fetch(`${base}/sitemap.xml`);
