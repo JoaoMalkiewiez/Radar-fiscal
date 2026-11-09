@@ -35,7 +35,7 @@
           <p class="eyebrow">Radar Fiscal · Consulta de documentos</p>
           <h1>Consulta de <span>CPF</span></h1>
           <p>Verifique se um CPF possui dígitos verificadores válidos, com resultado imediato e sem enviar o número a nenhum servidor.</p>
-          <p class="cpf-privacy">Validação matemática não confirma que o CPF existe, pertence a alguém ou está regular na Receita Federal.</p>
+          <p class="cpf-privacy">O resultado matemático não confirma existência, titularidade ou regularidade. Para esses dados, utilize o serviço oficial abaixo.</p>
         </div>
         <div class="cpf-panel">
           <h2>Validar CPF</h2>
@@ -47,6 +47,16 @@
             <button class="cpf-submit" type="submit">Validar CPF</button>
           </form>
           <div id="cpf-result" class="cpf-result" role="status" aria-live="polite" hidden></div>
+          <div class="cpf-official">
+            <h3>Consultar cadastro na Receita Federal</h3>
+            <p>Para confirmar nome e situação cadastral, abra o serviço oficial. A Receita solicita o CPF, a data de nascimento e uma verificação de segurança. O Radar Fiscal não recebe esses dados.</p>
+            <div class="cpf-official-actions">
+              <a class="cpf-official-link" href="https://solucoes.receita.fazenda.gov.br/Servicos/cpf/ConsultaSituacao/ConsultaPublica.asp" target="_blank" rel="noopener noreferrer">Abrir consulta oficial da Receita ↗</a>
+              <button id="copy-cpf" class="cpf-copy" type="button" disabled>Copiar CPF</button>
+            </div>
+            <p id="copy-feedback" class="cpf-feedback" role="status" aria-live="polite"></p>
+            <p class="cpf-official-note">Não utilizamos bancos de dados privados nem prometemos identificar terceiros. Consulte somente com finalidade legítima.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -55,7 +65,7 @@
         <h2>O que esta consulta informa?</h2>
         <div class="cpf-cards">
           <article><h3>Validação de CPF</h3><p>Confere o formato e os dígitos verificadores do número informado.</p></article>
-          <article><h3>Situação cadastral</h3><p>Não é consultada nesta ferramenta. A regularidade deve ser verificada nos canais oficiais da Receita Federal.</p><a href="https://www.gov.br/receitafederal/pt-br/assuntos/meu-cpf" target="_blank" rel="noopener noreferrer">Consultar canais oficiais da Receita Federal</a></article>
+          <article><h3>Situação cadastral</h3><p>A regularidade é verificada no site oficial da Receita, mediante CPF, data de nascimento e etapa de segurança.</p><a href="https://www.gov.br/pt-br/servicos/consultar-cadastro-de-pessoas-fisicas" target="_blank" rel="noopener noreferrer">Consultar canais oficiais da Receita Federal</a></article>
           <article><h3>Dados dos sócios</h3><p>O CPF completo de sócios não é disponibilizado por esta ferramenta. Consulte os dados públicos das empresas na página de CNPJ.</p><a href="/">Consultar CNPJ</a></article>
         </div>
       </div>
