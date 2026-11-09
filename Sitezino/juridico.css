@@ -1,0 +1,35 @@
+/* Radar Jurídico — existing Radar Fiscal visual identity */
+.legal-hero{padding:145px 0 0;background:radial-gradient(700px 380px at 85% 0,rgba(217,243,108,.13),transparent),#0a1f17;color:#f7f4ec}
+.legal-hero h1{font:600 clamp(2.8rem,5vw,4.4rem)/1.15 var(--font-display);letter-spacing:-.04em;margin:15px 0}
+.legal-hero h1 span{color:#d9f36c}
+.legal-lead{color:#c0cec5;line-height:1.75;max-width:750px;margin-bottom:45px}
+.legal-nav{display:flex;flex-wrap:wrap;gap:10px;padding-bottom:22px}
+.legal-tab{border:1px solid rgba(217,243,108,.25);color:#e7eee7;background:transparent;padding:13px 20px;border-radius:11px;font-weight:600}
+.legal-tab[aria-selected=true]{background:#d9f36c;color:#0a1f17;border-color:#d9f36c}
+.legal-tab:hover{border-color:#d9f36c}
+.legal-workspace{padding:70px 0 90px}
+.legal-panel{max-width:960px;margin:auto;padding:38px;background:var(--card);border:1px solid var(--line);border-radius:22px}
+.legal-panel-head h2{font:600 clamp(1.65rem,3vw,2.3rem) var(--font-display);margin:12px 0}
+.legal-panel-head>p:last-child{color:var(--muted);line-height:1.75;max-width:700px}
+.legal-form{margin-top:30px}
+.legal-form label{display:block;font-size:13px;font-weight:600;margin-bottom:9px}
+.legal-form-row{display:flex;gap:12px}
+.legal-form input:not([type=file]),.legal-form textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:var(--surface-input);color:var(--ink);padding:14px;font:500 16px var(--font-mono)}
+.legal-form textarea{font:400 14px/1.7 var(--font-body);resize:vertical;min-height:220px}
+.legal-form button,.legal-doc-actions button{padding:14px 22px;border-radius:12px;background:#d9f36c;color:#0a1f17;font-weight:700;white-space:nowrap}
+.legal-form button:hover{background:#c9e94f}
+.legal-hint,.legal-disclaimer{font-size:13px;color:var(--muted);line-height:1.7;margin-top:12px}
+.legal-result{margin-top:24px;padding:20px;background:var(--surface-input);border:1px solid var(--line);border-radius:13px;line-height:1.7;white-space:pre-line}
+.legal-result.is-error{border-color:var(--rust)}
+.legal-links{display:flex;flex-wrap:wrap;gap:20px;margin-top:26px}
+.legal-links a{color:var(--green-700);font-weight:600;text-decoration:underline}
+.legal-doc-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:14px}
+.legal-doc-actions .legal-file{display:inline-flex;align-items:center;margin:0;padding:13px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.legal-doc-actions input[type=file]{position:absolute;width:1px;height:1px;opacity:0}
+.legal-doc-actions .legal-secondary{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.legal-bottom{padding:65px 0;background:var(--card);border-top:1px solid var(--line)}
+.legal-bottom h2{font:600 25px var(--font-display);margin-bottom:12px}
+.legal-bottom p{color:var(--muted);line-height:1.7}
+.legal-footer{padding:28px 0;border-top:1px solid var(--line);color:var(--muted)}
+.legal-footer .container{display:flex;justify-content:space-between;gap:15px}
+@media(max-width:700px){.legal-hero{padding-top:125px}.legal-panel{padding:23px}.legal-form-row{flex-direction:column}.legal-tab{flex:1 1 100%;text-align:left}.legal-footer .container{flex-direction:column}}
