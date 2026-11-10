@@ -429,7 +429,7 @@ function queryDatajud(tribunal, number) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify({
       size: 5,
-      query: { term: { numeroProcesso: number } }
+      query: { match: { numeroProcesso: number } }
     });
     const req = https.request({
       hostname: "api-publica.datajud.cnj.jus.br",
@@ -486,7 +486,7 @@ function simplifyDatajud(payload, requestedNumber, tribunal) {
             })) : []
       })),
     coverage: "Somente metadados públicos do tribunal selecionado, sem processos sigilosos nem busca por partes.",
-    status: hits.length ? "found" : "no_match"
+    status: hits.some(hit => String(hit?._source?.numeroProcesso) === requestedNumber) ? "found" : "no_match"
   };
 }
 async function getMonitorHistory(force = false) {
