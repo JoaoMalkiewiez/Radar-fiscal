@@ -3,8 +3,8 @@
 ## Estado em 10/11/2026
 
 - **Supabase exclusivo criado**: [Radar Jurídico](https://supabase.com/dashboard/project/kokpxikvisheaxkicmop), região sa-east-1.
-- **Migrações já executadas** nesse projeto: `radar_juridico_v1_private_schema`, `radar_juridico_relation_indexes` e `legal_authorized_users_and_process_movements`.
-- Seis tabelas (`legal_clients`, `legal_cases`, `legal_events`, `legal_documents`, `legal_movements`, `legal_access`) com RLS ativada. Acesso direto de `anon` negado.
+- **Migrações já executadas** nesse projeto: `radar_juridico_v1_private_schema`, `radar_juridico_relation_indexes` `legal_authorized_users_and_process_movements` e `legal_private_audit_trail`.
+- Sete tabelas (`legal_clients`, `legal_cases`, `legal_events`, `legal_documents`, `legal_movements`, `legal_access`, `legal_audit_logs`) com RLS ativada. Acesso direto de `anon` negado.
 - Além da conta autenticada, é necessário registro autorizado em `legal_access` com `enabled = true`.
 - Bucket `legal-private` privado, até 10 MB por objeto.
 - **Código disponível apenas na branch `feat/radar-juridico-v1` e em PR draft**. Nenhum deploy no Render.
@@ -40,7 +40,7 @@
 3. Em **Processos**, cadastre título e número CNJ e vincule ao cliente. Utilize **Registrar movimentação processual** para anotar cada acontecimento e criar uma linha do tempo manual. Os registros permitem edição na própria lista.
 4. Em **Documentos**, escolha um processo, selecione PDF, DOCX, PNG ou JPG até 10 MB e envie. O download é autorizado pelo próprio token e pela política RLS de Storage.
 5. Em **Agenda e prazos**, registre tarefas, audiências e compromissos. Filtre pendentes, marque itens como concluídos e revise os vencidos no dashboard. O sistema **não calcula automaticamente prazos judiciais**; confira datas nos sistemas oficiais.
-6. Em **Visão geral**, consulte os contadores da própria conta e os próximos prazos. Use o campo de pesquisa em cada módulo. Clique em **Sair** para encerrar a sessão local e tentar revogá-la no Supabase.
+6. Em **Visão geral**, consulte os contadores da própria conta, os próximos prazos e as atividades recentes (auditoria sem conteúdo de documentos). Use o campo de pesquisa em cada módulo. Clique em **Sair** para encerrar a sessão local e tentar revogá-la no Supabase.
 
 O portal não usa notificações do navegador, pop-ups ou sons; o retorno das operações é exibido na própria página. O token e o refresh token permanecem **somente em memória**, sem persistência no localStorage. Recarregar exige novo login.
 
@@ -53,4 +53,8 @@ O portal não usa notificações do navegador, pop-ups ou sons; o retorno das op
 
 ## Migrações versionadas no GitHub
 
-Uma instalação nova executa, em ordem, `database/radar-juridico.sql` e `database/authorized-access-and-movements.sql`. No projeto Supabase já criado ambas as estruturas **já existem**: não reaplique os arquivos desnecessariamente. Nunca execute `drop table` para ajustar a versão.
+Uma instalação nova executa, em ordem, `database/radar-juridico.sql`, `database/authorized-access-and-movements.sql` e `database/private-audit-trail.sql`. No projeto Supabase já criado ambas as estruturas **já existem**: não reaplique os arquivos desnecessariamente. Nunca execute `drop table` para ajustar a versão.
+
+## Política de auditoria
+
+O banco registra criação, alteração e exclusão de clientes, processos, agenda, documentos (metadados) e movimentações, guardando tipo, UUID, usuário e data. **Não copia CPF, nome, anotação nem conteúdo dos arquivos para os logs.** Cada conta vê apenas sua própria auditoria quando autorizada. Downloads e alterações internas do Supabase Auth não têm auditoria neste MVP; é necessário definir retenção e exportação antes de uso profissional.
