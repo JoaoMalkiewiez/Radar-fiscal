@@ -8,7 +8,7 @@ let refreshToken = null;
 let tokenExpiresAt = 0;
 let currentUser = null;
 let refreshInFlight = null;
-const state = { clients: [], cases: [], events: [], documents: [] };
+const state = { clients: [], cases: [], events: [], documents: [], movements: [] };
 const $ = (id) => document.getElementById(id);
 
 function feedback(message) {
@@ -90,13 +90,17 @@ const RECORD_FIELDS = {
     ["status", "Situação", "select", ["ativo", "suspenso", "encerrado"]],
     ["notes", "Observações", "textarea"],
   ],
+  movements: [
+    ["case_id","Processo","cases"], ["title","Movimentação","text"],
+    ["happened_at","Data","datetime-local"], ["details","Detalhes","textarea"],
+  ],
   events: [
     ["title", "Título", "text"], ["kind", "Tipo", "select", ["compromisso", "audiencia", "prazo", "tarefa"]],
     ["starts_at", "Data e horário", "datetime-local"], ["case_id", "Processo", "cases"],
     ["completed", "Situação", "select", ["false", "true"]], ["notes", "Observações", "textarea"],
   ],
 };
-const TABLES = { clients: "legal_clients", cases: "legal_cases", events: "legal_events", documents: "legal_documents" };
+const TABLES = { clients: "legal_clients", cases: "legal_cases", events: "legal_events", documents: "legal_documents", movements: "legal_movements" };
 let agendaPendingOnly = true;
 
 function searchable(rows, inputId, keys) {
@@ -198,6 +202,7 @@ function showRecordEditor(type, item, row) {
     event.preventDefault();
     save.disabled = true;
     const values = formValues(editor, RECORD_FIELDS[type].map(([field]) => field));
+    if (type === "movements") values.happened_at = new Date(values.happened_at).toISOString();
     if (type === "events") {
       values.completed = values.completed === "true";
       values.starts_at = new Date(values.starts_at).toISOString();
@@ -243,10 +248,12 @@ function render() {
   fillSelect("case-client", state.clients, (item) => item.name);
   fillSelect("document-case", state.cases, (item) => item.title);
   fillSelect("event-case", state.cases, (item) => item.title);
+  fillSelect("movement-case", state.cases, (item) => item.title);
   const c = searchable(state.clients, "client-search", ["name","document","email","phone"]);
   const cases = searchable(state.cases, "case-search", ["title","cnj","court","status"]);
   const documents = searchable(state.documents, "document-search", ["name","mime_type"]);
   const events = searchable(state.events, "event-search", ["title","kind","starts_at"]);
+  const movements = searchable(state.movements.map((item) => ({ ...item, case_title: state.cases.find((c) => c.id === item.case_id)?.title || "" })), "movement-search", ["title","details","case_title"]);
   const now = Date.now();
   const upcoming = [...state.events].filter((e) => !e.completed)
     .sort((a,b) => new Date(a.starts_at) - new Date(b.starts_at)).slice(0, 12);
@@ -257,6 +264,7 @@ function render() {
   itemList("case-list",cases,(item) => item.title + " · " + item.status + (item.cnj ? " · " + item.cnj : ""),{edit:"cases"});
   itemList("event-list",events.filter((item)=> !agendaPendingOnly || !item.completed),describeEvent,{complete:true,edit:"events",overdue:isOverdue});
   itemList("document-list",documents,(item) => item.name,{open:openDocument,remove:"documents"});
+  itemList("movement-list",movements,(item) => new Date(item.happened_at).toLocaleString("pt-BR") + " · " + item.case_title + " · " + item.title,{edit:"movements"});
 }
 
 async function openDocument(item) {
@@ -271,9 +279,9 @@ async function openDocument(item) {
 }
 
 async function reloadData() {
-  const tables = { clients: "legal_clients", cases: "legal_cases", events: "legal_events", documents: "legal_documents" };
+  const tables = TABLES;
   await Promise.all(Object.entries(tables).map(async ([key, name]) => {
-    const order = key === "events" ? "starts_at.asc" : "created_at.desc";
+    const order = key === "events" ? "starts_at.asc" : key === "movements" ? "happened_at.desc" : "created_at.desc";
     state[key] = await api(`/${name}?select=*&order=${order}&limit=200`);
   }));
   render();
@@ -324,6 +332,10 @@ $("login-form").addEventListener("submit", async (event) => {
     tokenExpiresAt = Date.now() + Math.max(30, data.expires_in || 3600) * 1000;
     currentUser = data.user.id;
     form.reset();
+    const membership = await api("/legal_access?select=enabled,role&user_id=eq." + encodeURIComponent(currentUser));
+    if (!Array.isArray(membership) || !membership.some((entry) => entry.enabled)) {
+      throw new Error("Esta conta ainda não foi autorizada para acessar o escritório.");
+    }
     await reloadData();
     $("login-panel").hidden = true;
     $("workspace").hidden = false;
@@ -353,7 +365,7 @@ for (const link of document.querySelectorAll("[data-view]")) link.addEventListen
   if (accessToken) { show(link.dataset.view); feedback(""); }
 });
 
-for (const id of ["client-search","case-search","document-search","event-search"])
+for (const id of ["client-search","case-search","document-search","event-search","movement-search"])
   $(id).addEventListener("input",render);
 for (const [id,pending] of [["show-pending",true],["show-all",false]]) {
   $(id).addEventListener("click",() => {
@@ -367,6 +379,9 @@ for (const [id,pending] of [["show-pending",true],["show-all",false]]) {
   });
 }
 
+bindForm("movement-form", "legal_movements", ["case_id","title","happened_at","details"], (record) => ({
+  ...record, happened_at: new Date(record.happened_at).toISOString(),
+}));
 bindForm("client-form", "legal_clients", ["kind", "name", "document", "email", "phone", "notes"]);
 bindForm("case-form", "legal_cases", ["title", "cnj", "court", "client_id", "status", "notes"]);
 bindForm("event-form", "legal_events", ["title", "kind", "starts_at", "case_id", "notes"], (record) => ({
