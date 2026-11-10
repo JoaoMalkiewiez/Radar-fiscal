@@ -21,6 +21,15 @@ const BRASIL_API = "https://brasilapi.com.br/api/cnpj/v1/";
 const IE_API = "https://publica.cnpj.ws/cnpj/";
 const MONITOR_ORIGIN = "https://monitor.tecnospeed.com.br";
 const DOCUMENTS = ["nfe", "nfce", "cte"];
+const DATAJUD_KEY = String(process.env.DATAJUD_PUBLIC_KEY || "cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==");
+// A chave é pública e publicada oficialmente no wiki do CNJ; pode ser rotacionada.
+// Apenas aliases conhecidos são permitidos, nunca URL de livre escolha do cliente.
+const DATAJUD_TRIBUNALS = new Set([
+  "tjsc","tjsp","tjpr","tjrs","tjrj","tjmg","tjba","tjpe","tjdft","tjgo",
+  "tjmt","tjms","tjpa","tjpb","tjce","tjal","tjam","tjap","tjac","tjro",
+  "tjrr","tjto","tjpi","tjma","tjse","tjrn","tjes","trf1","trf2","trf3",
+  "trf4","trf5","trf6","tst","stj","tse"
+]);
 
 const MONITOR_TTL = 60 * 1000;
 const MONITOR_HISTORY_URL = "https://raw.githubusercontent.com/JoaoMalkiewiez/Radar-fiscal/monitor-history/history.json";
@@ -35,6 +44,7 @@ const RATE_WINDOW = 60 * 1000;
 const RATE_LIMITS = {
   monitor: 120,
   cnpj: 30,
+  datajud: 12,
 };
 
 const STATIC_FILES = {
@@ -414,6 +424,71 @@ async function getCompanyData(cnpj, force = false) {
 }
 
 
+// Consulta gratuita a metadados processuais publicamente expostos pelo CNJ.
+function queryDatajud(tribunal, number) {
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify({
+      size: 5,
+      query: { term: { numeroProcesso: number } }
+    });
+    const req = https.request({
+      hostname: "api-publica.datajud.cnj.jus.br",
+      path: "/api_publica_" + tribunal + "/_search",
+      method: "POST",
+      headers: {
+        Authorization: "APIKey " + DATAJUD_KEY,
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload),
+        Accept: "application/json"
+      },
+      timeout: 6500
+    }, (upstream) => {
+      let body = "";
+      upstream.setEncoding("utf8");
+      upstream.on("data", chunk => {
+        body += chunk;
+        if (body.length > 600_000) req.destroy(new Error("Resposta pública muito grande."));
+      });
+      upstream.on("end", () => {
+        if (upstream.statusCode !== 200) {
+          reject(new Error("DataJud indisponível (HTTP " + upstream.statusCode + ")."));
+          return;
+        }
+        try { resolve(JSON.parse(body)); }
+        catch { reject(new Error("Resposta inválida do CNJ.")); }
+      });
+    });
+    req.on("timeout", () => req.destroy(new Error("Tempo limite do DataJud.")));
+    req.on("error", reject);
+    req.end(payload);
+  });
+}
+function simplifyDatajud(payload, requestedNumber, tribunal) {
+  const hits = Array.isArray(payload?.hits?.hits) ? payload.hits.hits : [];
+  return {
+    source: "CNJ DataJud — API Pública",
+    sourceUrl: "https://datajud-wiki.cnj.jus.br/api-publica/",
+    searchedAt: new Date().toISOString(),
+    tribunal, number: requestedNumber,
+    records: hits.map(hit => hit?._source).filter(p => p && String(p.numeroProcesso) === requestedNumber)
+      .slice(0,5).map(p => ({
+        numeroProcesso: String(p.numeroProcesso),
+        tribunal: String(p.tribunal || "").slice(0,70),
+        grau: String(p.grau || "").slice(0,70),
+        classe: String(p.classe?.nome || p.classe?.codigo || "").slice(0,180),
+        assuntos: Array.isArray(p.assuntos) ? p.assuntos.slice(0,8).map(a => String(a?.nome || a?.codigo || "").slice(0,100)) : [],
+        orgaoJulgador: String(p.orgaoJulgador?.nome || "").slice(0,180),
+        dataAjuizamento: String(p.dataAjuizamento || "").slice(0,40),
+        movimentos: Array.isArray(p.movimentos)
+          ? p.movimentos.slice(-15).map(m=>({
+              nome: String(m?.nome || "").slice(0,180),
+              dataHora: String(m?.dataHora || "").slice(0,40)
+            })) : []
+      })),
+    coverage: "Somente metadados públicos do tribunal selecionado, sem processos sigilosos nem busca por partes.",
+    status: hits.length ? "found" : "no_match"
+  };
+}
 async function getMonitorHistory(force = false) {
   if (!force && monitorHistoryCache.data && Date.now() - monitorHistoryCache.at < MONITOR_HISTORY_TTL) {
     return { ...monitorHistoryCache.data, cached: true };
@@ -772,6 +847,30 @@ async function handleRequest(request, response) {
       sendJSON(request, response, 502, {
         error: "Não foi possível carregar o histórico de instabilidades.",
         detail: error.message,
+      });
+    }
+    return;
+  }
+
+  if (pathname === "/api/juridico/datajud") {
+    if (request.method !== "GET") {
+      sendJSON(request, response, 405, { error: "Método não permitido." });
+      return;
+    }
+    if (!checkRateLimit(request, response, "datajud", RATE_LIMITS.datajud)) return;
+    const number = String(url.searchParams.get("numero") || "").replace(/\D/g, "");
+    const tribunal = String(url.searchParams.get("tribunal") || "").toLowerCase();
+    if (!/^\d{20}$/.test(number) || !DATAJUD_TRIBUNALS.has(tribunal)) {
+      sendJSON(request, response, 400, { error: "Informe um número CNJ de 20 dígitos e tribunal válido." });
+      return;
+    }
+    try {
+      const data = await queryDatajud(tribunal, number);
+      sendJSON(request, response, 200, simplifyDatajud(data, number, tribunal));
+    } catch {
+      sendJSON(request, response, 502, {
+        status: "unavailable",
+        error: "Não foi possível consultar o CNJ agora. Isso não significa ausência de processos."
       });
     }
     return;
