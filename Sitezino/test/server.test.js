@@ -2,6 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const http = require("node:http");
 const { createServer, parseMonitorStates, resetRateLimits } = require("../server");
 
 async function withServer(callback) {
@@ -170,12 +171,42 @@ test("publica robots.txt e sitemap.xml", async () => {
 
 test("gera URL HTTPS canônica no sitemap do domínio Render", async () => {
   await withServer(async (base) => {
-    const response = await fetch(`${base}/sitemap.xml`, {
-      headers: { host: "radar-fiscal-iyn3.onrender.com" },
+    // http.request permite controlar Host explicitamente no teste; fetch pode substituí-lo.
+    const body = await new Promise((resolve, reject) => {
+      const target = new URL(base + "/sitemap.xml");
+      const request = http.request({
+        hostname: target.hostname, port: target.port, path: target.pathname,
+        headers: { Host: "radar-fiscal-iyn3.onrender.com" },
+      }, (response) => {
+        assert.equal(response.statusCode, 200);
+        let content = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => { content += chunk; });
+        response.on("end", () => resolve(content));
+      });
+      request.on("error", reject);
+      request.end();
     });
-    assert.equal(response.status, 200);
-    const body = await response.text();
     assert.match(body, /<loc>https:\/\/radar-fiscal-iyn3\.onrender\.com\/<\/loc>/);
+  });
+});
+
+test("portal jurídico oferece pesquisa e manutenção de registros sem expor dados", async () => {
+  await withServer(async (base) => {
+    const [page, script] = await Promise.all([
+      fetch(base + "/juridico/portal"), fetch(base + "/juridico-portal.js"),
+    ]);
+    assert.equal(page.status, 200);
+    assert.equal(script.status, 200);
+    const html = await page.text();
+    const js = await script.text();
+    for (const id of ["client-search","case-search","document-search","event-search","upcoming-list"])
+      assert.ok(html.includes('id="' + id + '"'), id);
+    for (const name of ["refreshAccessToken","showRecordEditor","updateRecord","removeRecord"])
+      assert.ok(js.includes(name), name);
+    assert.doesNotMatch(js, /localStorage\.setItem|sessionStorage\.setItem|Notification\.requestPermission/);
+    assert.doesNotMatch(html, /googleads|adsbygoogle|googlesyndication/);
+    assert.equal((await fetch(base + "/api/juridico/clientes")).status, 404);
   });
 });
 
