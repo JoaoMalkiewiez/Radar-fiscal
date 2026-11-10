@@ -1249,6 +1249,13 @@ const MONITOR_HISTORY_SEVERITY = {
 
 const monitorHistoryState = { data: null, error: null, loading: false };
 const monitorHistoryFilters = { period: "7d", document: "all", uf: "all", state: "all" };
+const MONITOR_HISTORY_PAGE_SIZE = 5;
+let monitorHistoryVisibleCount = MONITOR_HISTORY_PAGE_SIZE;
+
+function resetMonitorHistoryPage() {
+  monitorHistoryVisibleCount = MONITOR_HISTORY_PAGE_SIZE;
+}
+
 const MONITOR_MAP_POSITIONS = {
   AC: [24, 43], RO: [32, 52], AM: [38, 31], RR: [40, 13], AP: [65, 16],
   PA: [60, 35], TO: [61, 51], MA: [70, 43], PI: [77, 49], CE: [85, 39],
@@ -1782,6 +1789,26 @@ function renderMonitorHistory() {
   const note = $("#monitor-history-note");
   const summary = $("#monitor-history-summary");
   const resultsCount = $("#monitor-history-results-count");
+  const moreButton = $("#monitor-history-more");
+  const lessButton = $("#monitor-history-less");
+  const pagination = $("#monitor-history-pagination");
+  const pageStatus = $("#monitor-history-page-status");
+
+  // Contagens e ações sempre refletem o filtro atual; atualização automática
+  // preserva a quantidade já expandida, sem introduzir scroll infinito.
+  const updatePagination = (total = 0) => {
+    const shown = Math.min(monitorHistoryVisibleCount, total);
+    if (pagination) pagination.hidden = total <= MONITOR_HISTORY_PAGE_SIZE;
+    if (moreButton) {
+      const remaining = Math.max(0, total - shown);
+      moreButton.hidden = remaining === 0;
+      moreButton.textContent = `Ver mais (${Math.min(MONITOR_HISTORY_PAGE_SIZE, remaining)} de ${remaining} restantes)`;
+    }
+    if (lessButton) lessButton.hidden = shown <= MONITOR_HISTORY_PAGE_SIZE;
+    if (pageStatus) pageStatus.textContent = total ? `Exibindo ${shown} de ${total} ocorrência(s)` : "";
+    if (resultsCount && total) resultsCount.textContent = `Exibindo ${shown} de ${total} ocorrência(s) no filtro atual`;
+  };
+
   if (!list || !status) return;
   ensureMonitorHistoryUFOptions();
 
@@ -1800,6 +1827,7 @@ function renderMonitorHistory() {
   const data = monitorHistoryState.data;
   if (monitorHistoryState.loading && !data) {
     status.textContent = "Consultando histórico…";
+    updatePagination(0);
     list.innerHTML = '<div class="monitor-history-empty">Buscando as primeiras ocorrências registradas…</div>';
     if (summary) summary.innerHTML = "";
     if ($("#monitor-history-chart")) $("#monitor-history-chart").innerHTML = '<div class="monitor-history-chart-empty">Carregando gráfico…</div>';
@@ -1808,6 +1836,7 @@ function renderMonitorHistory() {
 
   if (!data && monitorHistoryState.error) {
     status.textContent = "Histórico temporariamente indisponível";
+    updatePagination(0);
     list.innerHTML = `
       <div class="monitor-history-empty">
         <strong>Não foi possível carregar o histórico agora.</strong>
@@ -1818,7 +1847,10 @@ function renderMonitorHistory() {
     if ($("#monitor-history-chart")) $("#monitor-history-chart").innerHTML = '<div class="monitor-history-chart-empty">Não foi possível montar o gráfico sem dados.</div>';
     return;
   }
-  if (!data) return;
+  if (!data) {
+    updatePagination(0);
+    return;
+  }
 
   const allIncidents = (Array.isArray(data.incidents) ? data.incidents : [])
     .filter((incident) => incident && MONITOR_DOCS.includes(incident.document) && /^[A-Z]{2}$/.test(String(incident.uf || "")));
@@ -1842,7 +1874,8 @@ function renderMonitorHistory() {
     ].map((item) => `<div class="monitor-history-metric tone-${item.tone}"><span>${escapeHTML(item.label)}</span><strong>${escapeHTML(String(item.value))}</strong></div>`).join("");
   }
   renderMonitorHistoryChart(incidents);
-  if (resultsCount) resultsCount.textContent = `${incidents.length} ocorrência(s) no filtro atual`;
+  updatePagination(incidents.length);
+  if (resultsCount && !incidents.length) resultsCount.textContent = "0 ocorrência(s) no filtro atual";
 
   if (!allIncidents.length) {
     list.innerHTML = `
@@ -1862,7 +1895,7 @@ function renderMonitorHistory() {
     return;
   }
 
-  list.innerHTML = incidents.slice(0, 50).map((incident) => {
+  list.innerHTML = incidents.slice(0, monitorHistoryVisibleCount).map((incident) => {
     const documentLabel = MONITOR_DOC_LABELS[incident.document] || String(incident.document || "").toUpperCase();
     const uf = String(incident.uf).toUpperCase();
     const stateName = SEFAZ[uf]?.name || uf;
@@ -2066,32 +2099,48 @@ $("#monitor-map-services")?.addEventListener("click", (event) => {
 $$("[data-history-period]").forEach((button) => {
   button.addEventListener("click", () => {
     monitorHistoryFilters.period = ["24h", "7d", "30d"].includes(button.dataset.historyPeriod) ? button.dataset.historyPeriod : "7d";
+    resetMonitorHistoryPage();
     renderMonitorHistory();
   });
 });
 
 $("#monitor-history-document")?.addEventListener("change", (event) => {
   monitorHistoryFilters.document = ["all", ...MONITOR_DOCS].includes(event.target.value) ? event.target.value : "all";
+    resetMonitorHistoryPage();
   renderMonitorHistory();
 });
 
 $("#monitor-history-uf")?.addEventListener("change", (event) => {
   const value = event.target.value;
   monitorHistoryFilters.uf = value === "all" || Object.prototype.hasOwnProperty.call(SEFAZ, value) ? value : "all";
+    resetMonitorHistoryPage();
   renderMonitorHistory();
 });
 
 $("#monitor-history-state")?.addEventListener("change", (event) => {
   monitorHistoryFilters.state = ["all", "open", "resolved"].includes(event.target.value) ? event.target.value : "all";
+    resetMonitorHistoryPage();
   renderMonitorHistory();
 });
 
 $("[data-history-reset]")?.addEventListener("click", () => {
   monitorHistoryFilters.period = "7d";
+    resetMonitorHistoryPage();
   monitorHistoryFilters.document = "all";
   monitorHistoryFilters.uf = "all";
   monitorHistoryFilters.state = "all";
   renderMonitorHistory();
+});
+
+$("#monitor-history-more")?.addEventListener("click", () => {
+  monitorHistoryVisibleCount += MONITOR_HISTORY_PAGE_SIZE;
+  renderMonitorHistory();
+});
+
+$("#monitor-history-less")?.addEventListener("click", () => {
+  resetMonitorHistoryPage();
+  renderMonitorHistory();
+  $("#monitor-history-results-count")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 });
 
 $("#monitor-history-list")?.addEventListener("click", (event) => {
