@@ -2106,26 +2106,26 @@ $$("[data-history-period]").forEach((button) => {
 
 $("#monitor-history-document")?.addEventListener("change", (event) => {
   monitorHistoryFilters.document = ["all", ...MONITOR_DOCS].includes(event.target.value) ? event.target.value : "all";
-    resetMonitorHistoryPage();
+  resetMonitorHistoryPage();
   renderMonitorHistory();
 });
 
 $("#monitor-history-uf")?.addEventListener("change", (event) => {
   const value = event.target.value;
   monitorHistoryFilters.uf = value === "all" || Object.prototype.hasOwnProperty.call(SEFAZ, value) ? value : "all";
-    resetMonitorHistoryPage();
+  resetMonitorHistoryPage();
   renderMonitorHistory();
 });
 
 $("#monitor-history-state")?.addEventListener("change", (event) => {
   monitorHistoryFilters.state = ["all", "open", "resolved"].includes(event.target.value) ? event.target.value : "all";
-    resetMonitorHistoryPage();
+  resetMonitorHistoryPage();
   renderMonitorHistory();
 });
 
 $("[data-history-reset]")?.addEventListener("click", () => {
   monitorHistoryFilters.period = "7d";
-    resetMonitorHistoryPage();
+  resetMonitorHistoryPage();
   monitorHistoryFilters.document = "all";
   monitorHistoryFilters.uf = "all";
   monitorHistoryFilters.state = "all";
