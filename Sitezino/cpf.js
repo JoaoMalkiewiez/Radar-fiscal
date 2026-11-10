@@ -73,6 +73,7 @@ themeButton.addEventListener("click", () => {
 
 
 /* Consulta contratada: só aparece quando Serpro e acesso de operador estão configurados. */
+const cpfSerproSection = document.getElementById("cpf-serpro-section");
 const cpfApiForm = document.getElementById("cpf-api-form");
 const cpfApiStatus = document.getElementById("cpf-api-status");
 const cpfApiResult = document.getElementById("cpf-api-result");
@@ -116,13 +117,16 @@ async function checkCpfApiStatus() {
     if (!response.ok) throw new Error("Status indisponível");
     const info = await response.json();
     if (info.serproDisponivel === true) {
+      cpfSerproSection.hidden = false;
       cpfApiStatus.textContent = "Integração configurada. Acesso exclusivo de operador autorizado.";
       cpfApiForm.hidden = false;
     } else {
+      cpfSerproSection.hidden = true;
       cpfApiStatus.textContent = "Integração ainda não ativada. A consulta cadastral real depende de contrato e credenciais do Serpro; por enquanto, use o serviço da Receita Federal acima.";
       cpfApiForm.hidden = true;
     }
   } catch {
+    cpfSerproSection.hidden = true;
     cpfApiStatus.textContent = "Não foi possível verificar a disponibilidade da integração. A consulta gratuita de CPF continua funcionando.";
     cpfApiForm.hidden = true;
   }
