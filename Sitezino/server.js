@@ -135,20 +135,58 @@ function allowCpfGlobalBudget(request, response) {
 function readSmallJSON(request) {
   return new Promise((resolve, reject) => {
     const declared = Number(request.headers["content-length"] || 0);
-    if (declared > 1024) { reject(new Error("request_too_large")); return; }
-    let data = "";
+    if (!Number.isFinite(declared) || declared < 0 || declared > 1024) {
+      request.resume();
+      const error = new Error("request_too_large");
+      error.statusCode = 413;
+      reject(error);
+      return;
+    }
+    const chunks = [];
+    let bytes = 0;
+    let finished = false;
     request.on("data", (chunk) => {
-      data += chunk.toString("utf8");
-      if (Buffer.byteLength(data, "utf8") > 1024) {
-        request.destroy();
-        reject(new Error("request_too_large"));
+      if (finished) return;
+      bytes += chunk.length;
+      if (bytes > 1024) {
+        finished = true;
+        request.resume();
+        const error = new Error("request_too_large");
+        error.statusCode = 413;
+        reject(error);
+        return;
       }
+      chunks.push(chunk);
     });
     request.on("end", () => {
-      try { resolve(JSON.parse(data)); } catch { reject(new Error("invalid_json")); }
+      if (finished) return;
+      finished = true;
+      try { resolve(JSON.parse(Buffer.concat(chunks).toString("utf8"))); }
+      catch { reject(new Error("invalid_json")); }
     });
-    request.on("error", reject);
+    request.on("error", (error) => {
+      if (finished) return;
+      finished = true;
+      reject(error);
+    });
   });
+}
+
+function validCnpj(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!/^\d{14}$/.test(digits) || /^(\d)\1{13}$/.test(digits)) return false;
+  for (const count of [12, 13]) {
+    let weight = count - 7;
+    let sum = 0;
+    for (let index = 0; index < count; index++) {
+      sum += Number(digits[index]) * weight;
+      weight -= 1;
+      if (weight < 2) weight = 9;
+    }
+    const remainder = sum % 11;
+    if ((remainder < 2 ? 0 : 11 - remainder) !== Number(digits[count])) return false;
+  }
+  return true;
 }
 
 function acceptsGzip(request) {
@@ -557,6 +595,27 @@ function serveStatic(request, response, pathname) {
       return;
     }
 
+    // Revalidação HTTP: economiza leitura em disco e transferência de CSS/JS/HTML.
+    const etag = `W/"${stats.size.toString(16)}-${Math.floor(stats.mtimeMs).toString(16)}"`;
+    const lastModified = stats.mtime.toUTCString();
+    const ifNoneMatch = String(request.headers["if-none-match"] || "");
+    const ifModifiedSince = String(request.headers["if-modified-since"] || "");
+    const notModified = ifNoneMatch
+      ? ifNoneMatch.split(",").some((part) => part.trim() === etag || part.trim() === "*")
+      : Boolean(ifModifiedSince) && Number.isFinite(Date.parse(ifModifiedSince))
+        && Math.floor(stats.mtimeMs / 1000) <= Math.floor(Date.parse(ifModifiedSince) / 1000);
+    if (notModified) {
+      response.writeHead(304, {
+        ...SECURITY_HEADERS,
+        "ETag": etag,
+        "Last-Modified": lastModified,
+        "Cache-Control": "no-cache",
+        "Vary": "Accept-Encoding",
+      });
+      response.end();
+      return;
+    }
+
     fs.readFile(filePath, (readError, buffer) => {
       if (readError) {
         sendText(request, response, 500, "Erro ao ler o arquivo");
@@ -566,7 +625,9 @@ function serveStatic(request, response, pathname) {
       sendBuffer(request, response, 200, buffer, {
         "Content-Type": contentType,
         "Cache-Control": "no-cache",
-        "Last-Modified": stats.mtime.toUTCString(),
+        "Last-Modified": lastModified,
+        "ETag": etag,
+        "Vary": "Accept-Encoding",
       }, cacheKey);
     });
   });
@@ -616,8 +677,11 @@ async function handleRequest(request, response) {
     let body;
     try {
       body = await readSmallJSON(request);
-    } catch {
-      if (!response.writableEnded && !response.destroyed) sendJSON(request, response, 400, { error: "JSON inválido ou maior que o limite." });
+    } catch (error) {
+      if (!response.writableEnded && !response.destroyed) {
+        const tooLarge = error.statusCode === 413;
+        sendJSON(request, response, tooLarge ? 413 : 400, { error: tooLarge ? "JSON excede o limite de 1 KB." : "JSON inválido." });
+      }
       return;
     }
     if (!body || typeof body !== "object" || Array.isArray(body) ||
@@ -675,6 +739,7 @@ async function handleRequest(request, response) {
   }
 
   if (pathname === "/api/sefaz-history") {
+    if (!checkRateLimit(request, response, "monitor-history", 120)) return;
     try {
       const force = url.searchParams.get("force") === "1";
       const data = await getMonitorHistory(force);
@@ -693,6 +758,10 @@ async function handleRequest(request, response) {
     const cnpj = String(url.searchParams.get("cnpj") || "").replace(/\D/g, "");
     if (cnpj.length !== 14) {
       sendJSON(request, response, 400, { error: "Informe um CNPJ com 14 dígitos." });
+      return;
+    }
+    if (!validCnpj(cnpj)) {
+      sendJSON(request, response, 400, { error: "CNPJ com dígitos verificadores inválidos." });
       return;
     }
     try {
