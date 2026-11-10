@@ -675,7 +675,7 @@
             <div class="monitor-history-heading">
               <p class="eyebrow eyebrow--dark">Histórico de instabilidades</p>
               <h3>Quedas e recuperações recentes</h3>
-              <p>Filtre as ocorrências observadas e acompanhe quando cada serviço foi afetado e normalizado.</p>
+              <p>Exibimos as 5 ocorrências mais recentes. Filtre por estado, documento ou situação e use “Ver mais” para acessar registros anteriores.</p>
             </div>
             <div class="monitor-history-collection" id="monitor-history-status" aria-label="Estado da coleta">
               <span class="live-dot" aria-hidden="true"></span>
@@ -728,6 +728,13 @@
           </div>
           <div class="monitor-history-list" id="monitor-history-list" role="list" aria-live="polite">
             <div class="monitor-history-empty">Carregando o histórico de instabilidades…</div>
+          </div>
+          <div class="monitor-history-pagination" id="monitor-history-pagination" hidden>
+            <span id="monitor-history-page-status" class="monitor-history-page-status" aria-live="polite"></span>
+            <div class="monitor-history-page-actions">
+              <button class="monitor-history-more" id="monitor-history-more" type="button" aria-controls="monitor-history-list">Ver mais</button>
+              <button class="monitor-history-less" id="monitor-history-less" type="button" aria-controls="monitor-history-list" hidden>Ver menos</button>
+            </div>
           </div>
           <p class="monitor-history-note" id="monitor-history-note">O histórico começa quando a coleta é ativada. Ocorrências anteriores não são recuperadas, e quedas muito curtas entre as coletas podem não aparecer.</p>
         </div>
