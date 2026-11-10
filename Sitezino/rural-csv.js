@@ -35,7 +35,7 @@
   const synonyms = {
     holder: ["titular", "nome do titular", "detentor", "nome do detentor"],
     code: ["codigo do imovel", "codigo imovel", "codigo sncr", "codigo do imovel rural"],
-    name: ["denominacao", "denominacao do imovel", "nome do imovel", "imovel rural"],
+    name: ["denominacao", "denominacao do imovel", "denominacao do imovel rural", "nome do imovel", "imovel rural"],
     city: ["municipio", "municipio sede do imovel", "municipio sede"],
     state: ["uf", "unidade da federacao", "estado"],
     area: ["area total", "area total (ha)", "area total em hectares", "area total ha"],
