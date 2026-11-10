@@ -46,6 +46,7 @@ create table if not exists public.legal_documents (
   case_id uuid,
   name text not null check (char_length(name) between 1 and 200),
   storage_path text not null unique,
+  constraint path_belongs_to_owner check (split_part(storage_path, '/', 1) = owner_id::text),
   size_bytes bigint not null check (size_bytes between 1 and 10485760),
   mime_type text not null,
   created_at timestamptz not null default now(),
@@ -55,7 +56,10 @@ create table if not exists public.legal_documents (
 create index if not exists legal_clients_owner_idx on public.legal_clients(owner_id, name);
 create index if not exists legal_cases_owner_idx on public.legal_cases(owner_id, created_at desc);
 create index if not exists legal_events_owner_idx on public.legal_events(owner_id, starts_at);
-create index if not exists legal_documents_owner_idx on public.legal_documents(owner_id, created_at desc);
+create index if not exists legal_docs_owner_idx on public.legal_documents(owner_id, created_at desc);
+create index if not exists legal_cases_client_owner_fk_idx on public.legal_cases(client_id, owner_id);
+create index if not exists legal_documents_case_owner_fk_idx on public.legal_documents(case_id, owner_id);
+create index if not exists legal_events_case_owner_fk_idx on public.legal_events(case_id, owner_id);
 
 alter table public.legal_clients enable row level security;
 alter table public.legal_cases enable row level security;
@@ -84,8 +88,8 @@ values ('legal-private', 'legal-private', false, 10485760,
 on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 -- O caminho do arquivo começa sempre com o auth.uid() do proprietário.
-drop policy if exists legal_storage_select on storage.objects;
-create policy legal_storage_select on storage.objects for select to authenticated
+drop policy if exists legal_storage_read on storage.objects;
+create policy legal_storage_read on storage.objects for select to authenticated
 using (bucket_id = 'legal-private' and (storage.foldername(name))[1] = (select auth.uid())::text);
 drop policy if exists legal_storage_insert on storage.objects;
 create policy legal_storage_insert on storage.objects for insert to authenticated
