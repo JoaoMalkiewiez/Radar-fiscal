@@ -63,6 +63,40 @@ test("serve a página inicial com segurança e gzip", async () => {
   });
 });
 
+test("revalida assets estáticos com ETag sem reenviar o arquivo", async () => {
+  await withServer(async (base) => {
+    const first = await fetch(base + "/styles.css");
+    assert.equal(first.status, 200);
+    const etag = first.headers.get("etag");
+    assert.ok(etag);
+    assert.equal(first.headers.get("cache-control"), "no-cache");
+    assert.equal(first.headers.get("vary"), "Accept-Encoding");
+    const lastModified = first.headers.get("last-modified");
+    assert.ok(lastModified);
+    await first.arrayBuffer();
+
+    const revalidated = await fetch(base + "/styles.css", {
+      headers: { "If-None-Match": etag },
+    });
+    assert.equal(revalidated.status, 304);
+    assert.equal(revalidated.headers.get("etag"), etag);
+    assert.equal(await revalidated.text(), "");
+
+    const byDate = await fetch(base + "/styles.css", {
+      headers: { "If-Modified-Since": lastModified },
+    });
+    assert.equal(byDate.status, 304);
+  });
+});
+
+test("descarta CNPJ matematicamente inválido antes de acessar fornecedores", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(base + "/api/cnpj?cnpj=11111111111111");
+    assert.equal(response.status, 400);
+    assert.match((await response.json()).error, /dígitos verificadores inválidos/);
+  });
+});
+
 test("expõe health check sem consultar fontes externas", async () => {
   await withServer(async (base) => {
     const response = await fetch(`${base}/api/health`);
@@ -153,6 +187,7 @@ test("consulta de CPF expõe formulário de operador sem chaves no HTML", async 
   await withServer(async (base) => {
     const page = await fetch(base + "/cpf");
     const html = await page.text();
+    assert.match(html, /id="cpf-serpro-section"[^>]*hidden/);
     assert.match(html, /id="cpf-api-form"/);
     assert.match(html, /id="cpf-api-key"/);
     assert.match(html, /Consulta CPF v3/);
