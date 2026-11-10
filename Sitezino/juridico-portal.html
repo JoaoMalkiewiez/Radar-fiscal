@@ -9,6 +9,15 @@
 <div class="panel"><h2>Investigação cadastral — pessoa jurídica</h2><p>Consulta de dados reais por CNPJ em fontes públicas. Informações societárias e endereço cadastral não comprovam a existência de bens no patrimônio da empresa ou dos sócios.</p>
 <form id="investigation-form" class="legal-form"><label>CNPJ a consultar<input name="cnpj" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="00.000.000/0000-00" required></label><label>Finalidade da consulta<input name="purpose" minlength="8" maxlength="250" placeholder="Ex.: diligência processual autorizada" required></label><button type="submit">Consultar CNPJ</button></form>
 <p id="investigation-status" role="status" aria-live="polite"></p><div id="investigation-result" class="records"></div></div>
+<div class="panel"><h2>Consulta processual gratuita — CNJ DataJud</h2>
+<p>Pesquise um processo público diretamente por número CNJ no tribunal selecionado. A API pública do CNJ retorna metadados e movimentações, mas não disponibiliza pesquisa completa por CPF, partes ou patrimônio.</p>
+<form id="datajud-form" class="legal-form">
+<label>Número único do processo (CNJ)<input name="number" required maxlength="30" inputmode="numeric" placeholder="0000000-00.0000.0.00.0000" autocomplete="off"></label>
+<label>Tribunal<select name="tribunal" required><option value="tjsc">TJSC — Santa Catarina</option><option value="tjsp">TJSP — São Paulo</option><option value="tjpr">TJPR — Paraná</option><option value="tjrs">TJRS — Rio Grande do Sul</option><option value="tjmg">TJMG — Minas Gerais</option><option value="tjrj">TJRJ — Rio de Janeiro</option><option value="tjdft">TJDFT — Distrito Federal</option><option value="trf4">TRF4 — Justiça Federal Sul</option><option value="trf3">TRF3 — Justiça Federal SP/MS</option><option value="trf1">TRF1</option><option value="trf2">TRF2</option><option value="trf5">TRF5</option><option value="trf6">TRF6</option><option value="stj">STJ</option><option value="tst">TST</option></select></label>
+<button type="submit">Consultar no CNJ</button></form>
+<p id="datajud-status" role="status" aria-live="polite"></p><div id="datajud-results" class="records"></div>
+<p>Um processo não localizado na base pública não significa que ele inexista. Confirme sempre no tribunal responsável.</p>
+</div>
 <div class="panel"><h2>Imóveis rurais — dados públicos do SNCR</h2><p>Importe uma planilha CSV obtida da consulta pública oficial por UF/município. A análise ocorre neste navegador; o arquivo não é enviado ao Radar Fiscal nem ao Supabase. A planilha identifica detentores declarados, o que não confirma propriedade atual.</p>
 <p><a href="https://sncr.serpro.gov.br/sncr-web/consultaPublica.jsf" target="_blank" rel="noopener noreferrer">Obter planilha pública do SNCR</a></p>
 <form id="rural-form" class="legal-form">
