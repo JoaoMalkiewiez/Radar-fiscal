@@ -4,7 +4,10 @@
 // Toda autorização de registros e arquivos é aplicada pelas políticas RLS do banco.
 let settings = null;
 let accessToken = null;
+let refreshToken = null;
+let tokenExpiresAt = 0;
 let currentUser = null;
+let refreshInFlight = null;
 const state = { clients: [], cases: [], events: [], documents: [] };
 const $ = (id) => document.getElementById(id);
 
@@ -14,13 +17,38 @@ function feedback(message) {
   node.hidden = !message;
 }
 
-async function api(path, { method = "GET", body, storage = false } = {}) {
+async function refreshAccessToken() {
+  if (!settings || !refreshToken) throw new Error("Sessão expirada. Entre novamente.");
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    const response = await fetch(settings.url + "/auth/v1/token?grant_type=refresh_token", {
+      method: "POST", headers: { apikey: settings.publishableKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }), cache: "no-store",
+    });
+    const data = await response.json();
+    if (!response.ok || !data.access_token || !data.refresh_token || data.user?.id !== currentUser)
+      throw new Error("Sessão expirada. Entre novamente.");
+    accessToken = data.access_token;
+    refreshToken = data.refresh_token;
+    tokenExpiresAt = Date.now() + Math.max(30, data.expires_in || 3600) * 1000;
+  })();
+  try { await refreshInFlight; }
+  catch (error) { logout(); throw error; }
+  finally { refreshInFlight = null; }
+}
+
+async function api(path, { method = "GET", body, storage = false, retry = true } = {}) {
   if (!settings || !accessToken) throw new Error("Faça login para continuar.");
+  if (Date.now() + 30000 >= tokenExpiresAt) await refreshAccessToken();
   const headers = { apikey: settings.publishableKey, Authorization: `Bearer ${accessToken}` };
   if (!storage && body !== undefined) headers["Content-Type"] = "application/json";
   const response = await fetch(settings.url + (storage ? "/storage/v1" : "/rest/v1") + path, {
     method, headers, body: storage ? body : body === undefined ? undefined : JSON.stringify(body), cache: "no-store",
   });
+  if (response.status === 401 && retry) {
+    await refreshAccessToken();
+    return api(path, { method, body, storage, retry: false });
+  }
   if (response.status === 401) {
     logout();
     throw new Error("Sessão expirada. Entre novamente.");
@@ -33,6 +61,8 @@ async function api(path, { method = "GET", body, storage = false } = {}) {
 
 function logout() {
   accessToken = null;
+  refreshToken = null;
+  tokenExpiresAt = 0;
   currentUser = null;
   for (const key of Object.keys(state)) state[key] = [];
   $("workspace").hidden = true;
@@ -156,9 +186,11 @@ $("login-form").addEventListener("submit", async (event) => {
       body: JSON.stringify(body), cache: "no-store",
     });
     const data = await response.json();
-    if (!response.ok || !data.access_token) throw new Error("Não foi possível entrar. Verifique as credenciais.");
+    if (!response.ok || !data.access_token || !data.refresh_token || !data.user?.id) throw new Error("Não foi possível entrar. Verifique as credenciais.");
     accessToken = data.access_token;
-    currentUser = data.user?.id;
+    refreshToken = data.refresh_token;
+    tokenExpiresAt = Date.now() + Math.max(30, data.expires_in || 3600) * 1000;
+    currentUser = data.user.id;
     form.reset();
     await reloadData();
     $("login-panel").hidden = true;
@@ -169,7 +201,21 @@ $("login-form").addEventListener("submit", async (event) => {
   finally { button.disabled = false; }
 });
 
-$("logout").addEventListener("click", () => { logout(); feedback("Sessão encerrada neste navegador."); });
+$("logout").addEventListener("click", async () => {
+  const token = accessToken;
+  logout();
+  feedback("Sessão local encerrada.");
+  if (token && settings) {
+    try {
+      const response = await fetch(settings.url + "/auth/v1/logout", {
+        method: "POST",
+        headers: { apikey: settings.publishableKey, Authorization: "Bearer " + token },
+        cache: "no-store",
+      });
+      if (!response.ok) feedback("Você saiu deste navegador, mas não foi possível revogar a sessão remota.");
+    } catch { feedback("Você saiu deste navegador, mas não foi possível confirmar a revogação remota."); }
+  }
+});
 for (const link of document.querySelectorAll("[data-view]")) link.addEventListener("click", (event) => {
   event.preventDefault();
   if (accessToken) { show(link.dataset.view); feedback(""); }
