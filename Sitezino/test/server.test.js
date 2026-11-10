@@ -339,3 +339,16 @@ test("aplica limite por IP nas consultas de CNPJ", async () => {
     assert.equal(lastStatus, 429);
   });
 });
+
+test("fluxo jurídico privado exige autorização adicional e oferece histórico de processos", async () => {
+  await withServer(async (base) => {
+    const html = await (await fetch(base + "/juridico/portal")).text();
+    const js = await (await fetch(base + "/juridico-portal.js")).text();
+    for (const id of ["movement-form", "movement-case", "movement-search", "movement-list"])
+      assert.ok(html.includes('id="' + id + '"'), id);
+    assert.match(js, /legal_access\?select=enabled,role/);
+    assert.match(js, /legal_movements/);
+    assert.match(js, /Esta conta ainda não foi autorizada/);
+    assert.doesNotMatch(js, /window\.alert|window\.confirm|Notification\.requestPermission/);
+  });
+});
