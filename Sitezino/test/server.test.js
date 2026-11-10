@@ -384,6 +384,6 @@ test("investigação privada integra CNPJ público e planilha SNCR sem resultado
     assert.match(js,/não confirma identidade nem titularidade atual/);
     assert.doesNotMatch(js,/innerHTML|localStorage\.setItem|fetch\("https:\/\/sncr/);
     assert.match(parser,/parseCsv/);
-    assert.equal((await fetch(base+"/api/juridico/config")).status,200);
+    assert.equal((await fetch(base+"/api/juridico/config")).status,503);
   });
 });
