@@ -366,3 +366,24 @@ test("dashboard privado exibe auditoria sem dados pessoais ou notificações inv
     assert.doesNotMatch(js, /Notification\.requestPermission|window\.alert\(|window\.confirm\(/);
   });
 });
+
+test("investigação privada integra CNPJ público e planilha SNCR sem resultados inventados", async () => {
+  await withServer(async (base) => {
+    const urls = ["/juridico/portal","/juridico-investigacao.js","/rural-csv.js"];
+    const responses = await Promise.all(urls.map(url=>fetch(base+url)));
+    for (const response of responses) assert.equal(response.status,200);
+    const [html,js,parser] = await Promise.all(responses.map(r=>r.text()));
+    assert.match(html,/data-view="investigation"/);
+    assert.match(html,/id="investigation-form"/);
+    assert.match(html,/id="rural-form"/);
+    assert.match(html,/id="rural-result"/);
+    assert.match(js,/\/api\/cnpj\?cnpj=/);
+    assert.match(js,/legal_access\?select=enabled/);
+    assert.match(js,/RuralCsv\.search/);
+    assert.match(js,/Nenhuma correspondência exata/);
+    assert.match(js,/não confirma identidade nem titularidade atual/);
+    assert.doesNotMatch(js,/innerHTML|localStorage\.setItem|fetch\("https:\/\/sncr/);
+    assert.match(parser,/parseCsv/);
+    assert.equal((await fetch(base+"/api/juridico/config")).status,503);
+  });
+});

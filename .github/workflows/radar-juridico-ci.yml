@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/radar-juridico-v1
+      - feat/juridico-investigacao-fontes-publicas
   pull_request:
     paths:
       - 'Sitezino/**'
@@ -26,6 +27,8 @@ jobs:
       - name: Checar sintaxe do portal e servidor
         run: |
           node --check juridico-portal.js
+          node --check juridico-investigacao.js
+          node --check rural-csv.js
           node --check server.js
       - name: Testar aplicacao existente e portal juridico
         run: npm test

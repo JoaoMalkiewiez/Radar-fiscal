@@ -58,3 +58,35 @@ Uma instalação nova executa, em ordem, `database/radar-juridico.sql`, `databas
 ## Política de auditoria
 
 O banco registra criação, alteração e exclusão de clientes, processos, agenda, documentos (metadados) e movimentações, guardando tipo, UUID, usuário e data. **Não copia CPF, nome, anotação nem conteúdo dos arquivos para os logs.** Cada conta vê apenas sua própria auditoria quando autorizada. Downloads e alterações internas do Supabase Auth não têm auditoria neste MVP; é necessário definir retenção e exportação antes de uso profissional.
+
+## Investigação com resultados reais — primeira etapa
+
+A área **Investigação** é visível somente após login e autorização em `legal_access`.
+
+### Consulta cadastral por CNPJ (gratuita)
+
+1. Informe um CNPJ válido e uma justificativa da diligência.
+2. O navegador consulta o endpoint já existente `/api/cnpj`, que agrega respostas públicas da **BrasilAPI** e de **CNPJ.ws pública** quando disponíveis.
+3. O sistema mostra razão social, nome fantasia, situação cadastral, endereço, CNAE, capital social e quadro societário **somente quando retornados pela fonte**; registra a fonte, o horário e eventual uso de cache.
+4. Se os provedores estiverem indisponíveis, mostra **consulta inconclusiva** — jamais “empresa sem bens”.
+5. A finalidade preenchida não é salva e não cria uma ficha da pessoa investigada. O CNPJ é enviado ao backend como parâmetro GET para consultar o cadastro público; **não envie CPF**, que não é aceito nessa operação.
+
+Consulta cadastral NÃO identifica propriedade de veículos, imóveis ou contas, e capital social NÃO é patrimônio comprovado.
+
+### Imóveis rurais por planilha pública do SNCR
+
+1. Na página pública do SNCR (https://sncr.serpro.gov.br/sncr-web/consultaPublica.jsf), selecione UF e município, faça a consulta e salve o arquivo CSV disponibilizado pelo órgão.
+2. Em **Investigação → Imóveis rurais**, selecione o arquivo de até 8 MB, informe a abrangência da planilha e o **nome exatamente como aparece no campo Titular**.
+3. O navegador lê o CSV em memória, localiza todas as linhas cujo campo `Titular` corresponde ao nome normalizado e mostra denominação, código, área, município, condição declarada e percentual de detenção, quando disponíveis.
+4. O CSV **não é enviado ao servidor nem armazenado no Supabase**. Após cada execução, o campo de arquivo é limpo. Não use correspondência por nome como prova de identidade: homônimos podem existir.
+5. Resultado zero significa apenas **nenhuma correspondência exata naquela planilha e abrangência**. Não significa que a pessoa não possui imóveis.
+
+O SNCR disponibiliza dados declaratórios. A API `consultarImovelPorCpfCnpj` do Conecta Gov não é uma API livre para aplicativos privados. Não foram implementadas consultas de veículos de terceiros ou imóveis urbanos por CPF.
+
+Fontes de referência:
+- BrasilAPI: https://github.com/BrasilAPI/BrasilAPI/blob/main/pages/docs/doc/cnpj.json
+- SNCR Consulta Pública: https://sncr.serpro.gov.br/sncr-web/consultaPublica.jsf
+- RFB sobre campos de CSV: https://www.gov.br/receitafederalpt-br/pt-br/assuntos/orientacao-tributaria/cadastros/portal-cnir/estatisticas-e-dados-abertos
+- SNCR Conecta Gov (acesso restrito): https://www.gov.br/conecta/catalogo/apis/sncr-sistema-nacional-de-cadastro-rural
+
+**Antes de permitir uso com dados reais de clientes:** testar fluxos com contas autorizadas, verificar finalidade/base legal, implementar política de retenção, backup e segurança da conta. Esta versão não serve como laudo conclusivo de inexistência de patrimônio.
