@@ -98,6 +98,69 @@
       button.disabled = false;
     }
   });
+  get("datajud-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button");
+    const status = get("datajud-status");
+    const target = get("datajud-results");
+    target.replaceChildren();
+    const fields = new FormData(form);
+    const number = String(fields.get("number") || "").replace(/\D/g,"");
+    const tribunal = String(fields.get("tribunal") || "");
+    if (!/^\d{20}$/.test(number)) {
+      status.textContent = "Informe os 20 dígitos do número CNJ.";
+      return;
+    }
+    if (!accessToken || !settings || get("workspace").hidden) {
+      status.textContent = "Entre com uma conta autorizada.";
+      return;
+    }
+    button.disabled = true;
+    status.textContent = "Consultando metadados públicos do CNJ...";
+    try {
+      const allowed = await api("/legal_access?select=enabled&user_id=eq." + encodeURIComponent(currentUser));
+      if (!Array.isArray(allowed) || !allowed.some((entry) => entry.enabled))
+        throw new Error("Conta não autorizada.");
+      const response = await fetch("/api/juridico/datajud?numero=" +
+        encodeURIComponent(number) + "&tribunal=" + encodeURIComponent(tribunal), { cache:"no-store" });
+      if (!response.ok) {
+        if (response.status === 429) throw new Error("Limite temporário de consultas; tente depois.");
+        throw new Error("A fonte CNJ está indisponível ou não respondeu. Resultado inconclusivo.");
+      }
+      const result = await response.json();
+      status.textContent = result.records?.length
+        ? result.records.length + " processo(s) público(s) encontrado(s) no tribunal selecionado."
+        : "Nenhum processo localizado nessa consulta ao tribunal. Isso não comprova inexistência.";
+      note(target, "Fonte: " + result.source + " · Consultado em " +
+        new Date(result.searchedAt).toLocaleString("pt-BR") + " · Tribunal: " + result.tribunal);
+      for (const record of result.records || []) {
+        const card = el("article", null, "investigation-card");
+        card.append(el("h3", "Processo " + record.numeroProcesso));
+        line(card, "Tribunal", record.tribunal);
+        line(card, "Grau", record.grau);
+        line(card, "Classe", record.classe);
+        line(card, "Órgão julgador", record.orgaoJulgador);
+        line(card, "Data de ajuizamento", record.dataAjuizamento);
+        if (record.assuntos?.length) line(card, "Assuntos", record.assuntos.join(", "));
+        if (record.movimentos?.length) {
+          card.append(el("h4", "Movimentações públicas retornadas"));
+          const list = el("ul");
+          for (const movement of record.movimentos) {
+            list.append(el("li", [movement.dataHora, movement.nome].filter(Boolean).join(" · ")));
+          }
+          card.append(list);
+        }
+        target.append(card);
+      }
+      source(target, "Consultar documentação oficial DataJud", result.sourceUrl);
+      note(target, result.coverage);
+    } catch (error) {
+      status.textContent = error.message || "A consulta ao CNJ falhou.";
+    } finally {
+      button.disabled = false;
+    }
+  });
   get("rural-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
