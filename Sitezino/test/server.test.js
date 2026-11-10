@@ -387,3 +387,26 @@ test("investigação privada integra CNPJ público e planilha SNCR sem resultado
     assert.equal((await fetch(base+"/api/juridico/config")).status,503);
   });
 });
+
+test("DataJud exige método GET, número CNJ válido e tribunal permitido", async () => {
+  await withServer(async (base) => {
+    const wrongMethod = await fetch(base + "/api/juridico/datajud", {method:"POST"});
+    assert.equal(wrongMethod.status,405);
+    const invalid = await fetch(base + "/api/juridico/datajud?numero=123&tribunal=tjsc");
+    assert.equal(invalid.status,400);
+    const unknownCourt = await fetch(base + "/api/juridico/datajud?numero=00008323520184013202&tribunal=evil.com");
+    assert.equal(unknownCourt.status,400);
+  });
+});
+test("área privada contém consulta CNJ e expõe somente metadados públicos", async () => {
+  await withServer(async (base) => {
+    const html = await (await fetch(base + "/juridico/portal")).text();
+    const js = await (await fetch(base + "/juridico-investigacao.js")).text();
+    assert.match(html,/id="datajud-form"/);
+    assert.match(html,/id="datajud-results"/);
+    assert.match(js,/api\/juridico\/datajud/);
+    assert.match(js,/legal_access\?select=enabled/);
+    assert.match(js,/Nenhum processo localizado/);
+    assert.doesNotMatch(js,/innerHTML\s*=/);
+  });
+});
