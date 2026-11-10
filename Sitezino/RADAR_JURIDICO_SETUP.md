@@ -90,3 +90,11 @@ Fontes de referência:
 - SNCR Conecta Gov (acesso restrito): https://www.gov.br/conecta/catalogo/apis/sncr-sistema-nacional-de-cadastro-rural
 
 **Antes de permitir uso com dados reais de clientes:** testar fluxos com contas autorizadas, verificar finalidade/base legal, implementar política de retenção, backup e segurança da conta. Esta versão não serve como laudo conclusivo de inexistência de patrimônio.
+
+### Processos judiciais públicos pelo CNJ DataJud (gratuito)
+
+Na aba **Investigação**, informe o número CNJ de 20 dígitos e selecione o tribunal. O sistema consulta o endpoint público do CNJ e apresenta somente metadados retornados, como número, órgão julgador, classe, assuntos e movimentações públicas. A consulta é por **número processual**, não CPF, nome ou bens. O endpoint público `/api/juridico/datajud` valida rigorosamente o tribunal e os 20 dígitos, impõe limite por IP e não aceita URL arbitrária. Nenhum resultado não comprova inexistência de processo. Processos sigilosos não são acessíveis.
+
+A chave **pública** do CNJ é publicada em https://datajud-wiki.cnj.jus.br/api-publica/acesso/ e pode mudar; caso expire, atualize a variável opcional `DATAJUD_PUBLIC_KEY` no Render com a nova chave pública, sem comitar credenciais privadas. Não há custos de API, mas disponibilidade e limites dependem do CNJ. Consulta oficial e exemplo: https://datajud-wiki.cnj.jus.br/api-publica/exemplos/exemplo1/.
+
+**Importante:** a atual versão continua sem consulta gratuita automática e universal de imóveis urbanos ou veículos por CPF de terceiros. Não tente contornar autenticação dos órgãos. A base SNCR é declaratória e a leitura via CSV é local.
