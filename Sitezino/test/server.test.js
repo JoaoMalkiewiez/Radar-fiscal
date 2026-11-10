@@ -2,6 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const http = require("node:http");
 const { createServer, parseMonitorStates, resetRateLimits } = require("../server");
 
 async function withServer(callback) {
@@ -60,6 +61,39 @@ test("serve a página inicial com segurança e gzip", async () => {
     const body = await response.text();
     assert.match(body, /Radar Fiscal/);
     assert.match(body, /monitor-search/);
+  });
+});
+
+test("prévia de gestão jurídica não permite cadastro e não substitui a área existente", async () => {
+  await withServer(async (base) => {
+    const [preview, original, api] = await Promise.all([
+      fetch(base + "/juridico/gestao"),
+      fetch(base + "/juridico"),
+      fetch(base + "/api/juridico/clientes"),
+    ]);
+    assert.equal(preview.status, 200);
+    assert.match(await preview.text(), /prévia visual com exemplos fictícios/i);
+    assert.equal(original.status, 200);
+    assert.match(await original.text(), /Consultar número processual/);
+    assert.equal(api.status, 404);
+  });
+});
+
+test("área privada não expõe credenciais nem permite gravação sem configuração", async () => {
+  await withServer(async (base) => {
+    const [page, script, config, write] = await Promise.all([
+      fetch(base + "/juridico/portal"),
+      fetch(base + "/juridico-portal.js"),
+      fetch(base + "/api/juridico/config"),
+      fetch(base + "/api/juridico/clientes", { method: "POST" }),
+    ]);
+    assert.equal(page.status, 200);
+    assert.match(await page.text(), /Entrar no Radar Jurídico/);
+    assert.equal(script.status, 200);
+    assert.match(await script.text(), /legal_clients/);
+    assert.equal(config.status, 503);
+    assert.equal(write.status, 405);
+    assert.equal((await config.json()).error, "Área privada ainda não configurada.");
   });
 });
 
@@ -137,12 +171,42 @@ test("publica robots.txt e sitemap.xml", async () => {
 
 test("gera URL HTTPS canônica no sitemap do domínio Render", async () => {
   await withServer(async (base) => {
-    const response = await fetch(`${base}/sitemap.xml`, {
-      headers: { host: "radar-fiscal-iyn3.onrender.com" },
+    // http.request permite controlar Host explicitamente no teste; fetch pode substituí-lo.
+    const body = await new Promise((resolve, reject) => {
+      const target = new URL(base + "/sitemap.xml");
+      const request = http.request({
+        hostname: target.hostname, port: target.port, path: target.pathname,
+        headers: { Host: "radar-fiscal-iyn3.onrender.com" },
+      }, (response) => {
+        assert.equal(response.statusCode, 200);
+        let content = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => { content += chunk; });
+        response.on("end", () => resolve(content));
+      });
+      request.on("error", reject);
+      request.end();
     });
-    assert.equal(response.status, 200);
-    const body = await response.text();
     assert.match(body, /<loc>https:\/\/radar-fiscal-iyn3\.onrender\.com\/<\/loc>/);
+  });
+});
+
+test("portal jurídico oferece pesquisa e manutenção de registros sem expor dados", async () => {
+  await withServer(async (base) => {
+    const [page, script] = await Promise.all([
+      fetch(base + "/juridico/portal"), fetch(base + "/juridico-portal.js"),
+    ]);
+    assert.equal(page.status, 200);
+    assert.equal(script.status, 200);
+    const html = await page.text();
+    const js = await script.text();
+    for (const id of ["client-search","case-search","document-search","event-search","upcoming-list"])
+      assert.ok(html.includes('id="' + id + '"'), id);
+    for (const name of ["refreshAccessToken","showRecordEditor","updateRecord","removeRecord"])
+      assert.ok(js.includes(name), name);
+    assert.doesNotMatch(js, /localStorage\.setItem|sessionStorage\.setItem|Notification\.requestPermission/);
+    assert.doesNotMatch(html, /googleads|adsbygoogle|googlesyndication/);
+    assert.equal((await fetch(base + "/api/juridico/clientes")).status, 404);
   });
 });
 
@@ -273,5 +337,32 @@ test("aplica limite por IP nas consultas de CNPJ", async () => {
       if (index < 30) assert.equal(response.status, 400);
     }
     assert.equal(lastStatus, 429);
+  });
+});
+
+test("fluxo jurídico privado exige autorização adicional e oferece histórico de processos", async () => {
+  await withServer(async (base) => {
+    const html = await (await fetch(base + "/juridico/portal")).text();
+    const js = await (await fetch(base + "/juridico-portal.js")).text();
+    for (const id of ["movement-form", "movement-case", "movement-search", "movement-list"])
+      assert.ok(html.includes('id="' + id + '"'), id);
+    assert.match(js, /legal_access\?select=enabled,role/);
+    assert.match(js, /legal_movements/);
+    assert.match(js, /Esta conta ainda não foi autorizada/);
+    assert.doesNotMatch(js, /window\.alert|window\.confirm|Notification\.requestPermission/);
+  });
+});
+
+test("dashboard privado exibe auditoria sem dados pessoais ou notificações invasivas", async () => {
+  await withServer(async (base) => {
+    const [page, script] = await Promise.all([
+      fetch(base + "/juridico/portal"), fetch(base + "/juridico-portal.js"),
+    ]);
+    const html = await page.text();
+    const js = await script.text();
+    assert.match(html, /id="audit-list"/);
+    assert.match(js, /legal_audit_logs/);
+    assert.match(js, /entityNames/);
+    assert.doesNotMatch(js, /Notification\.requestPermission|window\.alert\(|window\.confirm\(/);
   });
 });

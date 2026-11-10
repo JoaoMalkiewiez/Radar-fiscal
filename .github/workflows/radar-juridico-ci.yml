@@ -1,0 +1,31 @@
+name: Radar Juridico - verificacoes (sem deploy)
+
+on:
+  push:
+    branches:
+      - feat/radar-juridico-v1
+  pull_request:
+    paths:
+      - 'Sitezino/**'
+      - '.github/workflows/radar-juridico-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Sitezino
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checar sintaxe do portal e servidor
+        run: |
+          node --check juridico-portal.js
+          node --check server.js
+      - name: Testar aplicacao existente e portal juridico
+        run: npm test
