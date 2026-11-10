@@ -63,6 +63,39 @@ test("serve a página inicial com segurança e gzip", async () => {
   });
 });
 
+test("prévia de gestão jurídica não permite cadastro e não substitui a área existente", async () => {
+  await withServer(async (base) => {
+    const [preview, original, api] = await Promise.all([
+      fetch(base + "/juridico/gestao"),
+      fetch(base + "/juridico"),
+      fetch(base + "/api/juridico/clientes"),
+    ]);
+    assert.equal(preview.status, 200);
+    assert.match(await preview.text(), /prévia visual com exemplos fictícios/i);
+    assert.equal(original.status, 200);
+    assert.match(await original.text(), /Consultar número processual/);
+    assert.equal(api.status, 404);
+  });
+});
+
+test("área privada não expõe credenciais nem permite gravação sem configuração", async () => {
+  await withServer(async (base) => {
+    const [page, script, config, write] = await Promise.all([
+      fetch(base + "/juridico/portal"),
+      fetch(base + "/juridico-portal.js"),
+      fetch(base + "/api/juridico/config"),
+      fetch(base + "/api/juridico/clientes", { method: "POST" }),
+    ]);
+    assert.equal(page.status, 200);
+    assert.match(await page.text(), /Entrar no Radar Jurídico/);
+    assert.equal(script.status, 200);
+    assert.match(await script.text(), /legal_clients/);
+    assert.equal(config.status, 503);
+    assert.equal(write.status, 405);
+    assert.equal((await config.json()).error, "Área privada ainda não configurada.");
+  });
+});
+
 test("revalida assets estáticos com ETag sem reenviar o arquivo", async () => {
   await withServer(async (base) => {
     const first = await fetch(base + "/styles.css");

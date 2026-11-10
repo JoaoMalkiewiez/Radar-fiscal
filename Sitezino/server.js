@@ -12,6 +12,10 @@ const PORT = Number(process.env.PORT) || 5500;
 const HOST = process.env.HOST || "0.0.0.0";
 const TRUST_PROXY = process.env.TRUST_PROXY === "1";
 const PUBLIC_URL = String(process.env.PUBLIC_URL || "").replace(/\/+$/, "");
+const LEGAL_SUPABASE_URL = String(process.env.LEGAL_SUPABASE_URL || "").replace(/\/+$/, "");
+const LEGAL_SUPABASE_KEY = String(process.env.LEGAL_SUPABASE_PUBLISHABLE_KEY || "");
+const legalSupabaseOrigin = /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(LEGAL_SUPABASE_URL)
+  ? LEGAL_SUPABASE_URL : "";
 
 const BRASIL_API = "https://brasilapi.com.br/api/cnpj/v1/";
 const IE_API = "https://publica.cnpj.ws/cnpj/";
@@ -41,6 +45,11 @@ const STATIC_FILES = {
   "/juridico.html": "text/html; charset=utf-8",
   "/juridico.css": "text/css; charset=utf-8",
   "/juridico.js": "text/javascript; charset=utf-8",
+  "/juridico-gestao.html": "text/html; charset=utf-8",
+  "/juridico-gestao.css": "text/css; charset=utf-8",
+  "/juridico-portal.html": "text/html; charset=utf-8",
+  "/juridico-portal.js": "text/javascript; charset=utf-8",
+  "/juridico-portal.css": "text/css; charset=utf-8",
   "/patrimonio.html": "text/html; charset=utf-8",
   "/patrimonio.css": "text/css; charset=utf-8",
   "/patrimonio.js": "text/javascript; charset=utf-8",
@@ -56,7 +65,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com",
-  "connect-src 'self' https://brasilapi.com.br https://publica.cnpj.ws https://fonts.googleapis.com https://fonts.gstatic.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com",
+  `connect-src 'self' ${legalSupabaseOrigin} https://brasilapi.com.br https://publica.cnpj.ws https://fonts.googleapis.com https://fonts.gstatic.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com`,
   "frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com",
   "base-uri 'self'",
   "form-action 'self'",
@@ -644,6 +653,19 @@ async function handleRequest(request, response) {
     return;
   }
 
+  if (pathname === "/api/juridico/config") {
+    if (request.method !== "GET") {
+      sendJSON(request, response, 405, { error: "Método não permitido." });
+      return;
+    }
+    if (!legalSupabaseOrigin || !/^sb_publishable_[a-zA-Z0-9_-]+$/.test(LEGAL_SUPABASE_KEY)) {
+      sendJSON(request, response, 503, { error: "Área privada ainda não configurada." });
+      return;
+    }
+    sendJSON(request, response, 200, { url: legalSupabaseOrigin, publishableKey: LEGAL_SUPABASE_KEY });
+    return;
+  }
+
   // Endpoint privado opcional. Inativo por padrão, sem dados nos parâmetros da URL.
   if (pathname === "/api/cpf/status") {
     if (request.method !== "GET") {
@@ -821,6 +843,11 @@ async function handleRequest(request, response) {
   if (pathname === "/") pathname = "/index.html";
   if (pathname === "/cpf" || pathname === "/cpf/") pathname = "/cpf.html";
   if (pathname === "/juridico" || pathname === "/juridico/") pathname = "/juridico.html";
+  if (pathname === "/juridico/gestao" || pathname === "/juridico/gestao/") {
+    // Esta página é apenas uma prévia sem dados reais. Nunca expor registros privados aqui.
+    pathname = "/juridico-gestao.html";
+  }
+  if (pathname === "/juridico/portal" || pathname === "/juridico/portal/") pathname = "/juridico-portal.html";
   if (pathname === "/patrimonio" || pathname === "/patrimonio/") pathname = "/patrimonio.html";
   if (pathname === "/privacidade") pathname = "/privacidade.html";
   serveStatic(request, response, pathname);
