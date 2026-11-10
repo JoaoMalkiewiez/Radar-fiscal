@@ -74,7 +74,7 @@ function logout() {
 function show(view) {
   for (const node of document.querySelectorAll(".view")) node.hidden = node.id !== view;
   for (const link of document.querySelectorAll("[data-view]")) link.classList.toggle("active", link.dataset.view === view);
-  const names = { dashboard: "Visão geral", clients: "Clientes", cases: "Processos", documents: "Documentos", events: "Agenda e prazos" };
+  const names = { dashboard: "Visão geral", investigation: "Investigação patrimonial", clients: "Clientes", cases: "Processos", documents: "Documentos", events: "Agenda e prazos" };
   $("page-title").textContent = names[view] || names.dashboard;
 }
 
