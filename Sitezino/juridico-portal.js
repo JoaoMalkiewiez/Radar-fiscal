@@ -8,7 +8,7 @@ let refreshToken = null;
 let tokenExpiresAt = 0;
 let currentUser = null;
 let refreshInFlight = null;
-const state = { clients: [], cases: [], events: [], documents: [], movements: [] };
+const state = { clients: [], cases: [], events: [], documents: [], movements: [], audits: [] };
 const $ = (id) => document.getElementById(id);
 
 function feedback(message) {
@@ -100,7 +100,7 @@ const RECORD_FIELDS = {
     ["completed", "Situação", "select", ["false", "true"]], ["notes", "Observações", "textarea"],
   ],
 };
-const TABLES = { clients: "legal_clients", cases: "legal_cases", events: "legal_events", documents: "legal_documents", movements: "legal_movements" };
+const TABLES = { clients: "legal_clients", cases: "legal_cases", events: "legal_events", documents: "legal_documents", movements: "legal_movements", audits: "legal_audit_logs" };
 let agendaPendingOnly = true;
 
 function searchable(rows, inputId, keys) {
@@ -265,6 +265,13 @@ function render() {
   itemList("event-list",events.filter((item)=> !agendaPendingOnly || !item.completed),describeEvent,{complete:true,edit:"events",overdue:isOverdue});
   itemList("document-list",documents,(item) => item.name,{open:openDocument,remove:"documents"});
   itemList("movement-list",movements,(item) => new Date(item.happened_at).toLocaleString("pt-BR") + " · " + item.case_title + " · " + item.title,{edit:"movements"});
+  const entityNames = { clients:"cliente",cases:"processo",events:"compromisso",documents:"documento",movements:"movimentação" };
+  const actionNames = { INSERT:"Criou",UPDATE:"Atualizou",DELETE:"Excluiu" };
+  itemList("audit-list",state.audits.slice(0,20), (item) =>
+    new Date(item.created_at).toLocaleString("pt-BR") + " · " +
+    (actionNames[item.action] || "Alterou") + " · " +
+    (entityNames[item.entity_type] || "registro"));
+
 }
 
 async function openDocument(item) {
