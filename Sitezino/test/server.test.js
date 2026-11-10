@@ -352,3 +352,17 @@ test("fluxo jurídico privado exige autorização adicional e oferece histórico
     assert.doesNotMatch(js, /window\.alert|window\.confirm|Notification\.requestPermission/);
   });
 });
+
+test("dashboard privado exibe auditoria sem dados pessoais ou notificações invasivas", async () => {
+  await withServer(async (base) => {
+    const [page, script] = await Promise.all([
+      fetch(base + "/juridico/portal"), fetch(base + "/juridico-portal.js"),
+    ]);
+    const html = await page.text();
+    const js = await script.text();
+    assert.match(html, /id="audit-list"/);
+    assert.match(js, /legal_audit_logs/);
+    assert.match(js, /entityNames/);
+    assert.doesNotMatch(js, /Notification\.requestPermission|window\.alert\(|window\.confirm\(/);
+  });
+});
