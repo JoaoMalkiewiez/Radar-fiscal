@@ -412,12 +412,16 @@ $("recover-form").addEventListener("submit", async (event) => {
         body: JSON.stringify({ email: form.elements.email.value.trim() }),
         cache: "no-store"
       });
-    // Resposta genérica para impedir enumeração de contas.
-    if (!response.ok && response.status !== 429) {
+    // Nunca indicar envio quando Supabase devolveu 429.
+    if (response.status === 429) {
+      throw new Error("O Supabase atingiu o limite temporário de envios de e-mail. Aguarde a liberação do serviço antes de solicitar novamente.");
+    }
+    // Resposta genérica em caso de sucesso para impedir enumeração de contas.
+    if (!response.ok) {
       throw new Error("Não foi possível solicitar o link. Confira a configuração de redirecionamento no Supabase.");
     }
     form.reset();
-    feedback("Se o e-mail estiver cadastrado, enviaremos um link. Verifique também a caixa de spam.");
+    feedback("Solicitação aceita. Se o e-mail estiver cadastrado, verifique a caixa de entrada e o spam.");
   } catch (error) { feedback(error.message); }
   finally { button.disabled = false; }
 });
