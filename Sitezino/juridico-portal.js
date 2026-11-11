@@ -320,6 +320,108 @@ function bindForm(id, table, fields, transform = (record) => record) {
   });
 }
 
+// Convites e recuperações Supabase entregam tokens na fragment URL.
+// Não persistir tokens em storage ou logs; removê-los imediatamente da URL.
+function consumeAuthRedirect() {
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const type = hash.get("type");
+  const token = hash.get("access_token");
+  const renewal = hash.get("refresh_token");
+  const issue = hash.get("error_description") || hash.get("error_code");
+  if (!token && !issue) return false;
+  history.replaceState(null, "", location.pathname + location.search);
+  if (issue) {
+    feedback("O link expirou ou não pôde ser validado. Solicite um novo convite ou recuperação de senha.");
+    return true;
+  }
+  if (!["invite", "recovery"].includes(type) || !renewal) {
+    feedback("Link de autenticação não reconhecido. Solicite uma recuperação de senha.");
+    return true;
+  }
+  accessToken = token;
+  refreshToken = renewal;
+  tokenExpiresAt = Date.now() + Math.max(30, Number(hash.get("expires_in")) || 3600) * 1000;
+  currentUser = null;
+  $("login-panel").hidden = true;
+  $("recover-panel").hidden = true;
+  $("workspace").hidden = true;
+  $("password-panel").hidden = false;
+  $("page-title").textContent = "Criar senha de acesso";
+  return true;
+}
+
+$("password-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  feedback("");
+  const form = event.currentTarget;
+  const button = form.querySelector("button");
+  const password = form.elements.password.value;
+  if (password.length < 12 || password !== form.elements.confirm.value) {
+    feedback("A senha deve ter pelo menos 12 caracteres e os dois campos devem coincidir.");
+    return;
+  }
+  if (!settings || !accessToken) {
+    feedback("Link de convite ou recuperação inválido. Solicite um novo.");
+    return;
+  }
+  button.disabled = true;
+  try {
+    const response = await fetch(settings.url + "/auth/v1/user", {
+      method: "PUT",
+      headers: {
+        apikey: settings.publishableKey,
+        Authorization: "Bearer " + accessToken,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ password }),
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error("Não foi possível definir a senha. O convite pode ter expirado.");
+    form.reset();
+    logout();
+    $("password-panel").hidden = true;
+    feedback("Senha definida! Agora entre com seu e-mail e a nova senha.");
+  } catch (error) { feedback(error.message); }
+  finally { button.disabled = false; }
+});
+
+$("open-recover").addEventListener("click", () => {
+  feedback("");
+  $("login-panel").hidden = true;
+  $("recover-panel").hidden = false;
+  $("page-title").textContent = "Recuperar acesso";
+});
+$("back-login").addEventListener("click", () => {
+  feedback("");
+  $("recover-panel").hidden = true;
+  $("login-panel").hidden = false;
+  $("page-title").textContent = "Acesso ao escritório";
+});
+$("recover-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button");
+  button.disabled = true;
+  feedback("");
+  try {
+    if (!settings) throw new Error("Serviço de autenticação indisponível.");
+    const response = await fetch(settings.url + "/auth/v1/recover?redirect_to=" +
+      encodeURIComponent(location.origin + "/juridico/portal"), {
+        method: "POST",
+        headers: { apikey: settings.publishableKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.elements.email.value.trim() }),
+        cache: "no-store"
+      });
+    // Resposta genérica para impedir enumeração de contas.
+    if (!response.ok && response.status !== 429) {
+      throw new Error("Não foi possível solicitar o link. Confira a configuração de redirecionamento no Supabase.");
+    }
+    form.reset();
+    feedback("Se o e-mail estiver cadastrado, enviaremos um link. Verifique também a caixa de spam.");
+  } catch (error) { feedback(error.message); }
+  finally { button.disabled = false; }
+});
+
 $("login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   feedback("");
@@ -424,6 +526,6 @@ $("document-form").addEventListener("submit", async (event) => {
     const response = await fetch("/api/juridico/config", { cache: "no-store" });
     if (!response.ok) throw new Error("Integração privada não configurada.");
     settings = await response.json();
-    $("login-panel").hidden = false;
+    if (!consumeAuthRedirect()) $("login-panel").hidden = false;
   } catch { $("setup").hidden = false; }
 })();
