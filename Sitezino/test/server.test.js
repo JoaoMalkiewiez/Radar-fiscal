@@ -443,3 +443,15 @@ test("convite Supabase permite definir senha no próprio portal sem guardar toke
     assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*accessToken|sessionStorage\.setItem\([^\n]*accessToken/);
   });
 });
+
+test("recuperação informa limite de e-mails Supabase HTTP 429 sem confirmar envio", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(base + "/juridico-portal.js");
+    assert.equal(response.status,200);
+    const js = await response.text();
+    assert.match(js, /response\.status === 429/);
+    assert.match(js, /limite temporário de envios de e-mail/);
+    assert.match(js, /Solicitação aceita\. Se o e-mail estiver cadastrado/);
+    assert.doesNotMatch(js, /response\.status !== 429/);
+  });
+});
