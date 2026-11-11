@@ -1,7 +1,7 @@
 # Missão 01 — revisão de autenticação e segurança
 
 Data: 11/11/2026. Base inspecionada: `main` em `721b8d5`.
-Branch: `fix/juridico-auth-session-security`. Relacionado à issue #10.
+Branch: `fix/juridico-auth-session-security`. [PR #12](https://github.com/JoaoMalkiewiez/Radar-fiscal/pull/12), implementação `cf17cfa`. Relacionado à issue #10.
 
 A implementação desta missão está disponível para revisão. A etapa 01 continua **parcialmente bloqueada**: a inspeção de políticas e os testes simulados não substituem E2E com contas de teste no Supabase. Não houve merge, deploy, migração, alteração de configuração externa ou leitura/escrita de registros de clientes.
 
