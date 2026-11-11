@@ -426,3 +426,20 @@ test("Dockerfile inclui todos os arquivos do portal jurídico antes do deploy Re
     assert.ok(copied.includes(filename), "Arquivo ausente na imagem Docker: " + filename);
   }
 });
+
+test("convite Supabase permite definir senha no próprio portal sem guardar tokens em storage", async () => {
+  await withServer(async (base) => {
+    const html = await (await fetch(base + "/juridico/portal")).text();
+    const js = await (await fetch(base + "/juridico-portal.js")).text();
+    for (const id of ["password-panel","password-form","recover-panel","recover-form","open-recover","back-login"]) {
+      assert.match(html, new RegExp('id="' + id + '"'));
+    }
+    assert.match(js, /function consumeAuthRedirect/);
+    assert.match(js, /history\.replaceState\(null, "", location\.pathname \+ location\.search\)/);
+    assert.match(js, /\/auth\/v1\/user/);
+    assert.match(js, /method: "PUT"/);
+    assert.match(js, /\/auth\/v1\/recover\?redirect_to=/);
+    assert.match(js, /"invite", "recovery"/);
+    assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*accessToken|sessionStorage\.setItem\([^\n]*accessToken/);
+  });
+});
