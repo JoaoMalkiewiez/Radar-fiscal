@@ -36,7 +36,7 @@
 
 | Ordem | Etapa | Estado | Dependência | Entrega e evidência para avançar |
 |---|---|---|---|---|
-| 00 | Linha de base, rastreabilidade e roteiro | **EM ANDAMENTO** | Nenhuma | Roadmap versionado; CI aprovado; documentação atualizada |
+| 00 | Linha de base, rastreabilidade e roteiro | **CONCLUÍDA (documental)** | Nenhuma | Roadmap versionado; CI aprovado; documentação atualizada |
 | 01 | Autenticação, permissões e recuperação | **BLOQUEADA parcialmente** | SMTP/limite de e-mails e conta de teste para E2E | Convite/recuperação testados com URL correta; erros 429 explícitos; logout; sessão expirada; usuário sem acesso bloqueado; nenhuma credencial exposta |
 | 02 | Dashboard de gestão | **PENDENTE** | Testes básicos de autenticação | Resumo útil de clientes, processos, prazos e atividade, preservando ações CRUD e responsividade |
 | 03 | Relatório de investigação em PDF | **PENDENTE** | Definir dados autorizados e saída | PDF com fonte, instante da consulta, escopo, status, ressalvas e SEM afirmar inexistência absoluta de bens; sem enviar dados sensíveis a terceiros |
@@ -78,7 +78,7 @@ Tarefa rastreável: [GitHub Issue #10](https://github.com/JoaoMalkiewiez/Radar-f
 
 | Data | Etapa | Decisão/resultado | Evidências | Próxima ação |
 |---|---|---|---|---|
-| 11/11/2026 | 00 | Roteiro de melhoria criado. Nenhuma alteração funcional nesta etapa. | PR do roadmap e CI a anexar após aprovação | Atualizar 00 para concluída; iniciar 01 quando possível |
+| 11/11/2026 | 00 | Roadmap criado, guia histórico referenciado e issue #10 aberta. Nenhuma alteração de runtime nesta etapa. | [PR #11](https://github.com/JoaoMalkiewiez/Radar-fiscal/pull/11); checks Validate Radar Fiscal e Radar Jurídico verificados no PR | Etapa 01: destravar Auth/SMTP e E2E de permissões |
 
 ## Critérios permanentes de produto
 
