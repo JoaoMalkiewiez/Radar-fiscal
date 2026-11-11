@@ -1,5 +1,8 @@
 # Radar Jurídico v1 — preparação e operação
 
+> **Guia histórico de implantação v1:** os trechos abaixo descrevem a preparação original de outubro/novembro de 2026. Não use declarações antigas de "não implantado" ou "PR draft" como estado atual. Para o status atualizado, pendências e sequência obrigatória, consulte [RADAR_JURIDICO_ROADMAP.md](RADAR_JURIDICO_ROADMAP.md). O Radar Jurídico foi publicado no Render, e a conta inicial de administrador foi autorizada; a validação E2E ainda está pendente.
+>
+
 ## Estado em 10/11/2026
 
 - **Supabase exclusivo criado**: [Radar Jurídico](https://supabase.com/dashboard/project/kokpxikvisheaxkicmop), região sa-east-1.
