@@ -4,6 +4,9 @@ const assert = require("node:assert/strict");
 const vm = require("node:vm");
 const fs = require("node:fs");
 const path = require("node:path");
+const { File } = require("node:buffer");
+const { webcrypto } = require("node:crypto");
+const investigationSource = fs.readFileSync(path.join(__dirname, "..", "juridico-investigacao.js"), "utf8");
 const source = fs.readFileSync(path.join(__dirname, "..", "juridico-portal.js"), "utf8");
 const config = { url: "https://synthetic.supabase.co", publishableKey: "synthetic-public-key" };
 const session = (id = "user-a", extra = {}) => ({ access_token: "synthetic-access", refresh_token: "synthetic-refresh", expires_in: 3600, user: { id }, ...extra });
@@ -11,7 +14,7 @@ const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(b
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function deferred() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
 
-async function portal(handler = () => json([]), { hash = "", search = "", configResponse, configPending } = {}) {
+async function portal(handler = () => json([]), { hash = "", search = "", configResponse, configPending, investigation = false, abortSignal = AbortSignal } = {}) {
   const nodes = new Map();
   function node(id = "") {
     if (nodes.has(id)) return nodes.get(id);
@@ -28,13 +31,19 @@ async function portal(handler = () => json([]), { hash = "", search = "", config
   const calls = [], history = [];
   const location = { hash, search, pathname: "/juridico/portal", origin: "https://radar.example" };
   const context = vm.createContext({
-    document: { getElementById: node, querySelectorAll(selector) { return selector === "form" ? [...nodes.values()].filter(n => n.id.endsWith("-form")) : []; }, createElement: tag => node(tag + Math.random()) },
+    document: { getElementById: node, querySelectorAll(selector) { return selector === "form" ? [...nodes.values()].filter(n => n.id.endsWith("-form")) : []; }, createElement: tag => node(tag + Math.random()), createTextNode: text => ({textContent: text}) },
     location, history: { replaceState(...args) { history.push(args[2]); } },
     fetch: async (url, options) => { calls.push({ url, options }); return url === "/api/juridico/config" ? (configPending ? configPending.promise : configResponse || json(config)) : handler(url, options); },
-    URLSearchParams, AbortSignal, Option: function(text, value) { this.text = text; this.value = value; },
+    File, crypto: webcrypto, RuralCsv: require("../rural-csv"),
+    FormData: class {
+      constructor(form) { this.fields = form.elements; }
+      get(key) { const field = this.fields[key]; return field?.files?.[0] || field?.value || null; }
+    },
+    URLSearchParams, AbortSignal: abortSignal, Option: function(text, value) { this.text = text; this.value = value; },
     Date, setTimeout, URL, console: { log() { throw Error("Unexpected log"); } },
   });
   vm.runInContext(source, context);
+  if (investigation) vm.runInContext(investigationSource, context);
   if (!configPending) await tick();
   const run = code => vm.runInContext(code, context);
   async function submit(id, fields) {
@@ -218,4 +227,212 @@ test("Storage negado limpa sessão e preserva isolamento no cliente", async () =
   const p = await portal(() => json({}, 403)); seed(p);
   await assert.rejects(p.run('api("/object/authenticated/legal-private/user-b/file.pdf", {storage:true})'), /não possui autorização/);
   assert.equal(p.run("accessToken"), null);
+});
+
+// Os dois scripts reais compartilham a mesma geração de sessão neste contexto.
+const csv = 'Titular;Denominação;Código do Imóvel\nPessoa Fictícia;Imóvel sintético;123';
+const investigationCases = [
+  {name:'CNPJ', form:'investigation-form', status:'investigation-status', result:'investigation-result',
+    fields:{cnpj:'00000000000000',purpose:'Diligência fictícia'}, payload:{brasil:{razao_social:'Empresa sintética A'}}},
+  {name:'DataJud', form:'datajud-form', status:'datajud-status', result:'datajud-results',
+    fields:{number:'00000000000000000000',tribunal:'tjsc'}, payload:{records:[{numeroProcesso:'00000000000000000000'}],source:'Fonte sintética',searchedAt:'2026-11-11',tribunal:'tjsc',coverage:'Teste',sourceUrl:'https://example.invalid'}},
+  {name:'SNCR', form:'rural-form', status:'rural-status', result:'rural-result',
+    fields:{holder:'Pessoa Fictícia',scope:'Município fictício'}},
+];
+function prepareInvestigation(p, item, read = async () => csv) {
+  const file = new File([csv], 'synthetic.csv', {type:'text/csv'});
+  file.text = read;
+  p.node('rural-form').elements.file = {value:'synthetic.csv', files:[file]};
+  seed(p); p.node('workspace').hidden = false;
+  return () => p.submit(item.form, item.fields);
+}
+for (const item of investigationCases) {
+  test(item.name + ': mesma sessão preserva resultado e controles', async () => {
+    const p = await portal(url => url.includes('/rest/') ? json([{enabled:true}]) : json(item.payload), {investigation:true});
+    await prepareInvestigation(p,item)();
+    assert.ok(p.node(item.result).children.length > 0);
+    assert.equal(p.node(item.form).querySelector().disabled, false);
+    assert.doesNotMatch(p.node(item.status).textContent, /Falha|não foi possível/i);
+  });
+  for (const phase of item.name === 'SNCR' ? ['authorization','file'] : ['authorization','response','body']) {
+    for (const nextUser of [null, 'user-b', 'user-a']) {
+      test(`${item.name}: resposta em ${phase} é descartada após logout / ${nextUser || 'sem sessão'}`, async () => {
+        const pending = deferred();
+        let externalCalls = 0;
+        const p = await portal(url => {
+          if (url.includes('/rest/')) return phase === 'authorization' ? pending.promise : json([{enabled:true}]);
+          externalCalls++;
+          return phase === 'response' ? pending.promise : {ok:true,json:()=>pending.promise};
+        }, {investigation:true});
+        const start = prepareInvestigation(p,item, () => pending.promise);
+        const attempt = start(); await tick();
+        p.run('logout()');
+        assert.equal(p.node(item.status).textContent,'');
+        assert.equal(p.node(item.form).querySelector().disabled,false);
+        if (nextUser) {
+          // Simula a nova sessão autenticada; inclusive reentrada da mesma conta.
+          seed(p); p.run(`currentUser=${JSON.stringify(nextUser)}`); p.node('workspace').hidden=false;
+          p.node(item.status).textContent='Consulta da nova sessão em andamento';
+          p.node(item.result).append('Resultado exclusivo da nova sessão');
+          p.node(item.form).querySelector().disabled=true;
+          p.node('rural-form').elements.file.value='new-session.csv';
+        }
+        pending.resolve(phase === 'authorization' ? json([{enabled:true}]) : phase === 'response' ? json(item.payload) : phase === 'file' ? csv : item.payload);
+        await attempt;
+        assert.equal(p.node(item.status).textContent,nextUser ? 'Consulta da nova sessão em andamento' : '');
+        assert.deepEqual(p.node(item.result).children,nextUser ? ['Resultado exclusivo da nova sessão'] : []);
+        assert.equal(p.node(item.form).querySelector().disabled,Boolean(nextUser));
+        if (nextUser && item.name === 'SNCR') assert.equal(p.node('rural-form').elements.file.value,'new-session.csv');
+        if (phase === 'authorization') assert.equal(externalCalls,0);
+      });
+    }
+  }
+  for (const nextUser of [null,'user-b']) test(`${item.name}: falha tardia não altera status/finally após logout / ${nextUser}`, async () => {
+    const pending = deferred();
+    const p = await portal(url => url.includes('/rest/') ? json([{enabled:true}]) : pending.promise.then(()=>{throw Error('Falha da sessão A');}), {investigation:true});
+    const attempt = prepareInvestigation(p,item,()=>pending.promise.then(()=>{throw Error('Falha do CSV da sessão A');}))();
+    await tick(); p.run('logout()');
+    if (nextUser) {seed(p); p.run("currentUser='user-b'"); p.node('workspace').hidden=false;}
+    p.node(item.status).textContent='Status atual';
+    p.node(item.form).querySelector().disabled=true;
+    p.node('rural-form').elements.file.value='new-session.csv';
+    pending.resolve(); await attempt;
+    assert.equal(p.node(item.status).textContent,'Status atual');
+    assert.equal(p.node(item.form).querySelector().disabled,true);
+    assert.equal(p.node('rural-form').elements.file.value,'new-session.csv');
+  });
+}
+
+// Relógio determinístico: sem esperar minutos, mas com AbortSignal real e aborto observado pelo fetch.
+function timeoutClock() {
+  let now = 0;
+  const deadlines = [];
+  return {
+    signal: { timeout(ms) { const controller = new AbortController(); deadlines.push({at:now+ms,controller}); return controller.signal; } },
+    advance(ms) { now+=ms; for (const {at,controller} of deadlines) if(at<=now) controller.abort(new DOMException('Timed out','TimeoutError')); },
+  };
+}
+function abortable(signal, pending) {
+  return new Promise((resolve,reject)=>{
+    if(signal.aborted) return reject(signal.reason);
+    signal.addEventListener('abort',()=>reject(signal.reason),{once:true});
+    pending.promise.then(resolve,reject);
+  });
+}
+test('timeout normal: leitura é abortada aos 30 s, sem repetir requisição', async () => {
+  const clock=timeoutClock(), pending=deferred();
+  const p=await portal((url,opts)=>abortable(opts.signal,pending),{abortSignal:clock.signal}); seed(p);
+  const read=p.run('api("/legal_clients")'); const rejected=assert.rejects(read,/temporariamente indisponível/);
+  clock.advance(29000); assert.equal(p.calls.at(-1).options.signal.aborted,false);
+  clock.advance(1000); await rejected;
+  assert.equal(p.calls.length,2);
+});
+for(const method of ['POST','PUT','GET']) test(`transferência ${method}: 10 MB completam após 20 s, antes do limite de 5 min`,async()=>{
+  const clock=timeoutClock(),pending=deferred();
+  const p=await portal((url,opts)=>abortable(opts.signal,pending),{abortSignal:clock.signal}); seed(p);
+  p.context.transferFile=new File([new Uint8Array(10485760)],'synthetic.pdf',{type:'application/pdf'});
+  const transfer=p.run(`api('/object/legal-private/user-a/synthetic.pdf',{method:'${method}',storage:true${method==='GET'?'':',body:transferFile'}})`);
+  clock.advance(120000); assert.equal(p.calls.at(-1).options.signal.aborted,false);
+  if(method!=='GET') assert.equal(p.calls.at(-1).options.body.size,10485760);
+  pending.resolve(method==='GET' ? new Response(new Uint8Array(10485760),{headers:{'content-type':'application/pdf'}}) : json({}));
+  const result=await transfer;
+  if(method==='GET') assert.equal(result.size,10485760);
+  assert.equal(p.calls.length,2);
+});
+test('upload: timeout de 5 min informa gravação incerta sem repetição',async()=>{
+  const clock=timeoutClock(),pending=deferred();
+  const p=await portal((url,opts)=>abortable(opts.signal,pending),{abortSignal:clock.signal}); seed(p);
+  const upload=p.run("api('/object/legal-private/user-a/file.pdf',{method:'POST',storage:true,body:'synthetic'})");
+  const rejected=assert.rejects(upload,e=>e.uncertainWrite && /resultado da gravação é incerto/.test(e.message));
+  clock.advance(299999);assert.equal(p.calls.at(-1).options.signal.aborted,false);
+  clock.advance(1);await rejected;assert.equal(p.calls.length,2);
+});
+for(const operation of [()=>{throw Error('network');},()=>json({},503),()=>({ok:true,status:200,headers:new Headers({'content-type':'application/json'}),json:async()=>{throw Error('truncated');}})]) test('gravação sem confirmação sinaliza resultado incerto: '+operation.toString(),async()=>{
+  const p=await portal(operation);seed(p);
+  await assert.rejects(p.run("api('/legal_clients',{method:'POST',body:{name:'Synthetic'}})"),e=>e.uncertainWrite && /antes de repetir/.test(e.message));
+  assert.equal(p.calls.length,2);
+});
+async function uploadForm(p, file = new File(['synthetic'],'synthetic.pdf',{type:'application/pdf'})) {
+  p.node('document-form').elements.file={files:[file],value:'synthetic.pdf'};
+  p.node('document-form').elements.case_id={value:''};
+  await p.node('document-form').listeners.submit({preventDefault(){},currentTarget:p.node('document-form')});
+}
+test('metadados com resposta incerta não apagam objeto enviado',async()=>{
+  const p=await portal(url=>url.includes('/storage/')?json({}):Promise.reject(Error('lost response')));seed(p);
+  await uploadForm(p);
+  assert.match(p.node('feedback').textContent,/resultado da gravação é incerto/);
+  assert.equal(p.calls.filter(c=>c.options.method==='DELETE').length,0);
+  assert.equal(p.calls.filter(c=>c.options.method==='POST').length,2);
+});
+test('metadados rejeitados definitivamente mantêm limpeza do objeto',async()=>{
+  const p=await portal(url=>url.includes('/rest/')?json({},400):json({}));seed(p);
+  await uploadForm(p);
+  assert.equal(p.calls.filter(c=>c.options.method==='DELETE').length,1);
+});
+test('falha de listagem após upload/metadados confirmados não apaga arquivo',async()=>{
+  const p=await portal((url,opts)=>opts.method==='POST'?json({}):json({},503));seed(p);
+  await uploadForm(p);
+  assert.match(p.node('feedback').textContent,/Documento salvo/);
+  assert.equal(p.calls.filter(c=>c.options.method==='DELETE').length,0);
+});
+
+for (const item of investigationCases) test(`${item.name}: login B e consulta B continuam intactos quando A termina`, async () => {
+  const oldPending=deferred(),newPending=deferred(); let externalCalls=0;
+  const p=await portal(url=>{
+    if(url.includes('grant_type=password')) return json(session('user-b'));
+    if(url.includes('legal_access')) return json([{enabled:true,role:'administrador'}]);
+    if(url.includes('/rest/')) return json([]);
+    return ++externalCalls===1 ? oldPending.promise : newPending.promise;
+  },{investigation:true});
+  const oldAttempt=prepareInvestigation(p,item,()=>oldPending.promise)();
+  await tick(); p.run('logout()'); await login(p);
+  assert.equal(p.run('currentUser'),'user-b'); assert.equal(p.node('workspace').hidden,false);
+  const fileB=new File([csv],'new-session.csv',{type:'text/csv'}); fileB.text=()=>newPending.promise;
+  p.node('rural-form').elements.file={files:[fileB],value:'new-session.csv'};
+  const newAttempt=p.submit(item.form,item.fields); await tick();
+  const statusB=p.node(item.status).textContent;
+  oldPending.resolve(item.name==='SNCR'?csv:json(item.payload));await oldAttempt;
+  assert.equal(p.node(item.status).textContent,statusB);
+  assert.equal(p.node(item.form).querySelector().disabled,true);
+  assert.equal(p.node(item.result).children.length,0);
+  if(item.name==='SNCR')assert.equal(p.node('rural-form').elements.file.value,'new-session.csv');
+  newPending.resolve(item.name==='SNCR'?csv:json(item.payload));await newAttempt;
+  assert.ok(p.node(item.result).children.length>0);
+  assert.equal(p.node(item.form).querySelector().disabled,false);
+});
+test('formulário aceita PDF de 10 MB e upload lento sem usar timeout normal',async()=>{
+  const clock=timeoutClock(),pending=deferred();
+  const p=await portal((url,opts)=>url.includes('/storage/')?abortable(opts.signal,pending):json(opts.method==='POST'?{}:[]),{abortSignal:clock.signal});seed(p);
+  const flow=uploadForm(p,new File([new Uint8Array(10485760)],'synthetic.pdf',{type:'application/pdf'}));
+  clock.advance(120000);assert.equal(p.node('document-form').querySelector().disabled,true);
+  pending.resolve(json({}));await flow;
+  assert.match(p.node('feedback').textContent,/Registro salvo com sucesso/);
+  const metadata=p.calls.find(c=>c.url.endsWith('/legal_documents'));
+  assert.equal(JSON.parse(metadata.options.body).size_bytes,10485760);
+  assert.equal(p.calls.filter(c=>c.options.method==='POST').length,2);
+});
+test('upload perdido antes da confirmação não cria metadados e avisa resultado incerto',async()=>{
+  const clock=timeoutClock(),pending=deferred();
+  const p=await portal((url,opts)=>abortable(opts.signal,pending),{abortSignal:clock.signal});seed(p);
+  const flow=uploadForm(p);clock.advance(300000);await flow;
+  assert.match(p.node('feedback').textContent,/resultado da gravação é incerto/);
+  assert.equal(p.node('document-form').querySelector().disabled,false);
+  assert.equal(p.calls.length,2);
+});
+test('upload tardio após logout não cria metadados na sessão B nem altera controles',async()=>{
+  const pending=deferred();const p=await portal(()=>pending.promise);seed(p);
+  const flow=uploadForm(p);p.run('logout()');
+  seed(p);p.run("currentUser='user-b'");
+  p.node('feedback').textContent='Sessão B';p.node('document-form').querySelector().disabled=true;
+  pending.resolve(json({}));await flow;
+  assert.equal(p.calls.length,2);
+  assert.equal(p.node('feedback').textContent,'Sessão B');
+  assert.equal(p.node('document-form').querySelector().disabled,true);
+});
+for(const [method,storage] of [['POST',false],['DELETE',true]])test(`${method}, storage=${storage}: escrita normal aborta em 30 s sem repetir`,async()=>{
+  const clock=timeoutClock(),pending=deferred();
+  const p=await portal((url,opts)=>abortable(opts.signal,pending),{abortSignal:clock.signal});seed(p);
+  const action=p.run(`api('/synthetic',{method:'${method}',storage:${storage},body:{name:'Synthetic'}})`);
+  const rejected=assert.rejects(action,e=>e.uncertainWrite && /resultado da gravação é incerto/.test(e.message));
+  clock.advance(30000);await rejected;assert.equal(p.calls.length,2);
 });

@@ -13,9 +13,22 @@ let recoveryRetryAt = 0;
 const SESSION_ENDED = "Sessão expirada. Entre novamente.";
 const UNAVAILABLE = "Serviço temporariamente indisponível. Verifique sua conexão e tente novamente.";
 
-async function request(url, options) {
-  try { return await fetch(url, { ...options, signal: AbortSignal.timeout(20000) }); }
-  catch { throw new Error(UNAVAILABLE); }
+// Requisições comuns: 30 s. Upload/download privado de até 10 MB: até 5 min.
+const REQUEST_TIMEOUTS = { normal: 30000, transfer: 300000 };
+function operationFailure(writing = false) {
+  const error = new Error(writing
+    ? UNAVAILABLE + " O resultado da gravação é incerto. Confira os registros e arquivos antes de repetir."
+    : UNAVAILABLE);
+  error.uncertainWrite = writing;
+  return error;
+}
+
+async function request(url, options, { transfer = false, writing = false } = {}) {
+  try {
+    return await fetch(url, {
+      ...options, signal: AbortSignal.timeout(transfer ? REQUEST_TIMEOUTS.transfer : REQUEST_TIMEOUTS.normal),
+    });
+  } catch { throw operationFailure(writing); }
 }
 
 function authBusy(button, label) {
@@ -85,9 +98,11 @@ async function api(path, { method = "GET", body, storage = false, retry = true }
   if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   const headers = { apikey: settings.publishableKey, Authorization: `Bearer ${accessToken}` };
   if (!storage && body !== undefined) headers["Content-Type"] = "application/json";
+  const writing = !["GET", "HEAD"].includes(method);
+  const transfer = storage && ["GET", "POST", "PUT"].includes(method);
   const response = await request(settings.url + (storage ? "/storage/v1" : "/rest/v1") + path, {
     method, headers, body: storage ? body : body === undefined ? undefined : JSON.stringify(body), cache: "no-store",
-  });
+  }, { transfer, writing });
   if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   if (response.status === 401 && retry) {
     await refreshAccessToken();
@@ -101,11 +116,13 @@ async function api(path, { method = "GET", body, storage = false, retry = true }
     logout();
     throw new Error("Esta conta não possui autorização para esta operação. Entre novamente ou contate o administrador.");
   }
-  if (response.status >= 500) throw new Error(UNAVAILABLE);
+  if (response.status >= 500) throw operationFailure(writing);
   if (!response.ok) throw new Error(`Operação não concluída (${response.status}). Verifique suas permissões.`);
   if (response.status === 204) return null;
   const type = response.headers.get("content-type") || "";
-  const result = await (type.includes("json") ? response.json() : response.blob());
+  let result;
+  try { result = await (type.includes("json") ? response.json() : response.blob()); }
+  catch { throw operationFailure(writing); }
   if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   return result;
 }
@@ -121,6 +138,9 @@ function logout() {
   for (const id of ["client-list", "case-list", "event-list", "document-list", "movement-list", "audit-list", "upcoming-list", "investigation-result", "rural-result", "datajud-results"])
     $(id).replaceChildren();
   for (const form of document.querySelectorAll("form")) form.reset();
+  for (const id of ["investigation-status", "datajud-status", "rural-status"]) $(id).textContent = "";
+  // Os finally antigos não podem reativar controles de outra sessão.
+  for (const id of ["investigation-form", "datajud-form", "rural-form", "document-form"]) $(id).querySelector("button").disabled = false;
   for (const id of ["client-search", "case-search", "document-search", "event-search", "movement-search"]) $(id).value = "";
   for (const id of ["case-client", "document-case", "event-case", "movement-case"])
     $(id).replaceChildren(new Option("Sem vínculo", ""));
@@ -589,6 +609,7 @@ $("document-form").addEventListener("submit", async (event) => {
   feedback("");
   const form = event.currentTarget;
   const button = form.querySelector("button");
+  const version = sessionVersion;
   button.disabled = true;
   try {
     const file = form.elements.file.files[0];
@@ -597,15 +618,25 @@ $("document-form").addEventListener("submit", async (event) => {
     const ext = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx" }[file.type];
     const key = `${currentUser}/${crypto.randomUUID()}.${ext}`;
     await api(`/object/legal-private/${key}`, { method: "POST", storage: true, body: file });
+    if (version !== sessionVersion) return;
     try {
-      await insert("legal_documents", { name: file.name.slice(0, 200), storage_path: key, size_bytes: file.size, mime_type: file.type, case_id: form.elements.case_id.value || null });
+      await api("/legal_documents", { method: "POST", body: { name: file.name.slice(0, 200), storage_path: key, size_bytes: file.size, mime_type: file.type, case_id: form.elements.case_id.value || null } });
     } catch (error) {
-      await api(`/object/legal-private/${key}`, { method: "DELETE", storage: true }).catch(() => {});
+      // Se o servidor pode ter gravado os metadados, não apagar o objeto confirmado.
+      if (version === sessionVersion && !error.uncertainWrite)
+        await api(`/object/legal-private/${key}`, { method: "DELETE", storage: true }).catch(() => {});
       throw error;
     }
+    if (version !== sessionVersion) return;
     form.reset();
-  } catch (error) { feedback(error.message); }
-  finally { button.disabled = false; }
+    // Falha de leitura posterior não desfaz upload/metadados já confirmados.
+    try {
+      await reloadData();
+      if (version === sessionVersion) feedback("Registro salvo com sucesso.");
+    }
+    catch { if (version === sessionVersion) feedback("Documento salvo, mas não foi possível atualizar a lista. Confira os registros antes de reenviar."); }
+  } catch (error) { if (version === sessionVersion) feedback(error.message); }
+  finally { if (version === sessionVersion) button.disabled = false; }
 });
 
 // Limpar o fragmento antes de qualquer espera de rede, inclusive se a configuração falhar.
