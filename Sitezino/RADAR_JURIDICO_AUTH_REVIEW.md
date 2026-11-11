@@ -22,7 +22,8 @@ Tokens continuam somente em memória; nenhum segredo foi adicionado. APIs, consu
 | --- | --- |
 | Linha de base `npm test` | 46/46 aprovados antes de editar |
 | `npm test` na primeira entrega | 83/83 aprovados: 46 existentes + 37 testes de comportamento do portal |
-| `npm test` após revisão GPT-6 | 135/135 aprovados: todos os 83 anteriores + 52 cenários novos de sessão/transferências |
+| `npm test` após primeira correção de revisão | 135/135 aprovados: todos os 83 anteriores + 52 cenários novos de sessão/transferências |
+| `npm test` após revisão CRUD | 207/207 aprovados: todos os 135 anteriores + 72 cenários novos de CRUD/sessão |
 | `node --check` | Aprovado em `juridico-portal.js`, `juridico-investigacao.js`, `test/juridico-auth.test.js`, `test/server.test.js` |
 | `git diff --check` | Aprovado |
 | Chromium, desktop 1440 px e mobile 390 px | Login autorizado, logout acessível, limpeza do DOM, recuperação 429 sem repetição de envio, convite/redefinição, URL limpa, storage vazio e ausência de erros JS. Servidor local e respostas Supabase interceptadas com dados fictícios; não é E2E real do provedor |
@@ -88,3 +89,29 @@ O logout limpa os três status/resultados e reabilita os controles para permitir
 - GitHub Actions: os workflows existentes são acionados pela atualização do PR. O comentário de entrega registra o novo SHA e os links/resultados dos checks desse head; conferir essa correspondência antes da revisão.
 
 Revisar especialmente `catch/finally` em `juridico-investigacao.js`, a limpeza feita por `logout()`, o orçamento de transferências em `request()/api()` e o caminho de confirmação/limpeza de documentos. Reexecutar `npm test` e verificar os cenários de atraso com `node --test test/juridico-auth.test.js`. As validações reais multiusuário, RLS/Storage, Auth URLs e SMTP permanecem na seção de pendências, sem alteração de políticas ou dados externos.
+
+
+## Revisão residual — mensagens, formulários e controles CRUD
+
+Referência: [segunda revisão GPT-6](https://github.com/JoaoMalkiewiez/Radar-fiscal/pull/12#issuecomment-6806329899), sobre o commit `8304706`. Continuação no mesmo PR #12 e branch `fix/juridico-auth-session-security`. Sem merge/deploy; etapa 01 permanece **parcialmente bloqueada** e etapa 02 não foi iniciada.
+
+### Correção
+
+- `insert`, `updateRecord` e `removeRecord` capturam a geração original. Verificam a geração após cada await, antes de prosseguir para nova requisição/listagem ou publicar mensagem de sucesso. A exclusão de documento verifica também a fronteira entre remover o objeto e remover metadados, impedindo que uma continuação de A use a sessão B.
+- `bindForm` só limpa o formulário, publica erro ou reabilita o botão se a geração original ainda estiver ativa. O editor inline e os botões criados por `createButton` aplicam a mesma guarda em `catch/finally`, cobrindo edição, conclusão e exclusão usadas pela interface existente.
+- O logout reabilita os botões dos formulários fixos de clientes, processos, agenda e movimentações para que B possa operar imediatamente. Os controles dinâmicos são removidos com as listas; callbacks antigos não modificam nem os controles destacados. Nenhum contrato, fonte, tabela ou política foi alterado.
+
+### Evidências desta correção
+
+- `npm test` em `Sitezino`: **207/207 aprovados**, incluindo os 135 anteriores e **72 novos testes**, sem remoção ou skip.
+- Matriz com operações reais do script em contexto `vm`: cadastro, edição, exclusão de registro e de documento, atrasos na gravação/Storage/listagem, sucesso tardio, HTTP 503 e falha de rede, logout sem nova sessão e logout seguido de login B pelo handler de autenticação. Confirma preservação de feedback, rascunhos e controles de B, e ausência de requisições subsequentes de A na sessão B.
+- Casos de sucesso/erro na sessão original preservam mensagens, limpeza e reativação de controles. Cadastros de processo, agenda e movimentação também têm cobertura de resposta tardia. Testes unitários nas fronteiras de microtask entre `api`/`reloadData` e seus callers verificam especificamente as guardas pós-await dos helpers.
+- `node --check`: `juridico-portal.js`, `juridico-investigacao.js`, `test/juridico-auth.test.js` e `test/server.test.js`; `git diff --check`: aprovados.
+- Chromium local em **390 px**, com dados fictícios e HTTP interceptado: A inicia cadastro/edição/exclusão, faz logout, B entra e inicia cadastro; a resposta de A chega enquanto B ainda aguarda. Mensagem, campo e botão de B permanecem intactos; ao liberar a resposta de B, seu cadastro conclui normalmente, com reset e botão reabilitado. Sem erros JavaScript.
+- O comentário de entrega no PR registra o novo SHA e os resultados/links dos dois GitHub Actions nesse head. Os testes de navegador e VM usam respostas sintéticas, **não E2E real Supabase**.
+
+### Riscos, pendências e revisão
+
+A proteção descarta continuações da sessão encerrada; não cancela nem desfaz uma escrita já aceita pelo servidor. Uma exclusão interrompida pela troca de sessão pode precisar de conferência dos objetos/metadados pela conta original. Após logout, mensagens de operações antigas são suprimidas, e não transferidas para B. Na sessão original, o comportamento e os erros existentes permanecem preservados. Reversão desta correção exige apenas reverter seu commit, sem SQL.
+
+Para o GPT-6: revisar a geração capturada nos quatro helpers e nos handlers inline/botões, repetir `npm test`, conferir o SHA dos GitHub Actions e reproduzir o fluxo A→logout→login B com uma operação de B pendente. Autenticação real A/B/C/D, isolamento REST/Storage, URLs Auth e SMTP continuam pendentes; não concluir etapa 01 nem publicar com base apenas nestas simulações.

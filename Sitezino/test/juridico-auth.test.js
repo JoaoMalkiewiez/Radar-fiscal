@@ -436,3 +436,120 @@ for(const [method,storage] of [['POST',false],['DELETE',true]])test(`${method}, 
   const rejected=assert.rejects(action,e=>e.uncertainWrite && /resultado da gravação é incerto/.test(e.message));
   clock.advance(30000);await rejected;assert.equal(p.calls.length,2);
 });
+
+function inlineClientEditor(p, suffix) {
+  const row=p.node('edit-row-'+suffix); row.querySelector=()=>null;
+  p.context.editRow=row;
+  p.run("showRecordEditor('clients',{id:'synthetic-client',kind:'pf',name:'Synthetic'},editRow)");
+  const form=row.children.at(-1), button=form.children.at(-1).children[0];
+  form.elements={kind:{value:'pf'},name:{value:'Synthetic '+suffix}};
+  return {form,button};
+}
+const crudCases=[
+  {name:'cadastro', phases:['write','reload'], begin(p){
+    const flow=p.submit('client-form',{kind:'pf',name:'Synthetic A'});
+    return {flow,form:p.node('client-form'),button:p.node('client-form').querySelector()};
+  }},
+  {name:'edição', phases:['write','reload'], begin(p){
+    const {form,button}=inlineClientEditor(p,'A');
+    return {flow:form.listeners.submit({preventDefault(){},currentTarget:form}),form,button};
+  }},
+  {name:'exclusão de registro', phases:['write','reload'], begin(p){
+    const button=p.run("createButton('Excluir',()=>removeRecord('clients',{id:'synthetic-client'}))");
+    return {flow:button.listeners.click(),button};
+  }},
+  {name:'exclusão de documento', phases:['storage','write','reload'], begin(p){
+    const button=p.run("createButton('Excluir',()=>removeRecord('documents',{id:'synthetic-document',storage_path:'user-a/synthetic.pdf'}))");
+    return {flow:button.listeners.click(),button};
+  }},
+];
+for(const item of crudCases) for(const phase of item.phases) {
+  for(const outcome of ['success','server-error','network-error']) for(const userB of [false,true]) {
+    test(`CRUD ${item.name}: ${phase}/${outcome}, logout${userB?' e login B':''} preservam UI atual`,async()=>{
+      const pending=deferred();let holdA=true,held=0;
+      const p=await portal((url,opts)=>{
+        if(url.includes('grant_type=password'))return json(session('user-b'));
+        if(url.includes('legal_access'))return json([{enabled:true}]);
+        const storage=url.includes('/storage/');
+        const shouldHold=holdA && (phase==='reload'?opts.method==='GET':phase==='storage'?storage:opts.method!=='GET'&&!storage);
+        if(shouldHold){held++;return pending.promise.then(()=>{
+          if(outcome==='network-error')throw Error('Network failure from A');
+          return json(phase==='reload'?[]:{},outcome==='server-error'?503:200);
+        });}
+        return json(opts.method==='GET'?[]:{});
+      });
+      seed(p);p.node('workspace').hidden=false;
+      const old=item.begin(p);await tick();assert.ok(held>0,'A alcançou a etapa pendente');
+      p.run('logout()');holdA=false;
+      assert.equal(p.node('client-form').querySelector().disabled,false);
+      if(userB){await login(p);assert.equal(p.run('currentUser'),'user-b');}
+      p.node('feedback').textContent='Mensagem da interface atual';
+      const formB=p.node('client-form');formB.elements.name={value:'Rascunho exclusivo de B'};
+      formB.querySelector().disabled=true;
+      const editorB=inlineClientEditor(p,'B');editorB.button.disabled=true;
+      editorB.form.elements.name.value='Edição exclusiva de B';
+      const callsBefore=p.calls.length;
+      pending.resolve();await old.flow;
+      assert.equal(p.node('feedback').textContent,'Mensagem da interface atual');
+      assert.equal(formB.elements.name.value,'Rascunho exclusivo de B');
+      assert.equal(formB.querySelector().disabled,true);
+      assert.equal(editorB.form.elements.name.value,'Edição exclusiva de B');
+      assert.equal(editorB.button.disabled,true);
+      assert.equal(old.button.disabled,true,'finally antigo não modifica nem controle destacado');
+      assert.equal(p.calls.length,callsBefore,'nenhuma continuação envia nova requisição pela sessão B');
+    });
+  }
+}
+for(const item of crudCases) for(const outcome of ['success','failure']) {
+  test(`CRUD ${item.name}: ${outcome} na mesma sessão mantém feedback/controles`,async()=>{
+    const p=await portal((url,opts)=>json(opts.method==='GET'?[]:{},opts.method!=='GET'&&outcome==='failure'?400:200));seed(p);
+    const action=item.begin(p);await action.flow;
+    assert.equal(action.button.disabled,false);
+    assert.match(p.node('feedback').textContent,outcome==='failure'?/Operação não concluída/:/Registro (salvo|atualizado|excluído)/);
+    if(item.name==='cadastro')assert.equal(action.form.elements.name.value,outcome==='success'?'':'Synthetic A');
+  });
+}
+for(const [id,fields] of [
+  ['case-form',{title:'Synthetic case',status:'ativo'}],
+  ['event-form',{title:'Synthetic event',kind:'tarefa',starts_at:'2026-11-11T12:00'}],
+  ['movement-form',{title:'Synthetic movement',case_id:'synthetic-case',happened_at:'2026-11-11T12:00'}],
+])test(`${id}: cadastro tardio não limpa formulário nem habilita botão de B`,async()=>{
+  const pending=deferred();
+  const p=await portal((url,opts)=>url.includes('grant_type=password')?json(session('user-b')):url.includes('legal_access')?json([{enabled:true}]):opts.method==='POST'?pending.promise:json([]));seed(p);
+  const flow=p.submit(id,fields);p.run('logout()');
+  assert.equal(p.node(id).querySelector().disabled,false);
+  await login(p);p.node(id).elements.title.value='Rascunho B';p.node(id).querySelector().disabled=true;
+  p.node('feedback').textContent='Mensagem B';pending.resolve(json({}));await flow;
+  assert.equal(p.node(id).elements.title.value,'Rascunho B');
+  assert.equal(p.node(id).querySelector().disabled,true);
+  assert.equal(p.node('feedback').textContent,'Mensagem B');
+});
+
+// Exercita também a fronteira entre a Promise resolvida e a continuação do helper.
+// A troca pode ocorrer nessa microtask, depois da última guarda interna de api/reloadData.
+for(const operation of [
+  "insert('legal_clients',{name:'Synthetic A'})",
+  "updateRecord('legal_clients','synthetic-a',{name:'Synthetic A'})",
+  "removeRecord('clients',{id:'synthetic-a'})",
+])for(const boundary of ['api','reloadData'])test(`${operation}: guarda após ${boundary} impede continuação na geração B`,async()=>{
+  const p=await portal();seed(p);
+  p.context.transitionToB=()=>{
+    p.run('logout()');seed(p);p.run("currentUser='user-b'");
+    p.node('feedback').textContent='Mensagem B';
+  };
+  p.run(`
+    let helperRequests=0;
+    api=async()=>{helperRequests++;${boundary==='api'?'transitionToB();':''}};
+    reloadData=async()=>{${boundary==='reloadData'?'transitionToB();':''}};
+  `);
+  await assert.rejects(p.run(operation),/Sessão expirada/);
+  assert.equal(p.node('feedback').textContent,'Mensagem B');
+  assert.equal(p.run('helperRequests'),1);
+});
+test('exclusão de documento: mudança de geração após objeto impede DELETE dos metadados',async()=>{
+  const p=await portal();seed(p);
+  p.context.transitionToB=()=>{p.run('logout()');seed(p);p.run("currentUser='user-b'");};
+  p.run('let deleteRequests=0; api=async()=>{deleteRequests++;transitionToB();};');
+  await assert.rejects(p.run("removeRecord('documents',{id:'synthetic-doc',storage_path:'user-a/synthetic.pdf'})"),/Sessão expirada/);
+  assert.equal(p.run('deleteRequests'),1);
+});

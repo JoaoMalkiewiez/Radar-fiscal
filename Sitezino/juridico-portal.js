@@ -140,7 +140,7 @@ function logout() {
   for (const form of document.querySelectorAll("form")) form.reset();
   for (const id of ["investigation-status", "datajud-status", "rural-status"]) $(id).textContent = "";
   // Os finally antigos não podem reativar controles de outra sessão.
-  for (const id of ["investigation-form", "datajud-form", "rural-form", "document-form"]) $(id).querySelector("button").disabled = false;
+  for (const id of ["investigation-form", "datajud-form", "rural-form", "document-form", "client-form", "case-form", "event-form", "movement-form"]) $(id).querySelector("button").disabled = false;
   for (const id of ["client-search", "case-search", "document-search", "event-search", "movement-search"]) $(id).value = "";
   for (const id of ["case-client", "document-case", "event-case", "movement-case"])
     $(id).replaceChildren(new Option("Sem vínculo", ""));
@@ -197,10 +197,11 @@ function createButton(text, action, variant = "secondary") {
   button.className = variant;
   button.textContent = text;
   button.addEventListener("click", async () => {
+    const version = sessionVersion;
     button.disabled = true;
     try { await action(button); }
-    catch (error) { feedback(error.message); }
-    finally { button.disabled = false; }
+    catch (error) { if (version === sessionVersion) feedback(error.message); }
+    finally { if (version === sessionVersion) button.disabled = false; }
   });
   return button;
 }
@@ -282,6 +283,7 @@ function showRecordEditor(type, item, row) {
   editor.append(actions);
   editor.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const version = sessionVersion;
     save.disabled = true;
     const values = formValues(editor, RECORD_FIELDS[type].map(([field]) => field));
     if (type === "movements") values.happened_at = new Date(values.happened_at).toISOString();
@@ -290,27 +292,34 @@ function showRecordEditor(type, item, row) {
       values.starts_at = new Date(values.starts_at).toISOString();
     }
     try { await updateRecord(TABLES[type], item.id, values); }
-    catch (error) { feedback(error.message); }
-    finally { save.disabled = false; }
+    catch (error) { if (version === sessionVersion) feedback(error.message); }
+    finally { if (version === sessionVersion) save.disabled = false; }
   });
   row.append(editor);
 }
 
 async function updateRecord(table, id, value) {
+  const version = sessionVersion;
   await api("/" + table + "?id=eq." + encodeURIComponent(id), { method: "PATCH", body: value });
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   await reloadData();
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   feedback("Registro atualizado.");
 }
 
 async function removeRecord(type, item) {
+  const version = sessionVersion;
   const table = TABLES[type];
   if (type === "documents") {
     const encoded = item.storage_path.split("/").map(encodeURIComponent).join("/");
     // Exclui primeiro o objeto; se a exclusão do registro falhar, ele continua visível para nova tentativa.
     await api("/object/legal-private/" + encoded, { method: "DELETE", storage: true });
+    if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   }
   await api("/" + table + "?id=eq." + encodeURIComponent(item.id), { method: "DELETE" });
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   await reloadData();
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   feedback("Registro excluído.");
 }
 
@@ -386,23 +395,27 @@ function formValues(form, fields) {
 }
 
 async function insert(table, value) {
+  const version = sessionVersion;
   await api(`/${table}`, { method: "POST", body: value });
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   await reloadData();
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   feedback("Registro salvo com sucesso.");
 }
 
 function bindForm(id, table, fields, transform = (record) => record) {
   $(id).addEventListener("submit", async (event) => {
     event.preventDefault();
+    const version = sessionVersion;
     feedback("");
     const form = event.currentTarget;
     const button = form.querySelector("button[type=submit],button:not([type])");
     button.disabled = true;
     try {
       await insert(table, transform(formValues(form, fields)));
-      form.reset();
-    } catch (error) { feedback(error.message); }
-    finally { button.disabled = false; }
+      if (version === sessionVersion) form.reset();
+    } catch (error) { if (version === sessionVersion) feedback(error.message); }
+    finally { if (version === sessionVersion) button.disabled = false; }
   });
 }
 
