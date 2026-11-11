@@ -52,6 +52,8 @@
 
 ### Detalhamento da etapa 01 (próxima a destravar)
 
+Tarefa rastreável: [GitHub Issue #10](https://github.com/JoaoMalkiewiez/Radar-fiscal/issues/10).
+
 - Conferir URLs do Supabase Auth: site público e redirecionamento para `/juridico/portal`. A configuração de projeto pode exigir ação manual no dashboard.
 - Evitar envio repetido durante rate limit 429; avaliar SMTP gratuito somente se as condições contratuais e limites forem confirmados, sem criar custos ou armazenar segredos no GitHub.
 - Testes: login, conta autorizada, conta sem `legal_access`, recuperação de senha, convite, token expirado, refresh, logout, reentrada, erro de rede.
