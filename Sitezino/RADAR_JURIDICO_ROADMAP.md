@@ -79,6 +79,7 @@ Tarefa rastreável: [GitHub Issue #10](https://github.com/JoaoMalkiewiez/Radar-f
 | Data | Etapa | Decisão/resultado | Evidências | Próxima ação |
 |---|---|---|---|---|
 | 11/11/2026 | 00 | Roadmap criado, guia histórico referenciado e issue #10 aberta. Nenhuma alteração de runtime nesta etapa. | [PR #11](https://github.com/JoaoMalkiewiez/Radar-fiscal/pull/11); checks Validate Radar Fiscal e Radar Jurídico verificados no PR | Etapa 01: destravar Auth/SMTP e E2E de permissões |
+| 11/11/2026 | 01 | Missão 01 em revisão: proteção contra respostas após logout, limpeza de DOM, erros/429, sanitização de links e logout mobile; 83 testes locais aprovados, Chromium com Auth simulado. Etapa segue parcialmente BLOQUEADA por E2E real/SMTP e contas sintéticas indisponíveis. Sem merge/deploy ou mudança de RLS. | Branch `fix/juridico-auth-session-security`; [relatório técnico](RADAR_JURIDICO_AUTH_REVIEW.md) | Revisão GPT-6, CI e validação real multiusuário antes de concluir etapa 01 |
 
 ## Critérios permanentes de produto
 

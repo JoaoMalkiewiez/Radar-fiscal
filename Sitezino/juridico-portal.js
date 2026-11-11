@@ -8,6 +8,44 @@ let refreshToken = null;
 let tokenExpiresAt = 0;
 let currentUser = null;
 let refreshInFlight = null;
+let sessionVersion = 0;
+let recoveryRetryAt = 0;
+const SESSION_ENDED = "Sessão expirada. Entre novamente.";
+const UNAVAILABLE = "Serviço temporariamente indisponível. Verifique sua conexão e tente novamente.";
+
+async function request(url, options) {
+  try { return await fetch(url, { ...options, signal: AbortSignal.timeout(20000) }); }
+  catch { throw new Error(UNAVAILABLE); }
+}
+
+function authBusy(button, label) {
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = label;
+  button.setAttribute("aria-busy", "true");
+  return () => {
+    button.disabled = false;
+    button.textContent = original;
+    button.setAttribute("aria-busy", "false");
+  };
+}
+
+async function authData(response) {
+  if (response.status === 429) throw new Error("Muitas tentativas. Aguarde antes de tentar novamente.");
+  if (response.status >= 500) throw new Error(UNAVAILABLE);
+  if (!response.ok) return {};
+  try {
+    const data = await response.json();
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error(UNAVAILABLE);
+    return data;
+  } catch { throw new Error(UNAVAILABLE); }
+}
+
+function expiresAt(seconds) {
+  const lifetime = Number(seconds);
+  if (!Number.isFinite(lifetime) || lifetime <= 0) throw new Error(SESSION_ENDED);
+  return Date.now() + lifetime * 1000;
+}
 const state = { clients: [], cases: [], events: [], documents: [], movements: [], audits: [] };
 const $ = (id) => document.getElementById(id);
 
@@ -20,31 +58,37 @@ function feedback(message) {
 async function refreshAccessToken() {
   if (!settings || !refreshToken) throw new Error("Sessão expirada. Entre novamente.");
   if (refreshInFlight) return refreshInFlight;
-  refreshInFlight = (async () => {
-    const response = await fetch(settings.url + "/auth/v1/token?grant_type=refresh_token", {
+  const version = sessionVersion;
+  const pending = (async () => {
+    const response = await request(settings.url + "/auth/v1/token?grant_type=refresh_token", {
       method: "POST", headers: { apikey: settings.publishableKey, "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }), cache: "no-store",
     });
-    const data = await response.json();
+    const data = await authData(response);
     if (!response.ok || !data.access_token || !data.refresh_token || data.user?.id !== currentUser)
       throw new Error("Sessão expirada. Entre novamente.");
+    if (version !== sessionVersion) throw new Error(SESSION_ENDED);
     accessToken = data.access_token;
     refreshToken = data.refresh_token;
-    tokenExpiresAt = Date.now() + Math.max(30, data.expires_in || 3600) * 1000;
+    tokenExpiresAt = expiresAt(data.expires_in);
   })();
-  try { await refreshInFlight; }
-  catch (error) { logout(); throw error; }
-  finally { refreshInFlight = null; }
+  refreshInFlight = pending;
+  try { await pending; }
+  catch (error) { if (version === sessionVersion) logout(); throw error; }
+  finally { if (refreshInFlight === pending) refreshInFlight = null; }
 }
 
 async function api(path, { method = "GET", body, storage = false, retry = true } = {}) {
   if (!settings || !accessToken) throw new Error("Faça login para continuar.");
+  const version = sessionVersion;
   if (Date.now() + 30000 >= tokenExpiresAt) await refreshAccessToken();
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   const headers = { apikey: settings.publishableKey, Authorization: `Bearer ${accessToken}` };
   if (!storage && body !== undefined) headers["Content-Type"] = "application/json";
-  const response = await fetch(settings.url + (storage ? "/storage/v1" : "/rest/v1") + path, {
+  const response = await request(settings.url + (storage ? "/storage/v1" : "/rest/v1") + path, {
     method, headers, body: storage ? body : body === undefined ? undefined : JSON.stringify(body), cache: "no-store",
   });
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
   if (response.status === 401 && retry) {
     await refreshAccessToken();
     return api(path, { method, body, storage, retry: false });
@@ -53,18 +97,36 @@ async function api(path, { method = "GET", body, storage = false, retry = true }
     logout();
     throw new Error("Sessão expirada. Entre novamente.");
   }
+  if (response.status === 403) {
+    logout();
+    throw new Error("Esta conta não possui autorização para esta operação. Entre novamente ou contate o administrador.");
+  }
+  if (response.status >= 500) throw new Error(UNAVAILABLE);
   if (!response.ok) throw new Error(`Operação não concluída (${response.status}). Verifique suas permissões.`);
   if (response.status === 204) return null;
   const type = response.headers.get("content-type") || "";
-  return type.includes("json") ? response.json() : response.blob();
+  const result = await (type.includes("json") ? response.json() : response.blob());
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
+  return result;
 }
 
 function logout() {
+  sessionVersion += 1;
+  refreshInFlight = null;
   accessToken = null;
   refreshToken = null;
   tokenExpiresAt = 0;
   currentUser = null;
   for (const key of Object.keys(state)) state[key] = [];
+  for (const id of ["client-list", "case-list", "event-list", "document-list", "movement-list", "audit-list", "upcoming-list", "investigation-result", "rural-result", "datajud-results"])
+    $(id).replaceChildren();
+  for (const form of document.querySelectorAll("form")) form.reset();
+  for (const id of ["client-search", "case-search", "document-search", "event-search", "movement-search"]) $(id).value = "";
+  for (const id of ["case-client", "document-case", "event-case", "movement-case"])
+    $(id).replaceChildren(new Option("Sem vínculo", ""));
+  for (const id of ["count-clients", "count-cases", "count-events", "count-documents"]) $(id).textContent = "0";
+  $("password-panel").hidden = true;
+  $("recover-panel").hidden = true;
   $("workspace").hidden = true;
   $("login-panel").hidden = !settings;
   $("logout").hidden = true;
@@ -286,11 +348,15 @@ async function openDocument(item) {
 }
 
 async function reloadData() {
-  const tables = TABLES;
-  await Promise.all(Object.entries(tables).map(async ([key, name]) => {
+  const version = sessionVersion;
+  const rows = await Promise.all(Object.entries(TABLES).map(async ([key, name]) => {
     const order = key === "events" ? "starts_at.asc" : key === "movements" ? "happened_at.desc" : "created_at.desc";
-    state[key] = await api(`/${name}?select=*&order=${order}&limit=200`);
+    const values = await api(`/${name}?select=*&order=${order}&limit=200`);
+    if (!Array.isArray(values)) throw new Error(UNAVAILABLE);
+    return [key, values];
   }));
+  if (version !== sessionVersion) throw new Error(SESSION_ENDED);
+  Object.assign(state, Object.fromEntries(rows));
   render();
 }
 
@@ -328,19 +394,24 @@ function consumeAuthRedirect() {
   const token = hash.get("access_token");
   const renewal = hash.get("refresh_token");
   const issue = hash.get("error_description") || hash.get("error_code");
-  if (!token && !issue) return false;
-  history.replaceState(null, "", location.pathname + location.search);
-  if (issue) {
+  const query = new URLSearchParams(location.search);
+  const sensitive = ["access_token", "refresh_token", "token", "token_hash", "code", "error", "error_description", "error_code"];
+  const queryAuth = sensitive.some((key) => query.has(key));
+  if (!sensitive.some((key) => hash.has(key)) && !queryAuth) return false;
+  for (const key of sensitive) query.delete(key);
+  history.replaceState(null, "", location.pathname + (query.toString() ? "?" + query.toString() : ""));
+  if (issue || hash.has("error") || queryAuth) {
     feedback("O link expirou ou não pôde ser validado. Solicite um novo convite ou recuperação de senha.");
     return true;
   }
-  if (!["invite", "recovery"].includes(type) || !renewal) {
+  if (!["invite", "recovery"].includes(type) || !token || !renewal) {
     feedback("Link de autenticação não reconhecido. Solicite uma recuperação de senha.");
     return true;
   }
   accessToken = token;
   refreshToken = renewal;
-  tokenExpiresAt = Date.now() + Math.max(30, Number(hash.get("expires_in")) || 3600) * 1000;
+  try { tokenExpiresAt = expiresAt(hash.get("expires_in")); }
+  catch { logout(); feedback("O link expirou ou é inválido. Solicite um novo convite ou recuperação."); return true; }
   currentUser = null;
   $("login-panel").hidden = true;
   $("recover-panel").hidden = true;
@@ -356,7 +427,7 @@ $("password-form").addEventListener("submit", async (event) => {
   const form = event.currentTarget;
   const button = form.querySelector("button");
   const password = form.elements.password.value;
-  if (password.length < 12 || password !== form.elements.confirm.value) {
+  if (password.length > 128 || password.length < 12 || password !== form.elements.confirm.value) {
     feedback("A senha deve ter pelo menos 12 caracteres e os dois campos devem coincidir.");
     return;
   }
@@ -364,9 +435,9 @@ $("password-form").addEventListener("submit", async (event) => {
     feedback("Link de convite ou recuperação inválido. Solicite um novo.");
     return;
   }
-  button.disabled = true;
+  const done = authBusy(button, "Salvando senha…");
   try {
-    const response = await fetch(settings.url + "/auth/v1/user", {
+    const response = await request(settings.url + "/auth/v1/user", {
       method: "PUT",
       headers: {
         apikey: settings.publishableKey,
@@ -376,13 +447,14 @@ $("password-form").addEventListener("submit", async (event) => {
       body: JSON.stringify({ password }),
       cache: "no-store"
     });
+    if (response.status >= 500) throw new Error(UNAVAILABLE);
     if (!response.ok) throw new Error("Não foi possível definir a senha. O convite pode ter expirado.");
     form.reset();
     logout();
     $("password-panel").hidden = true;
     feedback("Senha definida! Agora entre com seu e-mail e a nova senha.");
   } catch (error) { feedback(error.message); }
-  finally { button.disabled = false; }
+  finally { done(); }
 });
 
 $("open-recover").addEventListener("click", () => {
@@ -401,11 +473,12 @@ $("recover-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = event.currentTarget;
   const button = form.querySelector("button");
-  button.disabled = true;
+  const done = authBusy(button, "Solicitando link…");
   feedback("");
   try {
     if (!settings) throw new Error("Serviço de autenticação indisponível.");
-    const response = await fetch(settings.url + "/auth/v1/recover?redirect_to=" +
+    if (Date.now() < recoveryRetryAt) throw new Error("Aguarde antes de solicitar outro e-mail de recuperação.");
+    const response = await request(settings.url + "/auth/v1/recover?redirect_to=" +
       encodeURIComponent(location.origin + "/juridico/portal"), {
         method: "POST",
         headers: { apikey: settings.publishableKey, "Content-Type": "application/json" },
@@ -414,8 +487,12 @@ $("recover-form").addEventListener("submit", async (event) => {
       });
     // Nunca indicar envio quando Supabase devolveu 429.
     if (response.status === 429) {
+      const retry = response.headers.get("retry-after");
+      const delay = Number(retry) * 1000 || Date.parse(retry) - Date.now() || 60000;
+      recoveryRetryAt = Date.now() + Math.max(60000, delay);
       throw new Error("O Supabase atingiu o limite temporário de envios de e-mail. Aguarde a liberação do serviço antes de solicitar novamente.");
     }
+    if (response.status >= 500) throw new Error(UNAVAILABLE);
     // Resposta genérica em caso de sucesso para impedir enumeração de contas.
     if (!response.ok) {
       throw new Error("Não foi possível solicitar o link. Confira a configuração de redirecionamento no Supabase.");
@@ -423,7 +500,7 @@ $("recover-form").addEventListener("submit", async (event) => {
     form.reset();
     feedback("Solicitação aceita. Se o e-mail estiver cadastrado, verifique a caixa de entrada e o spam.");
   } catch (error) { feedback(error.message); }
-  finally { button.disabled = false; }
+  finally { done(); }
 });
 
 $("login-form").addEventListener("submit", async (event) => {
@@ -431,31 +508,37 @@ $("login-form").addEventListener("submit", async (event) => {
   feedback("");
   const form = event.currentTarget;
   const button = form.querySelector("button");
-  button.disabled = true;
+  const done = authBusy(button, "Entrando…");
+  const version = sessionVersion;
   try {
-    const body = { email: form.elements.email.value, password: form.elements.password.value };
-    const response = await fetch(settings.url + "/auth/v1/token?grant_type=password", {
+    if (!settings) throw new Error(UNAVAILABLE);
+    const body = { email: form.elements.email.value.trim(), password: form.elements.password.value };
+    const response = await request(settings.url + "/auth/v1/token?grant_type=password", {
       method: "POST", headers: { apikey: settings.publishableKey, "Content-Type": "application/json" },
       body: JSON.stringify(body), cache: "no-store",
     });
-    const data = await response.json();
+    const data = await authData(response);
+    if (version !== sessionVersion) throw new Error(SESSION_ENDED);
     if (!response.ok || !data.access_token || !data.refresh_token || !data.user?.id) throw new Error("Não foi possível entrar. Verifique as credenciais.");
     accessToken = data.access_token;
     refreshToken = data.refresh_token;
-    tokenExpiresAt = Date.now() + Math.max(30, data.expires_in || 3600) * 1000;
+    tokenExpiresAt = expiresAt(data.expires_in);
     currentUser = data.user.id;
     form.reset();
     const membership = await api("/legal_access?select=enabled,role&user_id=eq." + encodeURIComponent(currentUser));
-    if (!Array.isArray(membership) || !membership.some((entry) => entry.enabled)) {
+    if (!Array.isArray(membership) || !membership.some((entry) => entry.enabled === true)) {
       throw new Error("Esta conta ainda não foi autorizada para acessar o escritório.");
     }
     await reloadData();
+    if (version !== sessionVersion) throw new Error(SESSION_ENDED);
     $("login-panel").hidden = true;
     $("workspace").hidden = false;
     $("logout").hidden = false;
     show("dashboard");
-  } catch (error) { logout(); feedback(error.message); }
-  finally { button.disabled = false; }
+  } catch (error) {
+    if (version === sessionVersion) { logout(); feedback(error.message); }
+  }
+  finally { done(); }
 });
 
 $("logout").addEventListener("click", async () => {
@@ -464,7 +547,7 @@ $("logout").addEventListener("click", async () => {
   feedback("Sessão local encerrada.");
   if (token && settings) {
     try {
-      const response = await fetch(settings.url + "/auth/v1/logout", {
+      const response = await request(settings.url + "/auth/v1/logout", {
         method: "POST",
         headers: { apikey: settings.publishableKey, Authorization: "Bearer " + token },
         cache: "no-store",
@@ -525,11 +608,13 @@ $("document-form").addEventListener("submit", async (event) => {
   finally { button.disabled = false; }
 });
 
+// Limpar o fragmento antes de qualquer espera de rede, inclusive se a configuração falhar.
+const hasAuthRedirect = consumeAuthRedirect();
 (async () => {
   try {
-    const response = await fetch("/api/juridico/config", { cache: "no-store" });
+    const response = await request("/api/juridico/config", { cache: "no-store" });
     if (!response.ok) throw new Error("Integração privada não configurada.");
     settings = await response.json();
-    if (!consumeAuthRedirect()) $("login-panel").hidden = false;
-  } catch { $("setup").hidden = false; }
+    if (!hasAuthRedirect || !accessToken) $("login-panel").hidden = false;
+  } catch { logout(); $("setup").hidden = false; feedback(UNAVAILABLE); }
 })();
