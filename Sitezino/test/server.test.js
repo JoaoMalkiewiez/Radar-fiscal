@@ -410,3 +410,19 @@ test("área privada contém consulta CNJ e expõe somente metadados públicos", 
     assert.doesNotMatch(js,/innerHTML\s*=/);
   });
 });
+
+test("Dockerfile inclui todos os arquivos do portal jurídico antes do deploy Render", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const dockerfile = fs.readFileSync(path.join(__dirname, "..", "Dockerfile"), "utf8");
+  const copied = [...dockerfile.matchAll(/^COPY\s+([^\n]+?)\s+\.\/\s*$/gm)]
+    .flatMap(match => match[1].trim().split(/\s+/));
+  for (const filename of [
+    "juridico-portal.html", "juridico-portal.css", "juridico-portal.js",
+    "juridico-gestao.html", "juridico-gestao.css", "juridico-investigacao.js",
+    "rural-csv.js"
+  ]) {
+    assert.ok(fs.existsSync(path.join(__dirname, "..", filename)), "Arquivo local ausente: " + filename);
+    assert.ok(copied.includes(filename), "Arquivo ausente na imagem Docker: " + filename);
+  }
+});
