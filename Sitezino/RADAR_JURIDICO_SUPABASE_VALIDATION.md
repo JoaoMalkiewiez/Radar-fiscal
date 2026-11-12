@@ -265,3 +265,59 @@ O novo commit altera **somente os três documentos** e mantém os testes/código
 Reativar/anexar executor com Docker e workspace utilizável; confirmar os arquivos/recursos presentes antes de repetir instalações. Resolver a inicialização da CLI em um diretório gravável suportado pela versão, ou executá-la em ambiente de ferramenta isolado apropriado, sem redefinir HOME como atalho, mudar permissões globais ou presumir flags. Só então consultar a ajuda, inicializar stack oficial, restringir serviços a loopback, aplicar os SQL em banco vazio e executar a matriz real já definida, incluindo harness local separado. Não contornar restrições de rede ou fragilizar whitelist/CSP para obter testes verdes.
 
 A autorização permanece válida; não é necessário solicitá-la novamente. Esta missão **não concluiu os testes reais obrigatórios**. Custo contratado adicional R$ 0, nenhum recurso externo criado. Etapa 01 parcialmente bloqueada e PR draft, sem publicação ou missão 02, aguardando ambiente utilizável e revisão GPT-6.
+
+## Missão 01.7 — executor recuperado, EROFS resolvido, disco insuficiente
+
+Data: **12/11/2026**, início em `1720b1a85fee1d5c18a305e77581f1708b7dd40e`, mesma branch e PR #12. Autorizações da missão 01.6 preservadas. Nenhuma alteração de runtime, dado, conta, política ou configuração de produção.
+
+### Diagnóstico efetivamente executado
+
+- Executor disponível; arquivo de prova criado/removido no workspace. Usuário UID 1000. Aproximadamente **9 GB de memória disponível**, Docker Engine **29.9.2** respondendo pelo socket local explicitamente selecionado, filesystem total **7,9 GB**, inicialmente **7,3 GB livres**. Não houve nova desconexão do executor nesta missão.
+- Origem do EROFS: a CLI tenta manter estado global em `<home>/.supabase`, mas o diretório pessoal é somente de leitura neste ambiente. Inspeção do código oficial identificou o override **`SUPABASE_HOME`** em [supabase-home.ts, v3.1.0](https://github.com/supabase/cli/blob/v3.1.0/apps/cli/src/shared/config/supabase-home.ts) e sua leitura nas camadas de configuração.
+- `SUPABASE_HOME=/workspace/work/radar-juridico-lab/.cli` resolveu a inicialização: **CLI 3.1.0 executou `--version`, `--help`, `init --help`, `init`, `start --help` e `status --help`**. Não redefinimos HOME/CODEX_HOME, não ampliamos permissões globais e não presumimos o antigo SUPABASE_CONFIG_DIR como opção válida. Telemetria desativada para o laboratório.
+- Binário obtido do release oficial v3.1.0; SHA-256 comparado com o campo `digest` do asset no GitHub e confirmado. O asset separado checksums.txt retornou vazio nesta consulta; a verificação foi feita pelo digest oficial, não ignorada. Configuração local criada em diretório separado, com retorno loopback e JWT de 60 s para futura expiração real. Sem link/credenciais do projeto hospedado.
+
+### Tentativa oficial e limite de capacidade
+
+Executado `supabase start` excluindo realtime/imgproxy/postgres-meta/studio/edge-runtime/logflare/vector/supavisor. Permaneceram somente Postgres, Auth, REST, Storage, gateway e Mailpit. Saída bruta guardada em arquivo privado fora do Git, porque a inicialização pode imprimir segredos quando bem-sucedida.
+
+O Docker usa **`vfs`**. A extração falhou no Storage: `failed to register layer ... no space left on device`. O `df` após falha voltou a mostrar espaço porque camadas temporárias são liberadas; isso não elimina o pico de consumo observado. A execução CLI foi interrompida antes de continuar repetindo pulls. Uma segunda estratégia controlada — pull **sequencial** do Postgres oficial `17.11.0.018` antes de Storage — também terminou com `no space left on device` ao expandir `/nix/store/...icu4c...`. O pull sequencial de Storage não chegou a ser executado, pois dependia do sucesso do Postgres.
+
+Não repetimos a tentativa após a segunda falha, não alteramos driver/data-root do Docker, não fizemos prune global e não aumentamos plano. Verificação final: **zero containers e zero volumes**; quatro imagens menores permaneceram em cache (Auth, REST, Mailpit, Kong). Nenhuma stack saudável, usuário A/B/C/D, registro, objeto, sessão ou e-mail de laboratório foi criado. Limpeza de fixtures não se aplica. Os arquivos auxiliares/logs locais e cache de imagens não foram tratados como dados de produção nem enviados ao repositório.
+
+**Requisito que falta:** capacidade de disco no armazenamento do Docker para a expansão das imagens oficiais. O executor está funcional e o bloqueio não é mais HOME/EROFS. O caminho reproduzível para Windows + Docker Desktop/WSL2, com recursos recomendados e ressalva de licença, está em [lab/README.md](lab/README.md). Recomenda-se reservar 30 GB livres como margem operacional, não como mínimo oficial/garantia para todo driver. Conferir também o disco virtual do Docker, não somente o diretório do checkout.
+
+### Arquivos de laboratório preparados, ainda sem validação E2E
+
+- `lab/README.md`: instalação fixada, digest oficial, diretório gravável suportado, init/start sem link, migrações, configuração privada, execução/limpeza e Windows/WSL2.
+- `lab/configure-private.mjs`: lê status JSON privado da CLI e cria configuração privada exclusiva de loopback, sem imprimir chaves.
+- `lab/validate-real.mjs`: runner inicial explícito para contas/fixtures locais, JWTs comuns, Auth/Mailpit, matriz REST/Storage, revogação, auditoria, expiração e limpeza pelo manifesto. Admin local é reservado a bootstrap/limpeza, não representa usuários nos testes RLS. **Não executado contra stack iniciada; payloads/compatibilidade/resultados ainda precisam ser validados.** Não há aprovação de testes reais apenas por existir o runner.
+- `lab/portal-harness.mjs`: servidor/proxy real restrito a `127.0.0.1:5517`, serve assets aprovados e encaminha para Supabase local sem alterar whitelist/CSP do servidor de produção. Só aceita backend loopback e não devolve chave administrativa na configuração. **Não validado com Auth/Storage real nesta missão.**
+- `test/lab-safety.test.js`: dois testes unitários de processo confirmam recusa de URL hospedada antes de requests/servidor. São testes de guarda, **não E2E**, sem resposta Supabase simulada usada como evidência real.
+
+### Resultados e classificação da missão
+
+| Cenário | Estado | Evidência |
+| --- | --- | --- |
+| Executor/escrita/Docker/memória | APROVADO | Diagnóstico direto, sem status presumido |
+| Diretório gravável oficial e CLI | APROVADO | SUPABASE_HOME documentado no código oficial; CLI 3.1.0 e init executados |
+| Integridade do binário | APROVADO | Digest SHA-256 do asset oficial corresponde ao arquivo |
+| Iniciar stack oficial | BLOQUEADO | Duas estratégias falharam por falta de disco na expansão vfs; sem ignorar health checks |
+| Auth/convite/recovery/refresh/expiração reais | BLOQUEADO | Nenhum Postgres/stack/conta local disponível |
+| RLS/REST/CRUD/owners/FKs/revogação/auditoria reais | BLOQUEADO | Fixtures inexistentes; runner preparado mas não executado |
+| Storage/upload/download/MIME/tamanho/isolamento reais | BLOQUEADO | Sem backend e objetos conhecidos de controle |
+| Portal desktop/mobile com backend real | BLOQUEADO | Harness preparado; sem stack para validar integração |
+| Regressão automatizada | APROVADO | **236/236**, incluindo os 234 anteriores e dois testes unitários da guarda local; zero falhas/skip |
+| Sintaxe | APROVADO | Quatro JS solicitados, três novos MJS e novo teste de segurança |
+| Cadastro público fechado | REPROVADO no critério, alteração BLOQUEADA | GET real continua `disable_signup=false`, Email ativo, `mailer_autoconfirm=false`; não alterado |
+| Limpeza de fixtures | NÃO EXECUTADO / não aplicável | Zero fixtures, containers e volumes criados; cache de imagens mantido sem prune global |
+
+GitHub Actions do novo SHA serão vinculados com seus estados reais no comentário de entrega. Os testes locais foram executados nesta missão; não transportamos o resultado histórico de 234 como se fosse um novo E2E. Código fiscal, dependências da aplicação e proteções de produção preservados.
+
+### Signup de produção e próxima ação
+
+Reconferência HTTP nesta missão: settings 200, `disable_signup=false`, `external.email=true`, `mailer_autoconfirm=false`. Ferramentas Supabase conectadas continuam sem ação de atualização Auth e não há `SUPABASE_ACCESS_TOKEN` de gestão disponível no ambiente (somente presença verificada, sem imprimir valores). Não improvisamos credencial nem usamos SQL interno. Autorização do proprietário já concedida; falta mecanismo administrativo autenticado compatível.
+
+Procedimento manual oficial: [Authentication → Sign In / Providers](https://supabase.com/dashboard/project/kokpxikvisheaxkicmop/auth/providers) → User Signups → **Allow new users to sign up OFF**, salvar mantendo **Email e todas as outras opções**. Comparar antes/depois e verificar `disable_signup=true` sem expor chaves. Não alterar SMTP, usuários, RLS ou URLs como efeito colateral. Nenhum login/convite/recovery de produção foi solicitado.
+
+Retomar em host com disco suficiente, revisar/validar os runners ainda não exercitados e executar a matriz real antes de aprovar a etapa. Riscos residuais incluem compatibilidade do laboratório ainda desconhecida, signup aberto, proteção de senhas vazadas fora do Free, falta de prova real A/B/C/D/SMTP/URLs e resultados incertos de escrita. Nenhum serviço contratado; custo contratado adicional R$ 0. **PR continua draft e etapa 01 parcialmente bloqueada, sem merge/deploy/missão 02.**
