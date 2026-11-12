@@ -140,3 +140,14 @@ Validação local executada novamente: **234/234 testes aprovados**, sem skips o
 **CI:** em 12/11, os runs antigos `43095997268` e `43095997273` de `fc4ffa3` ainda estavam `queued`, sem jobs/conclusão, com timestamps de criação/atualização em 11/11. Isso não constitui aprovação nem falha de teste. Os novos runs serão vinculados ao novo SHA no comentário de entrega; conferir seus estados reais antes de aprovar. Não alterar workflows para contornar a fila e não confundir checks de `8304706` com os do novo head.
 
 Riscos e limites permanecem: descartar continuações não desfaz escrita já aceita, resultados incertos podem exigir conferência pela conta original, e transferências têm timeout finito. Testes reais Supabase A/B/C/D, isolamento REST/Storage, Auth URLs e recuperação/SMTP **não foram executados nesta conferência e continuam pendentes**. Etapa 01 parcialmente bloqueada; sem merge, deploy ou etapa 02. O GPT-6 deve revisar o novo diff, repetir os comandos de validação e conferir o SHA/conclusão dos dois Actions antes de decidir próximos passos.
+
+
+## Validação Supabase real — 12/11/2026
+
+Relatório e roteiro completo: [RADAR_JURIDICO_SUPABASE_VALIDATION.md](RADAR_JURIDICO_SUPABASE_VALIDATION.md). Código `7af09d0` reconferido, com 234/234 testes locais e os dois Actions aprovados. Produção não foi alterada.
+
+Inspeção de catálogo real confirmou RLS/ACL das sete tabelas, políticas por proprietário/autorização ativa, FKs compostas, bucket privado de 10 MB e triggers de auditoria protegidos. Sete GETs REST anônimos com `limit=0` retornaram HTTP 401 / PostgreSQL `42501`, sem retornar linhas. Isso comprova bloqueio anônimo, **não** isolamento autenticado A/B/C/D.
+
+Dois critérios de configuração foram classificados REPROVADOS: endpoint público Auth anuncia `disable_signup=false` (contraria cadastro fechado exigido no setup) e Security Advisors mantém WARN de proteção de senhas vazadas desativada. Não foi tentado cadastro nem alterada configuração; não foi demonstrado acesso indevido a dados. Revisão/correção administrativa pendente, sem contratar plano pago automaticamente.
+
+O usuário confirmou ausência de ambiente isolado e contas sintéticas preparadas. Login/CRUD autenticado, isolamento real REST/Storage, revogação, URLs Auth e recuperação/SMTP permanecem BLOQUEADOS. Não houve criação de contas, escrita de fixtures, upload ou envio de e-mail. Roteiro A/B/C/D e matriz por tabela/operação/Storage prontos para execução autorizada, sem service_role ou impersonação. Nenhum teste simulado foi rotulado como real. Etapa 01 parcialmente bloqueada, sem merge/deploy ou etapa 02.
