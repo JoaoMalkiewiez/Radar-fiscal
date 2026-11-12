@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-11-12T00:53:55Z",
+  "updatedAt": "2026-11-12T22:27:35Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -761,6 +761,17 @@
       "durationSeconds": 27385,
       "maxSeverity": 5,
       "statusLabel": "erro"
+    },
+    {
+      "id": "nfe-PR-20261112T222735Z",
+      "key": "nfe:PR",
+      "document": "nfe",
+      "uf": "PR",
+      "detectedAt": "2026-11-12T22:27:35Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
     }
   ]
 }
