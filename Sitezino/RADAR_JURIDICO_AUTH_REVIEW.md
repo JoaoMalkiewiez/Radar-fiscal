@@ -162,3 +162,12 @@ Plano **Free** confirmado por metadados da organização. Documentação oficial
 Docker Engine disponível; CLI Supabase ausente. Plano de stack local + Mailpit + esquema/RLS sem dados de produção descrito, sem instalação/inicialização/provisionamento. A whitelist do servidor não aceita Supabase HTTP local: E2E de portal exige harness loopback separado/revisado ou ambiente hospedado autorizado, sem enfraquecer produção. Nenhum desses recursos foi criado. A/B/C/D e E2E reais seguem BLOQUEADOS.
 
 234/234 testes e quatro checks de sintaxe novamente aprovados; runtime/dependências preservados, custo contratado adicional R$ 0. PR apto à revisão e próxima preparação autorizada, não à publicação. Aguardar autorização específica do titular para signup/laboratório e revisão do GPT-6; etapa 01 parcialmente bloqueada, sem merge/deploy/missão 02.
+
+
+## Missão 01.6 — execução autorizada, bloqueada por infraestrutura
+
+O proprietário autorizou laboratório local, ferramentas/fixtures sintéticas e fechamento exclusivo de signup. A tentativa conferiu Docker 29.9.2 e baixou/extraiu CLI oficial v3.1.0 no workspace. A CLI falhou com EROFS ao inicializar diretório pessoal; durante investigação, o executor desconectou e o ambiente foi marcado unavailable. A chamada posterior confirmou ausência de executor utilizável; metadados de status contraditórios não foram tomados como recuperação. Nenhum container/conta/registro/objeto foi criado.
+
+[Relato detalhado, matriz e evidências](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão-016--tentativa-de-execução-e-indisponibilidade-do-executor). Auth/RLS/Storage/recuperação/harness e comandos locais de regressão desta missão estão BLOQUEADOS, não aprovados. Os 234 testes anteriores permanecem preservados e históricos; somente os Actions remotos do novo head, se concluídos, são evidência nova de regressão.
+
+Signup não foi alterado porque a ferramenta administrativa compatível não está disponível; autorização já existe. Administrador deve desativar somente Allow new users to sign up no painel Auth/Providers, mantendo Email e demais opções, e conferir antes/depois. Última leitura anterior: disable_signup=false; não reconfirmada nesta missão. Produção, código, whitelist/CSP, usuários e RLS não foram alterados. Sem merge/deploy ou missão 02; retomada depende de executor utilizável, não de nova autorização.

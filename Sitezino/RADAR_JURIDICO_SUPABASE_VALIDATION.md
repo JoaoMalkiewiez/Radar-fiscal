@@ -216,3 +216,52 @@ Opção preferencial para o primeiro ciclo: stack Supabase local sobre **Docker 
 | Automação local | APROVADO | 234/234 e quatro checks de sintaxe, sem remoção/skip |
 
 **Próxima validação:** o PR permanece tecnicamente apto à revisão e preparação autorizada do laboratório, com runtime preservado; **não está liberado para produção nem permite concluir a etapa 01**. Administrador/titular precisa autorizar a mudança específica de signup e a criação do laboratório/fixtures, e decidir mitigação/aceitação do aviso pago. Seguem pendentes E2E A/B/C/D, URLs e entrega SMTP hospedada. Aguardar GPT-6, sem merge/deploy ou missão 02.
+
+
+## Missão 01.6 — tentativa de execução e indisponibilidade do executor
+
+Data: **12/11/2026**, base `38436d41324cbecf03157029f9da6ad256c1a994`. O proprietário **autorizou expressamente** laboratório local Docker/Mailpit, ferramentas gratuitas, contas/fixtures A/B/C/D locais e a alteração exclusiva de signup em produção. Esses itens não estão mais bloqueados por falta de autorização. Continuam proibidos merge/deploy, contas/RLS/dados de produção, contratação e missão 02.
+
+### Execução realmente tentada
+
+1. Branch específica e SHA de referência conferidos, workspace limpo; scripts SQL, testes e documentação inspecionados. Docker informou versão **29.9.2**, memória do daemon aproximadamente 10 GB; filesystem do workspace aproximadamente 7,5 GB livres. Apenas consultas de capacidade, sem criar/iniciar containers.
+2. O release oficial mais recente consultado do Supabase CLI foi **v3.1.0**. O arquivo oficial Linux amd64 foi baixado e extraído em `work/bin`; criado diretório separado `work/radar-juridico-lab`. Não executamos `supabase link`, login na plataforma ou importação de dados.
+3. A primeira invocação da CLI falhou antes de disponibilizar a ajuda/versão: **EROFS ao criar /home/agent/.supabase**. Trata-se da inicialização da ferramenta em filesystem somente de leitura, não falha do Radar Jurídico ou teste Supabase. Uma tentativa de apontar configuração para o diretório do laboratório com `SUPABASE_CONFIG_DIR` não eliminou o erro; não se presume que esse seja um override suportado pela v3.1.0.
+4. Enquanto investigávamos a inicialização por código-fonte oficial, o executor desconectou: **executor key changed during session recovery**. O ambiente selecionado passou a **unavailable**. Uma consulta simples em diretório temporário confirmou **No usable execution environment is available**.
+5. O conector de status ainda anunciou running/connected, em contradição com o contexto atual e a falha efetiva de execução. Não tratamos esse status como prova de recuperação. Diagnósticos retidos retornaram `history_status=not_found`, sem registros: isso também não estabelece a causa nem a saúde do executor. Nenhum log sensível de diagnóstico foi solicitado/compartilhado.
+6. Solicitada reativação/anexação de ambiente com Docker. Conectores GitHub continuaram acessíveis, permitindo atualizar esta evidência na mesma branch. Não há recurso Supabase local em execução criado por esta tentativa. Não foi criado usuário, senha/token de fixture, registro ou objeto; portanto limpeza de fixtures não se aplica. Não se afirma persistência/remoção dos arquivos auxiliares após a perda do executor.
+
+### Signup de produção — autorização concedida, ação administrativa indisponível
+
+As ferramentas Supabase conectadas não expõem atualização da configuração Auth. Não usamos SQL interno, API de dados ou credenciais improvisadas para substituir o controle oficial. A exceção prevista na missão aplica-se: **somente esta etapa depende de ação manual no dashboard**. Nenhuma configuração foi alterada.
+
+Procedimento já autorizado ao administrador: [Authentication → Sign In / Providers](https://supabase.com/dashboard/project/kokpxikvisheaxkicmop/auth/providers) → User Signups → **Allow new users to sign up: OFF** → salvar. Manter Email ativo, confirmação de email, SMTP, URLs, sessões e todas as demais opções inalteradas. Conferir `disable_signup=true`, Email ativo e comparação das demais configurações antes/depois, sem compartilhar chaves. Não desativar contas existentes.
+
+O último valor efetivamente observado foi `disable_signup=false` na missão 01.5. **Não houve nova leitura nem confirmação de alteração na missão 01.6** após a indisponibilidade do executor. Logo, não se declara cadastro fechado nem preservação real de login/recovery/convite comprovada.
+
+### Matriz desta tentativa — sem resultados inventados
+
+| Cenário | Estado | Evidência |
+| --- | --- | --- |
+| Conferência inicial do checkout/capacidade | APROVADO | Branch/SHA, Docker e espaço observados antes da falha |
+| Download/extração da CLI oficial | APROVADO somente quanto ao download | Release v3.1.0; não equivale a stack pronta |
+| Inicialização da CLI | REPROVADO como etapa técnica | EROFS em diretório pessoal, antes dos testes; não defeito do produto |
+| Acesso posterior ao executor | BLOQUEADO | Ambiente unavailable; chamada simples sem executor utilizável |
+| Fechar signup e conferir antes/depois | BLOQUEADO | Sem ferramenta administrativa compatível; procedimento manual fornecido, autorização não é o impedimento |
+| Stack oficial, Mailpit, banco local e aplicação dos SQL | BLOQUEADO | CLI não iniciou; executor indisponível antes de iniciar stack |
+| Contas A/B/C/D, Auth/refresh/expiração/convite/recovery reais | BLOQUEADO | Nenhuma conta criada ou sessão real de laboratório |
+| RLS/CRUD/vínculos/revogação/auditoria reais | BLOQUEADO | Banco/fixtures inexistentes nesta execução |
+| Storage, tipos/tamanho e integridade após negativas | BLOQUEADO | Sem stack/usuários/objetos de controle |
+| Harness loopback e navegador desktop/mobile real | BLOQUEADO | Sem executor/stack; proteções de produção preservadas |
+| `npm test` e quatro `node --check` locais nesta missão | BLOQUEADO | Não chegaram a ser executados; os 234 aprovados anteriores são históricos |
+| Novos testes de laboratório | NÃO EXECUTADO | Nenhuma resposta simulada foi contada como teste real |
+| Limpeza de usuários/objetos sintéticos | NÃO EXECUTADO / não aplicável | Nenhuma fixture criada |
+| Merge/deploy/alteração de RLS ou dados de produção | NÃO EXECUTADO | Restrições integralmente preservadas |
+
+O novo commit altera **somente os três documentos** e mantém os testes/código aprovados. Os Actions do novo SHA podem ser executados remotamente pelo GitHub; seus resultados serão registrados no comentário de entrega, separados dos testes locais bloqueados. Não transportar as aprovações do SHA anterior para este head sem conferir os runs.
+
+### Retomada concreta
+
+Reativar/anexar executor com Docker e workspace utilizável; confirmar os arquivos/recursos presentes antes de repetir instalações. Resolver a inicialização da CLI em um diretório gravável suportado pela versão, ou executá-la em ambiente de ferramenta isolado apropriado, sem redefinir HOME como atalho, mudar permissões globais ou presumir flags. Só então consultar a ajuda, inicializar stack oficial, restringir serviços a loopback, aplicar os SQL em banco vazio e executar a matriz real já definida, incluindo harness local separado. Não contornar restrições de rede ou fragilizar whitelist/CSP para obter testes verdes.
+
+A autorização permanece válida; não é necessário solicitá-la novamente. Esta missão **não concluiu os testes reais obrigatórios**. Custo contratado adicional R$ 0, nenhum recurso externo criado. Etapa 01 parcialmente bloqueada e PR draft, sem publicação ou missão 02, aguardando ambiente utilizável e revisão GPT-6.
