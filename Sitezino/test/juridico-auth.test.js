@@ -488,8 +488,10 @@ for(const item of crudCases) for(const phase of item.phases) {
       formB.querySelector().disabled=true;
       const editorB=inlineClientEditor(p,'B');editorB.button.disabled=true;
       editorB.form.elements.name.value='Edição exclusiva de B';
+      p.run("state.clients=[{id:'current-session-client',name:'Current session'}]");
       const callsBefore=p.calls.length;
       pending.resolve();await old.flow;
+      assert.equal(p.run('state.clients[0].id'),'current-session-client');
       assert.equal(p.node('feedback').textContent,'Mensagem da interface atual');
       assert.equal(formB.elements.name.value,'Rascunho exclusivo de B');
       assert.equal(formB.querySelector().disabled,true);
@@ -553,3 +555,63 @@ test('exclusão de documento: mudança de geração após objeto impede DELETE d
   await assert.rejects(p.run("removeRecord('documents',{id:'synthetic-doc',storage_path:'user-a/synthetic.pdf'})"),/Sessão expirada/);
   assert.equal(p.run('deleteRequests'),1);
 });
+
+// Teste F: o UUID permanece igual, mas logout/reentrada cria outra geração.
+for (const item of crudCases) for (const phase of item.phases) {
+  for (const outcome of ['success', 'server-error', 'network-error']) {
+    test(`CRUD reentrada A: ${item.name}, ${phase}/${outcome} descarta geração anterior`, async () => {
+      const pending = deferred();
+      let holdOldSession = true;
+      let held = 0;
+      const p = await portal((url, options) => {
+        if (url.includes('grant_type=password')) return json(session('user-a'));
+        if (url.includes('legal_access')) return json([{enabled: true}]);
+        const storage = url.includes('/storage/');
+        const shouldHold = holdOldSession && (
+          phase === 'reload' ? options.method === 'GET' :
+          phase === 'storage' ? storage : options.method !== 'GET' && !storage
+        );
+        if (shouldHold) {
+          held++;
+          return pending.promise.then(() => {
+            if (outcome === 'network-error') throw Error('Old session failure');
+            return json(phase === 'reload' ? [] : {}, outcome === 'server-error' ? 503 : 200);
+          });
+        }
+        return json(options.method === 'GET' ? [] : {});
+      });
+      seed(p);
+      p.node('workspace').hidden = false;
+      const previousVersion = p.run('sessionVersion');
+      const old = item.begin(p);
+      await tick();
+      assert.ok(held > 0);
+      p.run('logout()');
+      holdOldSession = false;
+      await login(p);
+      assert.equal(p.run('currentUser'), 'user-a');
+      assert.ok(p.run('sessionVersion') > previousVersion);
+
+      const currentForm = p.node('client-form');
+      currentForm.elements.name = {value: 'Rascunho da nova sessão A'};
+      currentForm.querySelector().disabled = true;
+      const currentEditor = inlineClientEditor(p, 'new-A');
+      currentEditor.form.elements.name.value = 'Edição da nova sessão A';
+      currentEditor.button.disabled = true;
+      p.node('feedback').textContent = 'Mensagem da nova sessão A';
+      p.run("state.clients=[{id:'new-session-A',name:'Synthetic current record'}]");
+      const requestsBefore = p.calls.length;
+
+      pending.resolve();
+      await old.flow;
+      assert.equal(p.node('feedback').textContent, 'Mensagem da nova sessão A');
+      assert.equal(currentForm.elements.name.value, 'Rascunho da nova sessão A');
+      assert.equal(currentForm.querySelector().disabled, true);
+      assert.equal(currentEditor.form.elements.name.value, 'Edição da nova sessão A');
+      assert.equal(currentEditor.button.disabled, true);
+      assert.equal(p.run('state.clients[0].id'), 'new-session-A');
+      assert.equal(p.calls.length, requestsBefore);
+      assert.equal(old.button.disabled, true);
+    });
+  }
+}

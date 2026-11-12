@@ -24,6 +24,7 @@ Tokens continuam somente em memória; nenhum segredo foi adicionado. APIs, consu
 | `npm test` na primeira entrega | 83/83 aprovados: 46 existentes + 37 testes de comportamento do portal |
 | `npm test` após primeira correção de revisão | 135/135 aprovados: todos os 83 anteriores + 52 cenários novos de sessão/transferências |
 | `npm test` após revisão CRUD | 207/207 aprovados: todos os 135 anteriores + 72 cenários novos de CRUD/sessão |
+| `npm test` na conferência final de 12/11/2026 | 234/234 aprovados: todos os 207 anteriores + 27 cenários explícitos de reentrada CRUD |
 | `node --check` | Aprovado em `juridico-portal.js`, `juridico-investigacao.js`, `test/juridico-auth.test.js`, `test/server.test.js` |
 | `git diff --check` | Aprovado |
 | Chromium, desktop 1440 px e mobile 390 px | Login autorizado, logout acessível, limpeza do DOM, recuperação 429 sem repetição de envio, convite/redefinição, URL limpa, storage vazio e ausência de erros JS. Servidor local e respostas Supabase interceptadas com dados fictícios; não é E2E real do provedor |
@@ -115,3 +116,27 @@ Referência: [segunda revisão GPT-6](https://github.com/JoaoMalkiewiez/Radar-fi
 A proteção descarta continuações da sessão encerrada; não cancela nem desfaz uma escrita já aceita pelo servidor. Uma exclusão interrompida pela troca de sessão pode precisar de conferência dos objetos/metadados pela conta original. Após logout, mensagens de operações antigas são suprimidas, e não transferidas para B. Na sessão original, o comportamento e os erros existentes permanecem preservados. Reversão desta correção exige apenas reverter seu commit, sem SQL.
 
 Para o GPT-6: revisar a geração capturada nos quatro helpers e nos handlers inline/botões, repetir `npm test`, conferir o SHA dos GitHub Actions e reproduzir o fluxo A→logout→login B com uma operação de B pendente. Autenticação real A/B/C/D, isolamento REST/Storage, URLs Auth e SMTP continuam pendentes; não concluir etapa 01 nem publicar com base apenas nestas simulações.
+
+
+## Conferência final — 12/11/2026
+
+O pedido final referencia `8304706`, mas a correção de produção dos quatro fluxos já está no commit `fc4ffa3`, preservado nesta branch. A conferência confirmou `sessionVersion` em `bindForm`, `insert`, `updateRecord` e `removeRecord`, inclusive antes de novas requisições e mensagens pós-await. Editor inline e botões também mantêm as guardas de `catch/finally`. Não foi necessário reimplementar ou alterar a correção de produção.
+
+Foi adicionada a matriz explícita do **Teste F — reentrada do mesmo usuário**: cadastro, edição, exclusão de registro e documento, com atraso de escrita/Storage/listagem e resposta de sucesso/503/erro de rede. O login real do handler devolve o mesmo UUID sintético, mas a geração aumenta. Os 27 novos cenários verificam que a antiga sessão não altera listas, mensagens, formulários ou controles e não inicia requisições adicionais. A matriz anterior A→B também ganhou verificação de preservação dos registros em memória.
+
+Correspondência dos requisitos obrigatórios:
+
+| Teste | Evidência automatizada |
+| --- | --- |
+| A — Cadastro | bindForm real, POST/listagem pendente, logout/login B; mensagem, rascunho, botão e registros atuais preservados |
+| B — Edição | editor inline real e updateRecord, PATCH/listagem pendente; interface atual preservada |
+| C — Exclusão | createButton/removeRecord, DELETE de registro/objeto/metadados/listagem; sem continuação pela sessão B |
+| D — Falha tardia | HTTP 503 e falha de rede em cada fase; erro antigo não aparece na sessão atual |
+| E — Sessão preservada | sucesso e rejeição definitiva na sessão original para cadastro, edição e exclusão; mensagens/reset/botões mantidos |
+| F — Reentrada | mesmo UUID com nova geração; 27 cenários novos descartam resposta/erro da sessão anterior |
+
+Validação local executada novamente: **234/234 testes aprovados**, sem skips ou remoção dos 207 anteriores; os quatro comandos `node --check` solicitados e `git diff --check` aprovados. O novo commit altera somente testes e os dois documentos; produção mantém os mecanismos de autenticação, investigação e transferência já revisados. Nenhum endpoint fiscal, dependência, banco, RLS ou configuração externa foi alterado.
+
+**CI:** em 12/11, os runs antigos `43095997268` e `43095997273` de `fc4ffa3` ainda estavam `queued`, sem jobs/conclusão, com timestamps de criação/atualização em 11/11. Isso não constitui aprovação nem falha de teste. Os novos runs serão vinculados ao novo SHA no comentário de entrega; conferir seus estados reais antes de aprovar. Não alterar workflows para contornar a fila e não confundir checks de `8304706` com os do novo head.
+
+Riscos e limites permanecem: descartar continuações não desfaz escrita já aceita, resultados incertos podem exigir conferência pela conta original, e transferências têm timeout finito. Testes reais Supabase A/B/C/D, isolamento REST/Storage, Auth URLs e recuperação/SMTP **não foram executados nesta conferência e continuam pendentes**. Etapa 01 parcialmente bloqueada; sem merge, deploy ou etapa 02. O GPT-6 deve revisar o novo diff, repetir os comandos de validação e conferir o SHA/conclusão dos dois Actions antes de decidir próximos passos.

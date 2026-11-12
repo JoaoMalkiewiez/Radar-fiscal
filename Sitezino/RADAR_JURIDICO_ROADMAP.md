@@ -1,6 +1,6 @@
 # Radar Jurídico — roteiro de evolução com aprovação por testes
 
-> Documento de referência persistente. Última revisão: 11/11/2026.
+> Documento de referência persistente. Última revisão: 12/11/2026.
 > Projeto: `JoaoMalkiewiez/Radar-fiscal` · hospedagem Render · Supabase dedicado.
 > **Prioridade absoluta:** manter Radar Fiscal e Radar Jurídico existentes funcionando.
 > **Orçamento incremental:** R$ 0. Nenhuma assinatura, serviço pago ou consulta onerosa sem autorização expressa.
@@ -82,6 +82,7 @@ Tarefa rastreável: [GitHub Issue #10](https://github.com/JoaoMalkiewiez/Radar-f
 | 11/11/2026 | 01 | Missão 01 em revisão: proteção contra respostas após logout, limpeza de DOM, erros/429, sanitização de links e logout mobile; 83 testes locais aprovados, Chromium com Auth simulado. Etapa segue parcialmente BLOQUEADA por E2E real/SMTP e contas sintéticas indisponíveis. Sem merge/deploy ou mudança de RLS. | [PR #12](https://github.com/JoaoMalkiewiez/Radar-fiscal/pull/12), implementação `cf17cfa`; [relatório técnico](RADAR_JURIDICO_AUTH_REVIEW.md) | Revisão GPT-6, CI e validação real multiusuário antes de concluir etapa 01 |
 | 11/11/2026 | 01 | Revisão do PR #12: consultas CNPJ/DataJud/SNCR isoladas por geração de sessão; timeouts de 30 s para requisições comuns e 5 min para transferências, com alerta de escrita incerta. 135 testes locais aprovados (83 anteriores mantidos + 52 novos); Chromium com respostas sintéticas. E2E real/SMTP continuam pendentes. | Mesmo [PR #12](https://github.com/JoaoMalkiewiez/Radar-fiscal/pull/12); [relatório atualizado](RADAR_JURIDICO_AUTH_REVIEW.md#correções-após-revisão-independente-do-gpt-6) | Nova revisão independente GPT-6; sem merge/deploy ou avanço de etapa |
 | 11/11/2026 | 01 | Revisão residual CRUD: geração de sessão aplicada a insert/update/remove/bindForm, editor inline e botões. 207 testes locais aprovados (135 mantidos + 72 novos); Chromium com A→logout→login B e cadastro B pendente. E2E real Supabase/SMTP continua pendente. | Mesmo [PR #12](https://github.com/JoaoMalkiewiez/Radar-fiscal/pull/12); [relatório CRUD](RADAR_JURIDICO_AUTH_REVIEW.md#revisão-residual--mensagens-formulários-e-controles-crud) | Nova revisão GPT-6; sem merge/deploy ou etapa 02 |
+| 12/11/2026 | 01 | Conferência final: correção CRUD de `fc4ffa3` preservada; 27 testes explícitos de reentrada adicionados, total 234/234 locais. Casos A–F documentados; registros da sessão atual também verificados. CI de `fc4ffa3` ainda queued, sem jobs; conferir novos runs do novo head. E2E real Supabase/SMTP pendente. | Mesmo [PR #12](https://github.com/JoaoMalkiewiez/Radar-fiscal/pull/12); [conferência final](RADAR_JURIDICO_AUTH_REVIEW.md#conferência-final--12112026) | Revisão GPT-6 e aprovação real dos Actions; etapa 01 parcialmente bloqueada, sem publicação/etapa 02 |
 
 ## Critérios permanentes de produto
 
