@@ -151,3 +151,14 @@ Inspeção de catálogo real confirmou RLS/ACL das sete tabelas, políticas por 
 Dois critérios de configuração foram classificados REPROVADOS: endpoint público Auth anuncia `disable_signup=false` (contraria cadastro fechado exigido no setup) e Security Advisors mantém WARN de proteção de senhas vazadas desativada. Não foi tentado cadastro nem alterada configuração; não foi demonstrado acesso indevido a dados. Revisão/correção administrativa pendente, sem contratar plano pago automaticamente.
 
 O usuário confirmou ausência de ambiente isolado e contas sintéticas preparadas. Login/CRUD autenticado, isolamento real REST/Storage, revogação, URLs Auth e recuperação/SMTP permanecem BLOQUEADOS. Não houve criação de contas, escrita de fixtures, upload ou envio de e-mail. Roteiro A/B/C/D e matriz por tabela/operação/Storage prontos para execução autorizada, sem service_role ou impersonação. Nenhum teste simulado foi rotulado como real. Etapa 01 parcialmente bloqueada, sem merge/deploy ou etapa 02.
+
+
+## Missão 01.5 — segurança administrada e plano de testes
+
+[Análise detalhada e plano local](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão-015--decisões-administrativas-e-laboratório-r-0), em 12/11/2026. Signup aberto reconfirmado; caminho exato para o administrador: Authentication → Sign In / Providers → Allow new users to sign up (desativar após autorização), mantendo Email ativo. Login existente deve continuar; recovery e convite usam fluxos separados, mas a comprovação real após a mudança permanece bloqueada.
+
+Plano **Free** confirmado por metadados da organização. Documentação oficial limita leaked password protection a **Pro ou superior**: não há ativação gerenciada gratuita a executar. Aviso persiste como risco/decisão, com alternativas sem contratação propostas; nenhuma configuração, exigência adicional de senha/MFA ou conta foi alterada.
+
+Docker Engine disponível; CLI Supabase ausente. Plano de stack local + Mailpit + esquema/RLS sem dados de produção descrito, sem instalação/inicialização/provisionamento. A whitelist do servidor não aceita Supabase HTTP local: E2E de portal exige harness loopback separado/revisado ou ambiente hospedado autorizado, sem enfraquecer produção. Nenhum desses recursos foi criado. A/B/C/D e E2E reais seguem BLOQUEADOS.
+
+234/234 testes e quatro checks de sintaxe novamente aprovados; runtime/dependências preservados, custo contratado adicional R$ 0. PR apto à revisão e próxima preparação autorizada, não à publicação. Aguardar autorização específica do titular para signup/laboratório e revisão do GPT-6; etapa 01 parcialmente bloqueada, sem merge/deploy/missão 02.

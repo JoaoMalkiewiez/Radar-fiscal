@@ -137,3 +137,82 @@ Limpar somente UUIDs/chaves do manifesto: documentos/objetos, movimentações, e
 ## Recomendação para revisão/publicação
 
 Manter PR #12 em draft e etapa 01 parcialmente bloqueada. O operador precisa disponibilizar ambiente/contas sintéticas, decidir as configurações CFG-01/CFG-02 sem custos adicionais e executar a matriz real. Somente depois o GPT-6 pode revisar evidências e decidir sobre publicação. **Este relatório não autoriza merge/deploy nem missão 02.**
+
+## Missão 01.5 — decisões administrativas e laboratório R$ 0
+
+Conferência de **12/11/2026**, base `0c3a579`. Nenhuma configuração foi aplicada. Esta seção complementa a matriz anterior, sem alterar o código aprovado ou converter testes bloqueados em aprovações.
+
+### Estado novamente observado e disponibilidade das ferramentas
+
+- GET real `/auth/v1/settings`: HTTP 200, `disable_signup=false`, `mailer_autoconfirm=false`, email ativo. Nenhum signup/login/convite/recovery foi tentado.
+- Security Advisor: mantém WARN `auth_leaked_password_protection`.
+- Metadados da organização do projeto confirmam **`plan=free`, `tier=tier_free`**. Não foram consultados pagamentos, contas de usuário ou dados de clientes.
+- As ferramentas Supabase conectadas não oferecem ação para atualizar a configuração Auth. Não usar SQL sobre schemas internos para substituir esse controle. Além disso, **não há autorização explícita para alterar produção**, mesmo se outro mecanismo vier a ficar disponível.
+- Docker Engine local responde, versão `29.9.2`; executável Supabase CLI não localizado. Não houve instalação, criação/inicialização de containers, projeto, branch Supabase, conta ou outro recurso.
+- `npm test` novamente: **234/234 aprovados**, zero falhas/skip. Os quatro `node --check` solicitados passaram. Custos contratados e alterações de runtime: **nenhum**.
+
+### Cadastro fechado — ação concreta para o administrador
+
+1. Abrir [projeto → Authentication → Sign In / Providers](https://supabase.com/dashboard/project/kokpxikvisheaxkicmop/auth/providers).
+2. Em **User Signups**, localizar **Allow new users to sign up** e, **após autorização explícita da mudança**, desativar e salvar. O resultado esperado é `disable_signup=true` no endpoint público. Não desabilitar o provedor **Email**: isso é outra configuração e pode interromper autenticação.
+3. Não alterar simultaneamente confirmação de e-mail, URLs, SMTP, sessões, MFA, políticas de senha ou usuários. Registrar o estado anterior e a alteração específica, sem anexar segredos. Alteração não executada nesta missão.
+4. Reconsultar `GET <url-do-projeto>/auth/v1/settings`, usando somente chave publicável no header apikey e descartando redirects. Registrar apenas HTTP e `disable_signup`, `external.email` e `mailer_autoconfirm`; nunca chave/headers. Esperado: signup desabilitado, email ainda ativo e demais opções preservadas.
+5. Em ambiente autorizado, executar controles positivos de login e recovery de uma conta sintética existente e convite administrativo de uma conta **nova** dedicada. Testar signup público negativo somente com fixture e autorização, sem repetir envios. Não usar contas reais para verificar a mudança.
+
+**Impacto esperado, documentado; ainda não testado em produção:** a [configuração geral oficial](https://supabase.com/docs/guides/auth/general-configuration) diz que, com signup desativado, usuários existentes continuam podendo entrar. Fechar cadastro não apaga contas, não muda senhas, não revoga sessões existentes e não substitui `legal_access`. Recuperação de conta existente é um fluxo separado de signup. A rota administrativa de convite também é separada; o fluxo upstream de `Invite` cria a conta pelo mecanismo administrativo, sem o gate público de `DisableSignup`. Convites continuam sujeitos a SMTP, limites e hooks de criação. Isso não garante entrega nem comprova o comportamento da versão hospedada sem o teste real.
+
+Para o administrador, o fluxo de convite fica em [Authentication → Users](https://supabase.com/dashboard/project/kokpxikvisheaxkicmop/auth/users), **Add user → Send invitation**, ou pela [API administrativa inviteUserByEmail](https://supabase.com/docs/reference/javascript/auth-admin-inviteuserbyemail) em contexto administrativo seguro. Não colocar chave administrativa no portal ou usá-la nas verificações RLS de usuários comuns. Após aceitar convite, a conta só acessa o escritório se autorizada em `legal_access`.
+
+Verificar separadamente [Authentication → URL Configuration](https://supabase.com/dashboard/project/kokpxikvisheaxkicmop/auth/url-configuration): retorno explícito `https://radar-fiscal-iyn3.onrender.com/juridico/portal`, sem URL arbitrária/wildcard desnecessário. Convite deve usar o retorno do portal; o fallback depende de Site URL. Não modificar URLs como efeito colateral de fechar cadastro. Recovery, SMTP e redirecionamento real permanecem BLOQUEADOS.
+
+A análise de implementação upstream consultou [invite.go](https://github.com/supabase/auth/blob/master/internal/api/invite.go), [recover.go](https://github.com/supabase/auth/blob/master/internal/api/recover.go) e [signup.go](https://github.com/supabase/auth/blob/master/internal/api/signup.go) em 12/11. É referência técnica, não identificação da versão hospedada nem evidência E2E. `Recover` procura a conta existente; o gate `DisableSignup` pertence ao fluxo público de cadastro. Nenhuma dessas rotas foi chamada com credenciais nesta análise.
+
+### Senhas vazadas — Free versus Pro e alternativas
+
+A [documentação oficial de Password security](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection), consultada em 12/11, declara: **“Leaked password protection is available on the Pro Plan and above.”** Com o plano Free confirmado, a ativação gerenciada gratuita está **BLOQUEADA por disponibilidade do plano**. O aviso de proteção ausente permanece um risco; não é correto recomendar que o administrador simplesmente habilite a opção no Free ou afirmar que esta missão o eliminou.
+
+Se o plano mudar por decisão separada do titular, a opção fica em **Authentication → Sign In / Providers → Email**, nas opções de segurança de senha. Não fazer upgrade nem habilitar recurso pago automaticamente. Não estimamos preço porque não há contratação proposta/autorizada; manter custo incremental contratado **R$ 0**.
+
+O mecanismo rejeita senhas conhecidas como vazadas ao definir/alterar senha e pode impactar erros de credenciais fracas. Políticas fortalecidas não devem ser tratadas como migração automática das senhas atuais: conferir login existente, recovery e redefinição em laboratório. Não reescrever ou invalidar contas em massa. Não habilitar nonce/reauthentication, exigência de senha atual ou MFA como efeito colateral: esses controles exigem validação dos fluxos do cliente, particularmente a recuperação, que hoje não solicita todos esses campos.
+
+Alternativas de custo de serviço zero, propostas e **não aplicadas**:
+
+- Administrador revisar no provedor Email o mínimo/complexidade de senha; alinhar o backend ao mínimo de 12 caracteres já usado no formulário, após autorização e teste. O mínimo real do backend não foi inferido do formulário nem exposto pelo endpoint público consultado.
+- Usar senhas longas, aleatórias e exclusivas, geradas/guardadas por gestor já disponível ao titular, sem contratar serviço. Não reutilizar senhas entre contas/ambientes.
+- Fechar signup, manter confirmação de email e convite administrativo, não alterar cotas para contornar limites; preservar RLS por proprietário/autorização, higiene de sessão e proteção dos segredos existentes.
+- Avaliar MFA em revisão própria apenas se houver disponibilidade sem custo e suporte integral do portal; não declarar MFA implementado ou impor um fator que impeça login/recovery.
+
+Essas medidas **não equivalem** a detectar senhas vazadas. Não enviar senha em texto puro, hashes ou consultas a um serviço externo pelo navegador para tentar substituir a função paga. Não introduzir hooks/serviços novos, integrações HIBP, dependências ou custos como atalho. A aceitação do risco residual deve ser explícita na revisão do GPT-6/titular.
+
+### Laboratório local — plano sem provisionamento externo
+
+Opção preferencial para o primeiro ciclo: stack Supabase local sobre **Docker Engine já existente**, seguindo o [guia oficial de desenvolvimento local](https://supabase.com/docs/guides/local-development/cli/getting-started). Sem projeto remoto, branch hospedada ou SMTP contratado. Isso usa CPU/RAM/disco/rede da máquina existente; confirmar capacidade e política/licença do runtime antes de iniciar, sem aumentar plano de hospedagem. Não é promessa de custo operacional absoluto zero em qualquer máquina; é ausência de nova assinatura/serviço contratado. Não recomendamos criar projeto Free remoto presumindo cota disponível.
+
+**Passos para execução futura autorizada — não executados:**
+
+1. Aprovar a criação do laboratório local e de suas quatro contas/fixtures. Confirmar disco/RAM disponíveis, acesso às imagens oficiais e portas loopback livres. Supabase CLI ainda precisa ser instalado por método oficial em diretório de laboratório, com versão registrada/fixada, sem adicionar dependências ao app. Consultar `supabase --help` e ajuda dos subcomandos da versão instalada antes de executar.
+2. Usar diretório isolado, por exemplo `work/radar-juridico-lab`, fora das migrações de produção. `supabase init` cria configuração local; **não executar `supabase link`**, não fornecer URL/chave de produção, não fazer pull/export de dados e não selecionar o projeto hospedado nas operações locais.
+3. Preparar a stack local e conferir seu escopo antes de `supabase start`. CLI pode imprimir credenciais na inicialização/status: executar em terminal reservado, não enviar saída bruta a chat, CI ou screenshots. Guardar segredos apenas no ambiente seguro do laboratório. Serviços limitados a loopback, sem túnel/exposição pública.
+4. Reproduzir somente a estrutura em banco **novo e vazio**, na ordem: `database/radar-juridico.sql`, `database/authorized-access-and-movements.sql`, `database/private-audit-trail.sql`. Se usar migrações CLI, criar cada arquivo com `supabase migration new` e aplicar somente na instância local após conferir as flags da versão. Não reaplicar SQL em produção nem copiar registros reais. Comparar políticas/ACL/FKs/bucket/triggers por catálogo; registrar versões e diferenças de Auth/Postgres/Storage.
+5. O guia atual apresenta API em `http://127.0.0.1:54321`, Studio em `:54323` e captura de email local **Mailpit em `:54324`**; confirmar as portas emitidas pela versão usada, sem registrar as chaves. Configurar Auth/redirects **somente locais**. E-mails fictícios terminam na caixa local, sem destinatário externo nem consumo de cota SMTP hospedada; links continuam sensíveis e devem ser sanitizados.
+6. Criar A/B/C/D **apenas no laboratório aprovado** usando o mecanismo administrativo local. A/B autorizados, C sem legal_access e D desativado. Subcaso de revogação usa uma fixture D exclusiva, criada para a transição autorizado→desativado; nunca desativar conta existente fora desse laboratório. Usuários comuns autenticam por senha e JWTs reais locais; chave administrativa não representa A/B/C/D.
+7. Executar a matriz detalhada deste relatório: controles positivos próprios, leitura/escrita/owner e vínculos cruzados, auditoria, Storage com objeto conhecido, MIME/tamanho, refresh/logout/reentrada, convite/recovery e revogação. Registrar como **teste real contra Supabase local**, não validação do Supabase hospedado. Não confundir a captura local de email com prova de entrega SMTP de produção.
+8. Limpar apenas fixtures do manifesto e encerrar os containers locais conforme autorização, sem apagar auditoria de produção ou dados de terceiros. Reservar a decisão de retenção/remoção do volume local ao operador. Não implementar job de limpeza amplo.
+
+**Limitação concreta para E2E do portal:** `server.js` aceita `LEGAL_SUPABASE_URL` apenas em `https://<ref>.supabase.co` e chave no formato publicável. A API local HTTP não passa por essa configuração; é esperado `/api/juridico/config` não habilitar a conexão local. Não é defeito novo de produção e não relaxamos whitelist/CSP. O laboratório pode testar Auth/REST/Storage diretamente. Para UI completa, preparar e revisar separadamente um **harness de teste loopback** que sirva os assets aprovados e faça proxy para a stack local, com configuração de conexão/CSP exclusiva do laboratório, sem simular respostas de Auth/dados. Isso é adaptação do ambiente, que deve ser documentada, e ainda não foi implementada/autorizada. Outra opção é projeto hospedado de teste já autorizado e comprovadamente dentro da cota gratuita; nenhum foi identificado ou criado. Enquanto esse requisito não for atendido, o E2E completo de UI segue BLOQUEADO.
+
+### Matriz da Missão 01.5
+
+| Cenário | Estado | Resultado/pendência |
+| --- | --- | --- |
+| Inspeção Auth pública e plano | APROVADO | HTTP 200; cadastro aberto reconfirmado; plano Free verificado |
+| Cadastro fechado em produção | REPROVADO | `disable_signup=false`; ação específica do administrador descrita, sem autorização para aplicá-la |
+| Preservação de login/recovery/convite após fechar signup | BLOQUEADO | Comportamento esperado/documentado; exige alteração autorizada e contas de fixture para comprovar |
+| Advisor de senhas vazadas | APROVADO quanto à execução da inspeção | WARN continua; proteção não ativada |
+| Ativação gerenciada sem custo no Free | BLOQUEADO | Docs reservam recurso a Pro+; nenhuma contratação |
+| Preparação de plano local sem recurso externo | APROVADO quanto ao planejamento | Docker disponível, CLI ausente, migrações e limitação UI identificadas; nenhum laboratório criado |
+| A/B/C/D, login/refresh/CRUD/RLS/Storage/recovery reais | BLOQUEADO | Sem ambiente/credenciais/contas novos autorizados; plano pronto, execução não iniciada |
+| Alteração de produção, provisionamento e envios reais | NÃO EXECUTADO | Proibidos sem autorização específica; nenhum dado existente alterado |
+| Automação local | APROVADO | 234/234 e quatro checks de sintaxe, sem remoção/skip |
+
+**Próxima validação:** o PR permanece tecnicamente apto à revisão e preparação autorizada do laboratório, com runtime preservado; **não está liberado para produção nem permite concluir a etapa 01**. Administrador/titular precisa autorizar a mudança específica de signup e a criação do laboratório/fixtures, e decidir mitigação/aceitação do aviso pago. Seguem pendentes E2E A/B/C/D, URLs e entrega SMTP hospedada. Aguardar GPT-6, sem merge/deploy ou missão 02.
