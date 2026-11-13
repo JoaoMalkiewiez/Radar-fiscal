@@ -96,3 +96,7 @@ Tarefa rastreável: [GitHub Issue #10](https://github.com/JoaoMalkiewiez/Radar-f
 - **Gratuidade:** orçamento adicional zero; oferecer alternativas legítimas sem afirmar que integração restrita é pública.
 - **Confiabilidade:** nenhuma alteração quebra o site fiscal original; preferir incrementos pequenos e reversíveis.
 - **Continuidade:** a próxima conversa começa pela leitura deste documento na `main`, não por uma promessa de trabalho em segundo plano.
+
+### Missão 01.9 — laboratório Codespaces (preparação)
+
+Consulta de ambientes respondeu200/zero; máquinas e billing usage403 para integração. Cota e bloqueio de cobrança não confirmados: nenhum Codespace criado, nenhum E2E real. Configuração opt-in, preflight sem pulls e roteiro remoto em [lab/README.md](lab/README.md#missão-019--codespaces-sem-computador-local). Proprietário precisa confirmar saldo/limite efetivo que impeça custos e elegibilidade antes de criar. **303 testes unitários/regressão aprovados**, doze checks de sintaxe; Actions do SHA final no comentário do PR. Produção preservada; etapa01 parcialmente bloqueada, PR draft, sem merge/deploy/missão02. [Relatório](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão-019--codespaces-preparado-criação-bloqueada-por-custo-não-comprovado).
