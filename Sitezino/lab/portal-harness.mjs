@@ -3,12 +3,11 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-const config = JSON.parse(
-  await fs.readFile(process.env.RADAR_LAB_CONFIG, "utf8"),
-);
+import { privateJSON, validateConfig, privateLocations } from "./safety.mjs";
+const config = privateJSON(process.env.RADAR_LAB_CONFIG);
+validateConfig(config);
+privateLocations([process.env.RADAR_LAB_CONFIG]);
 const upstream = new URL(config.url);
-if (upstream.protocol !== "http:" || upstream.hostname !== "127.0.0.1")
-  throw Error("Laboratory requires loopback backend");
 const origin = "http://127.0.0.1:5517";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const assets = new Map(
@@ -75,6 +74,12 @@ const server = http.createServer(async (req, res) => {
         redirect: "manual",
         signal: AbortSignal.timeout(300000),
       });
+      const location = response.headers.get("location");
+      if (location && new URL(location, origin).origin !== origin) {
+        res.writeHead(502);
+        res.end("Unexpected laboratory redirect");
+        return;
+      }
       res.statusCode = response.status;
       for (const name of ["content-type", "content-disposition", "location"])
         if (response.headers.has(name))

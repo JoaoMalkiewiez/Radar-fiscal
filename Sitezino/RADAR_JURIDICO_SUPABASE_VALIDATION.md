@@ -321,3 +321,49 @@ Reconferência HTTP nesta missão: settings 200, `disable_signup=false`, `extern
 Procedimento manual oficial: [Authentication → Sign In / Providers](https://supabase.com/dashboard/project/kokpxikvisheaxkicmop/auth/providers) → User Signups → **Allow new users to sign up OFF**, salvar mantendo **Email e todas as outras opções**. Comparar antes/depois e verificar `disable_signup=true` sem expor chaves. Não alterar SMTP, usuários, RLS ou URLs como efeito colateral. Nenhum login/convite/recovery de produção foi solicitado.
 
 Retomar em host com disco suficiente, revisar/validar os runners ainda não exercitados e executar a matriz real antes de aprovar a etapa. Riscos residuais incluem compatibilidade do laboratório ainda desconhecida, signup aberto, proteção de senhas vazadas fora do Free, falta de prova real A/B/C/D/SMTP/URLs e resultados incertos de escrita. Nenhum serviço contratado; custo contratado adicional R$ 0. **PR continua draft e etapa 01 parcialmente bloqueada, sem merge/deploy/missão 02.**
+
+## Missão 01.8 — revisão do laboratório sem repetição dos pulls
+
+Data: **13/11/2026**. Base: `f0e6718d3946a36d18a8e1083db8f74824d8dabd`. Mesmo PR #12/branch. Autorizações anteriores preservadas; nenhuma nova autorização solicitada para ferramentas/fixtures locais ou signup específico. Runtime de produção não alterado.
+
+### Fase A: capacidade atual e limite respeitado
+
+Executor disponível e workspace gravável; Docker **29.9.2**, driver **vfs**, armazenamento `/home/dockerd/.local/share/docker`, filesystem **7,9 GB** com aproximadamente **3,5 GB livres**, memória disponível aproximadamente **9 GB**. CLI **3.1.0** continua inicializando com `SUPABASE_HOME` no workspace, sem alterar HOME/permissões globais. Não houve aumento comprovado de capacidade e **não foi feito novo pull, start, instalação da stack ou criação de container/volume**.
+
+A margem operacional de aproximadamente 30 GB solicitada não foi atendida. Somente a execução da stack/E2E foi encerrada como bloqueada; a revisão de código de laboratório, correções, testes de regressão e documentação prosseguiram. [Procedimento executável Windows + WSL2/Docker Desktop ou Linux](lab/README.md) atualizado, mantendo validação de capacidade no armazenamento Docker, versão/digest da CLI, loopback, banco vazio e nenhuma conexão hospedada. Os comandos de Windows/WSL2 não foram executados neste host Linux e não constituem validação E2E.
+
+### Fase B: defeitos identificados e correções comprovadas por testes
+
+1. **Falso positivo em negativas:** o runner aceitava 400/401/403 genéricos como prova de RLS e até falhas genéricas em negativos de Storage. Agora exige SQLSTATE pertinente e status/código Storage compatível. Erros de payload, JWT ou indisponibilidade não comprovam bloqueio de acesso. Testes demonstram a rejeição desses falsos positivos; formatos reais da stack permanecem sujeitos ao E2E bloqueado.
+2. **Integridade incompleta:** antes só comparava existência/proprietário de A e contagem nas mutações negadas C/D. Agora captura snapshot completo de A e compara todos os campos; C/D verificam a linha completa por SQL local, além dos bytes conhecidos do objeto. Não inferir integridade pelo HTTP 200.
+3. **Limpeza sem confirmação:** a função antiga ignorava respostas das exclusões e marcava cleaned=true. Agora valida manifesto, UUIDs/proprietários/marcadores do lote e identidade da conta; confirma status e ausência de objetos, registros e usuários antes de declarar sucesso. Retorna falha se a API negar, objeto/usuário persistir ou identidade divergir. Conta criada sem resposta fica em pendingUsers e exige reconciliação, impedindo falsa declaração de limpeza. O resultado da fase cleanup não apaga reprovações históricas da suíte.
+4. **Separação de chaves e arquivos:** o conversor/harness não rejeitavam uma chave administrativa trocada para o campo público. Agora distinguem chave publicável/anon de service_role e recusam troca/colisão; o teste de role é apenas uma barreira de configuração, não autenticação criptográfica. Arquivos privados são recusados dentro do repo, por symlink ou com caminhos colidentes; escrita privada mantém 0600. JSON corrompido não repete conteúdo potencialmente secreto no erro.
+5. **Reentrada acidental no runner:** modo desconhecido anteriormente executava run. Agora setup/run/cleanup devem ser explícitos; falta de manifesto e repetição de rodada iniciada são bloqueadas antes de gravações. Setup exige Auth local vazio. Identificadores do lote são mantidos em nomes/caminhos para limpeza limitada.
+6. **Rede e compatibilidade:** somente origens HTTP em 127.0.0.1, sem credenciais/caminho/query/fragmento na configuração; Mailpit não segue redirects, com timeout, e harness rejeita Location externo. Transferência usa 300 s e chamadas comuns 30 s. Leitura de erro Auth aceita error_code do REST GoTrue, sem confundir code HTTP numérico. Expiração/logout exigem evidência de erro pertinente, não qualquer resposta de falha.
+
+Adicionados `lab/safety.mjs`, `lab/cleanup.mjs` e `test/lab-validation.test.js`; conversor, runner, harness e README atualizados. As correções se limitam ao laboratório. Não alteramos `server.js`, portal aprovado, funcionalidades fiscais, dependências da aplicação, SQL ou políticas de produção.
+
+### Matriz desta missão
+
+| Fase/cenário | Estado | Evidência e alcance |
+| --- | --- | --- |
+| Executor, escrita, Docker e CLI | APROVADO | Diagnóstico direto; EROFS permanece resolvido |
+| Capacidade para stack oficial | BLOQUEADO | Driver vfs e apenas ~3,5 GB livres; sem mudança e sem nova tentativa de pull |
+| Revisão/correções de laboratório | APROVADO quanto à regressão | Defeitos acima cobertos por testes unitários/de protocolo, sem simular aprovação Supabase |
+| Regressão local | APROVADO | **274/274**, incluindo todos os 236 anteriores e 38 novos; zero falhas/skip |
+| Sintaxe | APROVADO | Sete comandos solicitados e checks adicionais de safety/cleanup/teste |
+| C — Stack oficial, Mailpit, migrações, contas | BLOQUEADO | Nenhuma stack saudável ou fixture criada |
+| D — Auth/RLS/REST/Storage/revogação/auditoria reais | BLOQUEADO | **Zero cenários Supabase E2E executados** |
+| E — UI desktop/mobile com Supabase real | BLOQUEADO | Harness revisto, integração real ainda não executada |
+| F — Signup fechado em produção | REPROVADO no critério; ação BLOQUEADA | GET real HTTP 200, disable_signup=false; Email ativo e mailer_autoconfirm=false |
+| Credencial administrativa compatível | BLOQUEADO | Ausência de token de gestão verificada somente como booleano; ferramentas conectadas sem atualização Auth |
+| Cleanup de fixtures reais | NÃO EXECUTADO / não aplicável | Zero fixtures criadas; confirmação de cleanup testada somente com dependências controladas |
+| Novo CI | Conferir comentário de entrega | Somente declarar aprovação dos runs do SHA final correspondente |
+
+Os testes novos usam dados sintéticos e dependências controladas, incluindo um servidor HTTP de teste que verifica o contrato do encerramento. **Não são Supabase real**, não comprovam que os formatos/payloads são aceitos pela stack e não encerram as fases C/D/E. O runner revisto continua precisando de execução integral em host adequado, sem ignorar falhas de compatibilidade.
+
+### Produção, custos e retomada
+
+Signup foi reconferido em leitura: `disable_signup=false`, `external.email=true`, `mailer_autoconfirm=false`. Nenhuma mudança, conta, e-mail, RLS, SMTP ou URL de produção. A alteração específica permanece autorizada, mas não há mecanismo administrativo autenticado compatível disponível. Proprietário pode executar [Authentication → Sign In / Providers](https://supabase.com/dashboard/project/kokpxikvisheaxkicmop/auth/providers) → **Allow new users to sign up OFF** e salvar mantendo todas as demais opções; verificar antes/depois sem compartilhar credenciais. Não usar SQL interno nem inventar acesso de gestão.
+
+Risco residual principal: E2E real ainda ausente, laboratório não provado contra as imagens fixadas, signup aberto e aviso de senhas vazadas Pro+. Limpeza agora recusa ambiguidades, mas uma criação sem resposta exige conferência humana restrita ao lote. Uma gravação aceita não é desfeita por ignorar callback. Custo contratado adicional R$ 0; nenhum projeto externo/serviço pago criado. Próximo requisito é **host com armazenamento Docker suficiente**, seguido de execução da matriz e UI, não outra tentativa no host atual. **Etapa 01 parcialmente bloqueada, PR draft, sem merge/deploy ou missão 02; aguardar GPT-6.**

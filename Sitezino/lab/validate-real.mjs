@@ -3,27 +3,39 @@ import fs from "node:fs";
 import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { setTimeout as pause } from "node:timers/promises";
+import {
+  privateJSON,
+  validateConfig,
+  privateLocations,
+  writePrivate,
+  localBase,
+  databaseDenied,
+  storageDenied,
+  unchanged,
+  validManifest,
+  authErrorCode,
+} from "./safety.mjs";
+import { cleanupManifest } from "./cleanup.mjs";
 const configFile = process.env.RADAR_LAB_CONFIG;
 if (!configFile)
   throw Error("RADAR_LAB_CONFIG must point to private local configuration");
-const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
-const local = (url) => {
-  const u = new URL(url);
-  if (u.protocol !== "http:" || u.hostname !== "127.0.0.1")
-    throw Error("Only loopback HTTP is permitted");
-  return u;
-};
-local(config.url);
-local(config.mailpit);
-if (!/^supabase_.*radar/.test(config.databaseContainer))
-  throw Error("Unexpected laboratory database");
+const config = privateJSON(configFile);
+validateConfig(config);
+privateLocations([configFile, config.stateFile, config.evidenceFile]);
+const mode = process.argv[2];
+if (!["setup", "run", "cleanup"].includes(mode))
+  throw Error("Explicit mode setup, run or cleanup required");
+const local = localBase;
 const stateFile = config.stateFile,
   evidenceFile = config.evidenceFile;
-const state = fs.existsSync(stateFile)
-  ? JSON.parse(fs.readFileSync(stateFile, "utf8"))
+const exists = fs.existsSync(stateFile);
+if (!exists && mode !== "setup")
+  throw Error("Existing laboratory manifest required");
+const state = exists
+  ? privateJSON(stateFile)
   : { run: crypto.randomUUID(), users: {}, records: {}, results: [] };
-const save = () =>
-  fs.writeFileSync(stateFile, JSON.stringify(state), { mode: 0o600 });
+validManifest(state);
+const save = () => writePrivate(stateFile, state);
 const check = (ok, code) => {
   if (!ok) throw Object.assign(Error(code), { safeCode: code });
 };
@@ -86,7 +98,7 @@ async function request(
     headers: { ...headers, Prefer: "return=representation" },
     body: body === undefined ? undefined : bytes ? body : JSON.stringify(body),
     redirect: "manual",
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(bytes ? 300000 : 30000),
   });
   const buffer = Buffer.from(await r.arrayBuffer());
   let data = null;
@@ -148,13 +160,18 @@ async function mailLink(email, type) {
   for (let attempt = 0; attempt < 15; attempt++) {
     const r = await fetch(config.mailpit + "/api/v1/messages", {
       signal: AbortSignal.timeout(5000),
+      redirect: "manual",
     });
+    check(r.status === 200, "MAIL_LIST_FAILED");
     const list = await r.json();
     for (const m of list.messages || []) {
       if (!(m.To || []).some((x) => x.Address === email)) continue;
-      const msg = await (
-        await fetch(config.mailpit + "/api/v1/message/" + m.ID)
-      ).json();
+      const detail = await fetch(
+        config.mailpit + "/api/v1/message/" + encodeURIComponent(m.ID),
+        { redirect: "manual", signal: AbortSignal.timeout(5000) },
+      );
+      check(detail.status === 200, "MAIL_DETAIL_FAILED");
+      const msg = await detail.json();
       const text = (msg.HTML || msg.Text || "").replaceAll("&amp;", "&");
       const links = text.match(/https?:\/\/[^\s<>"']+/g) || [];
       const link = links.find(
@@ -188,9 +205,16 @@ async function accept(link) {
 const payload = Buffer.from("%PDF-1.4\nSynthetic laboratory only\n%%EOF\n");
 async function setup() {
   check(Object.keys(state.users).length === 0, "STATE_ALREADY_INITIALIZED");
+  check(
+    sql("select count(*) from auth.users;") === "0",
+    "LAB_DATABASE_NOT_EMPTY",
+  );
   for (const name of ["A", "B", "C", "D"]) {
     const email = `radar-${state.run}-${name.toLowerCase()}@example.test`,
       password = crypto.randomBytes(24).toString("base64url") + "aA1!";
+    state.pendingUsers ??= {};
+    state.pendingUsers[name] = { email };
+    save();
     const r = await admin(
       name === "A" ? "/auth/v1/invite" : "/auth/v1/admin/users",
       {
@@ -201,6 +225,7 @@ async function setup() {
     );
     check([200, 201].includes(r.status) && r.data.id, "USER_CREATE_FAILED");
     state.users[name] = { id: r.data.id, email, password };
+    delete state.pendingUsers[name];
     save();
     if (name === "A") {
       const link = await mailLink(email, "invite");
@@ -237,19 +262,19 @@ function fixture(name) {
         id: ids.legal_clients,
         owner_id: u.id,
         kind: "pf",
-        name: "E2E synthetic " + name,
+        name: "E2E " + state.run + " synthetic " + name,
       },
       legal_cases: {
         id: ids.legal_cases,
         owner_id: u.id,
         client_id: ids.legal_clients,
-        title: "E2E synthetic case " + name,
+        title: "E2E " + state.run + " synthetic case " + name,
       },
       legal_events: {
         id: ids.legal_events,
         owner_id: u.id,
         case_id: ids.legal_cases,
-        title: "E2E synthetic event",
+        title: "E2E " + state.run + " synthetic event",
         kind: "tarefa",
         starts_at: "2030-01-01T12:00:00Z",
       },
@@ -257,13 +282,13 @@ function fixture(name) {
         id: ids.legal_movements,
         owner_id: u.id,
         case_id: ids.legal_cases,
-        title: "E2E synthetic movement",
+        title: "E2E " + state.run + " synthetic movement",
       },
       legal_documents: {
         id: ids.legal_documents,
         owner_id: u.id,
         case_id: ids.legal_cases,
-        name: "e2e.pdf",
+        name: "e2e-" + state.run + ".pdf",
         storage_path: path,
         size_bytes: payload.length,
         mime_type: "application/pdf",
@@ -280,6 +305,7 @@ async function integrity() {
         r.data[0].owner_id === state.users.A.id,
       "A_RECORD_CHANGED",
     );
+    if (state.baseline?.[t]) unchanged(r.data[0], state.baseline[t]);
   }
   const r = await as(
     "A",
@@ -288,6 +314,14 @@ async function integrity() {
   check(r.status === 200 && r.buffer.equals(payload), "A_OBJECT_CHANGED");
 }
 async function run() {
+  check(
+    !state.runStarted &&
+      !state.cleaned &&
+      ["A", "B", "C", "D"].every((name) => state.users[name]?.access),
+    "RUN_REQUIRES_FRESH_SETUP",
+  );
+  state.runStarted = true;
+  save();
   for (const name of ["A", "B", "D"]) {
     const f = fixture(name);
     state.records[name] = f;
@@ -327,12 +361,19 @@ async function run() {
           body: {
             [t === "legal_clients" || t === "legal_documents"
               ? "name"
-              : "title"]: "E2E updated",
+              : "title"]: "E2E " + state.run + " updated",
           },
         });
         check(r.status === 200 && r.data.length === 1, "OWN_UPDATE_FAILED");
       });
     }
+  state.baseline = {};
+  for (const t of tables) {
+    const r = await rest("A", t, "?id=eq." + state.records.A.ids[t]);
+    check(r.status === 200 && r.data.length === 1, "BASELINE_UNAVAILABLE");
+    state.baseline[t] = r.data[0];
+  }
+  save();
   for (const t of tables)
     for (const method of ["GET", "PATCH", "DELETE"])
       await test("cross.B." + method + "." + t, async () => {
@@ -352,9 +393,15 @@ async function run() {
     await test("cross.owner-insert." + t, async () => {
       const b = { ...state.records.A.bodies[t], id: crypto.randomUUID() };
       if (t === "legal_documents")
-        b.storage_path = state.users.A.id + "/" + crypto.randomUUID() + ".pdf";
+        b.storage_path =
+          state.users.A.id +
+          "/e2e-" +
+          state.run +
+          "-" +
+          crypto.randomUUID() +
+          ".pdf";
       const r = await rest("B", t, "", { method: "POST", body: b });
-      check([400, 401, 403].includes(r.status), "CROSS_OWNER_INSERT_ALLOWED");
+      databaseDenied(r);
       await integrity();
     });
   for (const t of [
@@ -368,9 +415,15 @@ async function run() {
       if (t === "legal_cases") b.client_id = state.records.A.ids.legal_clients;
       else b.case_id = state.records.A.ids.legal_cases;
       if (t === "legal_documents")
-        b.storage_path = state.users.B.id + "/" + crypto.randomUUID() + ".pdf";
+        b.storage_path =
+          state.users.B.id +
+          "/e2e-" +
+          state.run +
+          "-" +
+          crypto.randomUUID() +
+          ".pdf";
       const r = await rest("B", t, "", { method: "POST", body: b });
-      check([400, 401, 403, 409].includes(r.status), "CROSS_REFERENCE_ALLOWED");
+      databaseDenied(r, ["23503", "42501"]);
       await integrity();
     });
   await test("authorization.D.revoke-active-session", async () => {
@@ -400,9 +453,14 @@ async function run() {
           b.case_id = state.records.B.ids.legal_cases;
         if (t === "legal_documents")
           b.storage_path =
-            state.users[name].id + "/" + crypto.randomUUID() + ".pdf";
+            state.users[name].id +
+            "/e2e-" +
+            state.run +
+            "-" +
+            crypto.randomUUID() +
+            ".pdf";
         const r = await rest(name, t, "", { method: "POST", body: b });
-        check([400, 401, 403].includes(r.status), "UNAUTHORIZED_WRITE");
+        databaseDenied(r);
         await integrity();
       });
     }
@@ -432,10 +490,7 @@ async function run() {
                 : {}),
             },
           );
-          check(
-            [400, 401, 403].includes(r.status),
-            "AUTHORIZATION_OR_AUDIT_WRITE_ALLOWED",
-          );
+          databaseDenied(r);
           await integrity();
         });
   await test("audit.generated-and-isolated", async () => {
@@ -473,14 +528,20 @@ async function run() {
         "/storage/v1/object/authenticated/legal-private/" +
           state.records.A.path,
       );
-      check(r.status !== 200, "CROSS_DOWNLOAD_ALLOWED");
+      storageDenied(r);
       await integrity();
     });
     await test("storage.cross-delete." + name, async () => {
-      await as(name, "/storage/v1/object/legal-private", {
+      const denied = await as(name, "/storage/v1/object/legal-private", {
         method: "DELETE",
         body: { prefixes: [state.records.A.path] },
       });
+      if (denied.status !== 200) storageDenied(denied);
+      else
+        check(
+          Array.isArray(denied.data) && denied.data.length === 0,
+          "CROSS_DELETE_REPORTED_ROWS",
+        );
       await integrity();
     });
     await test("storage.cross-list." + name, async () => {
@@ -505,7 +566,16 @@ async function run() {
     check(list.status === 200 && list.data.length >= 1, "OWN_LIST_FAILED");
   });
   await test("storage.max-size", async () => {
-    const path = state.users.B.id + "/" + crypto.randomUUID() + ".pdf";
+    const path =
+      state.users.B.id +
+      "/e2e-" +
+      state.run +
+      "-" +
+      crypto.randomUUID() +
+      ".pdf";
+    state.extraPaths ??= [];
+    state.extraPaths.push(path);
+    save();
     const bytes = Buffer.alloc(10485760, 32);
     const r = await as("B", "/storage/v1/object/legal-private/" + path, {
       method: "POST",
@@ -522,7 +592,7 @@ async function run() {
       body: Buffer.alloc(10485761, 32),
       bytes: true,
     });
-    check(big.status >= 400, "OVERSIZE_ALLOWED");
+    storageDenied(big, "size");
   });
   for (const t of tables)
     await test("cross.owner-update." + t, async () => {
@@ -531,7 +601,7 @@ async function run() {
         method: "PATCH",
         body: { owner_id: state.users.A.id },
       });
-      check([400, 401, 403].includes(r.status), "OWNER_REASSIGNED");
+      databaseDenied(r);
       check(
         (await rest("B", t, "?id=eq." + id)).data[0].owner_id ===
           state.users.B.id,
@@ -547,7 +617,7 @@ async function run() {
           async () => {
             const id = state.records[name === "D" ? "D" : "A"].ids[t];
             const before = sql(
-              `select count(*) from public.${t} where id='${uuid(id)}';`,
+              `select row_to_json(f) from public.${t} f where id='${uuid(id)}';`,
             );
             const r = await rest(name, t, "?id=eq." + id, {
               method,
@@ -561,7 +631,7 @@ async function run() {
             );
             check(
               sql(
-                `select count(*) from public.${t} where id='${uuid(id)}';`,
+                `select row_to_json(f) from public.${t} f where id='${uuid(id)}';`,
               ) === before,
               "ORIGINAL_DELETED",
             );
@@ -588,14 +658,18 @@ async function run() {
         bytes: true,
         contentType: type,
       });
-      check(
-        type === "text/plain" ? r.status >= 400 : r.status === 200,
-        "MIME_POLICY_FAILED",
-      );
+      if (type === "text/plain") storageDenied(r, "mime");
+      else check(r.status === 200, "MIME_POLICY_FAILED");
     });
   for (const name of ["B", "C", "D"])
     await test("storage.cross-upload." + name, async () => {
-      const path = state.users.A.id + "/e2e-" + crypto.randomUUID() + ".pdf";
+      const path =
+        state.users.A.id +
+        "/e2e-" +
+        state.run +
+        "-" +
+        crypto.randomUUID() +
+        ".pdf";
       state.extraPaths ??= [];
       state.extraPaths.push(path);
       save();
@@ -604,7 +678,7 @@ async function run() {
         body: payload,
         bytes: true,
       });
-      check(r.status >= 400, "CROSS_UPLOAD_ALLOWED");
+      storageDenied(r);
       await integrity();
     });
   await test("auth.invalid-credentials", async () => {
@@ -615,7 +689,10 @@ async function run() {
         password: "wrong-synthetic-password",
       },
     });
-    check(r.status === 400, "INVALID_CREDENTIALS_ACCEPTED");
+    check(
+      r.status === 400 && authErrorCode(r) === "invalid_credentials",
+      "INVALID_CREDENTIALS_ACCEPTED",
+    );
   });
   await test("auth.refresh", () => renew("A"));
   await test("auth.recovery-and-password", async () => {
@@ -643,7 +720,12 @@ async function run() {
     const r = await request("/rest/v1/legal_clients?limit=1", {
       token: originalAccess,
     });
-    check(r.status === 401, "EXPIRED_TOKEN_ACCEPTED");
+    check(
+      r.status === 401 &&
+        ["PGRST301", "PGRST303"].includes(r.data?.code) &&
+        /expir/i.test(r.data?.message || ""),
+      "EXPIRED_TOKEN_NOT_PROVEN",
+    );
   });
   await test("auth.logout-and-reentry", async () => {
     const u = state.users.A,
@@ -654,7 +736,15 @@ async function run() {
       method: "POST",
       body: { refresh_token: refresh },
     });
-    check(old.status >= 400, "LOGOUT_REFRESH_ACCEPTED");
+    check(
+      [400, 401].includes(old.status) &&
+        [
+          "refresh_token_not_found",
+          "refresh_token_already_used",
+          "session_not_found",
+        ].includes(authErrorCode(old)),
+      "LOGOUT_REFRESH_NOT_PROVEN",
+    );
     await login("A");
   });
   for (const t of [
@@ -694,40 +784,14 @@ async function run() {
   // Preserve A/D fixtures and accounts for the browser phase; cleanup is explicit.
 }
 async function cleanup() {
-  if (state.extraPaths?.length)
-    await admin("/storage/v1/object/legal-private", {
-      method: "DELETE",
-      body: { prefixes: state.extraPaths },
-    });
-  for (const name of ["A", "B", "D"]) {
-    const f = state.records[name];
-    if (!f) continue;
-    await admin("/storage/v1/object/legal-private", {
-      method: "DELETE",
-      body: { prefixes: [f.path] },
-    });
-  }
-  for (const t of [
-    "legal_documents",
-    "legal_movements",
-    "legal_events",
-    "legal_cases",
-    "legal_clients",
-  ]) {
-    const ids = Object.values(state.records).map(
-      (x) => "'" + uuid(x.ids[t]) + "'",
-    );
-    if (ids.length)
-      sql(`delete from public.${t} where id in (${ids.join(",")});`);
-  }
-  for (const u of Object.values(state.users))
-    await admin("/auth/v1/admin/users/" + uuid(u.id), { method: "DELETE" });
-  state.cleaned = true;
+  await cleanupManifest(state, { admin, sql, save });
+  state.results.push({ id: "fixtures.cleanup", status: "APROVADO" });
   save();
-  console.log("cleanup completed for laboratory manifest");
+  console.log("cleanup verified for laboratory manifest");
 }
+
+const resultStart = state.results.length;
 try {
-  const mode = process.argv[2] || "run";
   if (mode === "setup") {
     await setup();
   } else if (mode === "cleanup") {
@@ -735,8 +799,8 @@ try {
   } else await run();
 } catch (e) {
   state.results.push({
-    id: "suite.infrastructure",
-    status: "BLOQUEADO",
+    id: mode === "cleanup" ? "fixtures.cleanup" : "suite.infrastructure",
+    status: mode === "cleanup" ? "REPROVADO" : "BLOQUEADO",
     reason: e.safeCode || "EXECUTION_FAILED",
   });
   process.exitCode = 1;
@@ -744,6 +808,14 @@ try {
 }
 const summary = {
   run: state.run,
+  phase: mode,
+  phase_counts: Object.fromEntries(
+    ["APROVADO", "REPROVADO", "BLOQUEADO"].map((status) => [
+      status,
+      state.results.slice(resultStart).filter((x) => x.status === status)
+        .length,
+    ]),
+  ),
   environment: "real-local-supabase",
   counts: Object.fromEntries(
     ["APROVADO", "REPROVADO", "BLOQUEADO"].map((s) => [
@@ -756,4 +828,5 @@ const summary = {
 };
 fs.writeFileSync(evidenceFile, JSON.stringify(summary, null, 2));
 console.log(JSON.stringify(summary.counts));
-if (summary.counts.REPROVADO || summary.counts.BLOQUEADO) process.exitCode = 1;
+if (summary.phase_counts.REPROVADO || summary.phase_counts.BLOQUEADO)
+  process.exitCode = 1;

@@ -2,6 +2,12 @@
 
 **Não faz parte do `npm test` comum.** A missão 01.7 validou a CLI e as proteções locais de configuração, mas a stack não iniciou: o Docker `vfs` esgotou o disco de 7,9 GB durante extração paralela e sequencial. Os runners e o harness estão preparados, **não validados contra Supabase iniciado**; não atribuir aprovação E2E a seus cenários até executá-los. Nenhum destes arquivos altera `server.js`, CSP, URLs ou dados de produção.
 
+## Revisão 01.8 (13/11/2026)
+
+O host continua com Docker `vfs`, filesystem de 7,9 GB e aproximadamente 3,5 GB livres. **Nenhum pull/start adicional foi feito.** A stack e todos os cenários E2E de Supabase continuam BLOQUEADOS; use host com capacidade comprovada antes da fase de execução abaixo. Não trocar driver global nem usar `--ignore-health-check` para contornar o bloqueio.
+
+A revisão corrigiu verificadores permissivos de negativos, integridade parcial e limpeza sem confirmação. Os novos testes são unitários/de protocolo com dependências controladas, **não Auth/RLS/Storage reais**. O runner permanece não validado contra uma stack saudável, mesmo com as guardas aprovadas.
+
 ## Requisitos e Windows/WSL2
 
 1. Windows 10/11 compatível, WSL2 com Ubuntu e Docker Desktop com integração habilitada **para essa distribuição**. Conferir elegibilidade da licença gratuita antes de instalar; se a licença de uso exigir assinatura, não contratar. Alternativa: Docker Engine em Linux existente.
@@ -62,7 +68,7 @@ node ../../source/Sitezino/lab/configure-private.mjs status.private.json "$LAB_D
 export RADAR_LAB_CONFIG="$PWD/config.private.json"
 ```
 
-O conversor aceita somente URLs HTTP em `127.0.0.1`, arquivos privados fora do Git e container com nome de laboratório. Usa a chave administrativa **local** apenas para bootstrap/limpeza. As tentativas RLS/Storage de A/B/C/D usam JWTs reais emitidos pelo login de cada conta, nunca service_role para representar usuários comuns. Antes de executar o runner em outro host, conferir a disponibilidade dos campos de `supabase status -o json` e a origem exclusivamente local das chaves. Nenhuma chave deve ser copiada para o portal/repositório.
+O conversor aceita somente origens HTTP limpas em `127.0.0.1` (sem credenciais, caminho, query ou fragmento), arquivos privados fora do Git e container com nome de laboratório. Recusa colisões de arquivos, symlinks e chave administrativa no campo público. Chaves legadas são classificadas pelo campo role apenas para prevenir troca acidental de chaves; isso não verifica assinatura nem substitui a autenticação pelo Supabase. O harness repete essas guardas antes de escutar. O JSON inválido gera erro sanitizado, sem repetir seu conteúdo. O conversor também aplica 0600 ao arquivo privado. Usa a chave administrativa **local** apenas para bootstrap/limpeza. As tentativas RLS/Storage de A/B/C/D usam JWTs reais emitidos pelo login de cada conta, nunca service_role para representar usuários comuns. Antes de executar o runner em outro host, conferir a disponibilidade dos campos de `supabase status -o json` e a origem exclusivamente local das chaves. Nenhuma chave deve ser copiada para o portal/repositório.
 
 ## Execução e portal
 
@@ -72,7 +78,7 @@ node ../../source/Sitezino/lab/validate-real.mjs run
 node ../../source/Sitezino/lab/portal-harness.mjs
 ```
 
-O runner cria apenas A/B/C/D com e-mails fictícios destinados ao Mailpit local. A é criada por convite administrativo; demais contas por admin local. Produz `state.private.json` (credenciais/tokens, **não compartilhar**) e `evidence.sanitized.json` (IDs de cenário/estados, sem tokens). Não repetir setup/run na mesma fixture como tentativa automática: preservar a evidência e investigar falhas. O runner é inicial e não executado nesta infraestrutura; resultados devem ser inspecionados, inclusive falhas por diferença de versão/configuração, antes de qualquer aprovação.
+O runner cria apenas A/B/C/D com e-mails fictícios destinados ao Mailpit local. A é criada por convite administrativo; demais contas por admin local. Produz `state.private.json` (credenciais/tokens, **não compartilhar**) e `evidence.sanitized.json` (IDs de cenário/estados, sem tokens). Os modos `setup`, `run` e `cleanup` são explícitos; um modo ausente/desconhecido não inicia gravações. Setup exige banco de Auth local vazio. `run` exige setup válido e uma única execução por manifesto: repetir uma rodada iniciada é recusado, evitando perder UUIDs e criar duplicatas. Não repetir setup/run na mesma fixture como tentativa automática: preservar a evidência e investigar falhas. O runner é inicial e não executado nesta infraestrutura; resultados devem ser inspecionados, inclusive falhas por diferença de versão/configuração, antes de qualquer aprovação.
 
 Portal em `http://127.0.0.1:5517/juridico/portal`: harness só escuta loopback e faz proxy **real** para Auth/REST/Storage local. Não simula respostas desses serviços e não muda validação de URLs/CSP do app de produção. O endpoint de configuração retorna somente a chave pública. Testar desktop/mobile, login A/B e gate C/D, CRUD, documentos, logout/reentrada/troca de usuário, recovery no Mailpit e mensagens; anotar evidências sem URLs/token/senha. O status secreto da CLI e o manifesto privado não devem ir para console, HAR, Git ou screenshots. Recuperação local não comprova SMTP/URLs hospedados.
 
@@ -95,3 +101,9 @@ node --check test/server.test.js
 ```
 
 Limpeza usa somente UUIDs/caminhos do manifesto privado do laboratório. Confirmar remoção das fixtures, inclusive registros criados manualmente no navegador, antes de descartar volumes. Não usar DELETE amplo, prune global, produção ou usuário existente. Guardar evidências sanitizadas e apagar as credenciais locais conforme retenção aprovada. Não emitir evidência de limpeza concluída antes de conferir a stack.
+
+As fixtures trazem `run_id` no nome/título/chave. A limpeza valida o manifesto, restringe registros por UUID/proprietário/marcador e objetos por caminhos do lote, confere status das exclusões e consultas de ausência; cada usuário só é removido após confirmar UUID/e-mail sintético esperado. Não marca `cleaned=true` se houver objetos/linhas/usuários restantes, erro, identidade divergente ou cadastro de conta sem resposta reconciliada. A chave administrativa local é usada exclusivamente nesses controles de bootstrap/limpeza; as tentativas RLS usam JWTs dos usuários.
+
+Se `setup`/`run` falhar e o shell interromper por `set -e`, preservar os arquivos privados e abrir nova sessão WSL para limpeza explícita, reexportando SUPABASE_HOME/RADAR_LAB_CONFIG/LAB_CLI. Não reiniciar `run`. Se houver `pendingUsers`, conferir somente o cadastro sintético desse lote no ambiente local e reconciliar seu UUID antes de liberar a limpeza; não inventar IDs, apagar contas amplamente ou remover o bloqueio para obter sucesso. Uma resposta perdida pode ter criado a conta. Depois de reconciliado, `cleanup` confirmado retorna sucesso por sua própria fase, mantendo reprovações anteriores no histórico; `phase_counts` não apaga nem substitui `counts` da suíte.
+
+Negativas do banco exigem SQLSTATE pertinente (`42501`, ou `23503` no vínculo cruzado); erro de payload, JWT inválido, quota ou indisponibilidade não comprova RLS. Erros Storage também precisam de status/código pertinente; 400/500 genéricos não recebem aprovação. A compara seus registros completos com o snapshot e os bytes do objeto após negativas; as tentativas C/D de mutação conferem também a linha original completa por oráculo SQL somente local. Transferências têm até 5 minutos e requisições normais 30 s. Mailpit não segue redirects e o harness rejeita retorno para outra origem. Os formatos GoTrue `error_code`/`code` e erros legados/modernos cobertos por testes ainda devem ser conferidos com as versões reais da stack.
