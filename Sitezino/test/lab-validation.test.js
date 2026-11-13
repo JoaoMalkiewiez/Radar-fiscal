@@ -440,3 +440,65 @@ for (const flaw of ["admin-as-public", "output-in-Git"])
     assert.equal(fs.existsSync(output), false);
     assert.ok(!r.stderr.includes(configuration().adminKey));
   });
+
+for (const type of ["invite", "recovery"]) {
+  for (const redirect of [
+    "",
+    "&redirect_to=" +
+      encodeURIComponent("http://127.0.0.1:5517/juridico/portal"),
+  ]) {
+    test(`link local ${type} aceita token e retorno ${Boolean(redirect)}`, async () => {
+      const s = await safety();
+      const link = `http://127.0.0.1:54001/auth/v1/verify?token=synthetic-token&type=${type}${redirect}`;
+      assert.equal(s.localAuthLink(link, configuration().url, type).href, link);
+      assert.throws(() => s.localBase(link));
+    });
+  }
+}
+const actionLink =
+  "http://127.0.0.1:54001/auth/v1/verify?token=synthetic-token&type=invite";
+const badLinks = [
+  ["externo", actionLink.replace("127.0.0.1", "external.invalid")],
+  ["https", actionLink.replace("http:", "https:")],
+  ["porta", actionLink.replace("54001", "54003")],
+  ["localhost", actionLink.replace("127.0.0.1", "localhost")],
+  ["credenciais", actionLink.replace("127.0.0.1", "u:synthetic@127.0.0.1")],
+  ["caminho", actionLink.replace("/auth/v1/verify", "/other/verify")],
+  ["fragmento", actionLink + "#secret"],
+  ["tipo divergente", actionLink.replace("invite", "recovery")],
+  ["tipo proibido", actionLink.replace("invite", "signup")],
+  ["token ausente", actionLink.replace("token=synthetic-token&", "")],
+  ["token vazio", actionLink.replace("synthetic-token", "")],
+  ["tipo duplicado", actionLink + "&type=recovery"],
+  ["token duplicado", actionLink + "&token=second"],
+  ["parametro inesperado", actionLink + "&next=external"],
+  ...[
+    "http://external.invalid",
+    "/juridico/portal",
+    "http://127.0.0.1:5517/other",
+    "http://127.0.0.1:5517/juridico/portal?next=x",
+  ].map((url, i) => [
+    "retorno " + i,
+    actionLink + "&redirect_to=" + encodeURIComponent(url),
+  ]),
+  ["retorno duplicado", actionLink + "&redirect_to=&redirect_to="],
+  ["url malformada", "http://[invalid/synthetic-token"],
+];
+for (const [label, link] of badLinks) {
+  test("link Auth rejeita " + label + " sem expor segredo", async () => {
+    const s = await safety();
+    assert.throws(() => s.localAuthLink(link, configuration().url, "invite"), {
+      message: "INVALID_LOCAL_AUTH_LINK",
+    });
+  });
+}
+test("link Auth recusa tipo solicitado proibido e base inválida", async () => {
+  const s = await safety();
+  assert.throws(() =>
+    s.localAuthLink(actionLink, configuration().url, "signup"),
+  );
+  assert.throws(
+    () => s.localAuthLink(actionLink, "http://external.invalid", "invite"),
+    { message: "INVALID_LOCAL_AUTH_LINK" },
+  );
+});

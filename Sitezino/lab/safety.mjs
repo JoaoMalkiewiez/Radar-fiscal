@@ -25,6 +25,42 @@ export function localBase(value) {
   );
   return u;
 }
+// Email action URLs carry secrets: reject with a fixed message only.
+export function localAuthLink(value, apiBase, expectedType) {
+  const fail = () => requireCheck(false, "INVALID_LOCAL_AUTH_LINK");
+  try {
+    const base = localBase(apiBase);
+    const u = new URL(value);
+    if (
+      !["invite", "recovery"].includes(expectedType) ||
+      u.protocol !== "http:" ||
+      u.hostname !== "127.0.0.1" ||
+      u.origin !== base.origin ||
+      u.username ||
+      u.password ||
+      u.hash ||
+      u.pathname !== "/auth/v1/verify"
+    )
+      fail();
+    const allowed = ["token", "type", "redirect_to"];
+    for (const key of u.searchParams.keys()) {
+      if (!allowed.includes(key) || u.searchParams.getAll(key).length !== 1)
+        fail();
+    }
+    if (
+      !u.searchParams.get("token") ||
+      u.searchParams.get("type") !== expectedType ||
+      (u.searchParams.has("redirect_to") &&
+        u.searchParams.get("redirect_to") !==
+          "http://127.0.0.1:5517/juridico/portal")
+    )
+      fail();
+    return u;
+  } catch {
+    fail();
+  }
+}
+
 function role(key) {
   try {
     return JSON.parse(Buffer.from(key.split(".")[1], "base64url").toString())

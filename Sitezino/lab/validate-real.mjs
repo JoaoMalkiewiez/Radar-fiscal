@@ -8,7 +8,7 @@ import {
   validateConfig,
   privateLocations,
   writePrivate,
-  localBase,
+  localAuthLink,
   databaseDenied,
   storageDenied,
   unchanged,
@@ -25,7 +25,6 @@ privateLocations([configFile, config.stateFile, config.evidenceFile]);
 const mode = process.argv[2];
 if (!["setup", "run", "cleanup"].includes(mode))
   throw Error("Explicit mode setup, run or cleanup required");
-const local = localBase;
 const stateFile = config.stateFile,
   evidenceFile = config.evidenceFile;
 const exists = fs.existsSync(stateFile);
@@ -174,16 +173,18 @@ async function mailLink(email, type) {
       const msg = await detail.json();
       const text = (msg.HTML || msg.Text || "").replaceAll("&amp;", "&");
       const links = text.match(/https?:\/\/[^\s<>"']+/g) || [];
-      const link = links.find(
-        (x) =>
-          x.includes("/verify?") &&
-          new URL(x).searchParams.get("type") === type,
-      );
+      const link = links.find((x) => {
+        try {
+          return (
+            new URL(x).pathname === "/auth/v1/verify" &&
+            new URL(x).searchParams.get("type") === type
+          );
+        } catch {
+          return false;
+        }
+      });
       if (link) {
-        const u = new URL(link);
-        local(u);
-        check(u.origin === new URL(config.url).origin, "EMAIL_ORIGIN_MISMATCH");
-        return u;
+        return localAuthLink(link, config.url, type);
       }
     }
     await pause(500);
