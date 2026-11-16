@@ -1,6 +1,6 @@
 # Radar Jurídico — roteiro de evolução com aprovação por testes
 
-> Documento de referência persistente. Última revisão: 13/11/2026.
+> Documento de referência persistente. Última revisão: 16/11/2026.
 > Projeto: `JoaoMalkiewiez/Radar-fiscal` · hospedagem Render · Supabase dedicado.
 > **Prioridade absoluta:** manter Radar Fiscal e Radar Jurídico existentes funcionando.
 > **Orçamento incremental:** R$ 0. Nenhuma assinatura, serviço pago ou consulta onerosa sem autorização expressa.
@@ -100,3 +100,7 @@ Tarefa rastreável: [GitHub Issue #10](https://github.com/JoaoMalkiewiez/Radar-f
 ### Missão 01.9 — laboratório Codespaces (preparação)
 
 Consulta de ambientes respondeu200/zero; máquinas e billing usage403 para integração. Cota e bloqueio de cobrança não confirmados: nenhum Codespace criado, nenhum E2E real. Configuração opt-in, preflight sem pulls e roteiro remoto em [lab/README.md](lab/README.md#missão-019--codespaces-sem-computador-local). Proprietário precisa confirmar saldo/limite efetivo que impeça custos e elegibilidade antes de criar. **303 testes unitários/regressão aprovados**, doze checks de sintaxe; Actions do SHA final no comentário do PR. Produção preservada; etapa01 parcialmente bloqueada, PR draft, sem merge/deploy/missão02. [Relatório](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão-019--codespaces-preparado-criação-bloqueada-por-custo-não-comprovado).
+
+### Missão01.9.1 — correções do preflight (16/11/2026)
+
+Prova de filesystem local do daemon por peer/namespace/identidade; memória limitada por cgroupv2 com ancestrais verificáveis, capacidade8GB e margem6GB. README corrigido:4CPU/8GB/64GB mínimos obrigatórios,4core-hours/h e armazenamento separado.327/327 testes,303 anteriores preservados; checks JS/Python aprovados. Preflight neste executor bloqueou capacidade não comprovada, sem pulls. Codespace/cota/custo zero e E2E seguem pendentes; sem produção/merge/deploy/missão02. [Detalhes](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão-0191--equivalência-do-daemon-cgroups-e-mínimos). Etapa01 parcialmente bloqueada, PR draft, aguardar GPT-6.
