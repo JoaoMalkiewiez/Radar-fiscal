@@ -104,3 +104,7 @@ Consulta de ambientes respondeu200/zero; máquinas e billing usage403 para integ
 ### Missão01.9.1 — correções do preflight (16/11/2026)
 
 Prova de filesystem local do daemon por peer/namespace/identidade; memória limitada por cgroupv2 com ancestrais verificáveis, capacidade8GB e margem6GB. README corrigido:4CPU/8GB/64GB mínimos obrigatórios,4core-hours/h e armazenamento separado.327/327 testes,303 anteriores preservados; checks JS/Python aprovados. Preflight neste executor bloqueou capacidade não comprovada, sem pulls. Codespace/cota/custo zero e E2E seguem pendentes; sem produção/merge/deploy/missão02. [Detalhes](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão-0191--equivalência-do-daemon-cgroups-e-mínimos). Etapa01 parcialmente bloqueada, PR draft, aguardar GPT-6.
+
+### Missão01.10 — Resultado B (16/11/2026)
+
+Workflow exclusivamente manual preparado: preflight sem serviços e E2E permanentemente bloqueado. Repositório público confirmado; regra oficial de runner padrão gratuito verificada, sem artifacts/cache. Workflow novo não registrado na padrão(404); capacidade real do runner não medida. Executor continua HOST_CAPACITY_UNVERIFIED. Codespaces/billing403 sem custo zero comprovado; nenhum recurso criado.327/327 testes+checks JS/Python/YAML aprovados; CI final no PR. Auth/RLS/Storage/UI reais não executados, cleanup não aplicável. [Relatório](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão0110--resultado-b-preparado-execução-real-bloqueada). Etapa01 parcialmente bloqueada/PRdraft, sem merge/deploy/missão02.
