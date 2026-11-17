@@ -435,7 +435,7 @@ test("convite Supabase permite definir senha no próprio portal sem guardar toke
       assert.match(html, new RegExp('id="' + id + '"'));
     }
     assert.match(js, /function consumeAuthRedirect/);
-    assert.match(js, /history\.replaceState\(null, "", location\.pathname \+ location\.search\)/);
+    assert.match(js, /history\.replaceState\(null, "", location\.pathname/);
     assert.match(js, /\/auth\/v1\/user/);
     assert.match(js, /method: "PUT"/);
     assert.match(js, /\/auth\/v1\/recover\?redirect_to=/);

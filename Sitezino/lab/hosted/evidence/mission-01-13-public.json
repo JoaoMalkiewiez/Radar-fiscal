@@ -1,0 +1,102 @@
+{
+  "mission": "01.13",
+  "date": "2026-11-17",
+  "projectRef": "pkiowhcjmxfznhuhrxvj",
+  "api": {
+    "scope": "REAL_PUBLIC_API_ONLY_NO_AUTHENTICATED_E2E",
+    "projectRef": "pkiowhcjmxfznhuhrxvj",
+    "results": [
+      {
+        "id": "anonymous.denied.legal_access",
+        "http": 401,
+        "code": "42501",
+        "status": "APROVADO"
+      },
+      {
+        "id": "anonymous.denied.legal_clients",
+        "http": 401,
+        "code": "42501",
+        "status": "APROVADO"
+      },
+      {
+        "id": "anonymous.denied.legal_cases",
+        "http": 401,
+        "code": "42501",
+        "status": "APROVADO"
+      },
+      {
+        "id": "anonymous.denied.legal_events",
+        "http": 401,
+        "code": "42501",
+        "status": "APROVADO"
+      },
+      {
+        "id": "anonymous.denied.legal_movements",
+        "http": 401,
+        "code": "42501",
+        "status": "APROVADO"
+      },
+      {
+        "id": "anonymous.denied.legal_documents",
+        "http": 401,
+        "code": "42501",
+        "status": "APROVADO"
+      },
+      {
+        "id": "anonymous.denied.legal_audit_logs",
+        "http": 401,
+        "code": "42501",
+        "status": "APROVADO"
+      },
+      {
+        "id": "auth.invalid-credentials",
+        "http": 400,
+        "code": "invalid_credentials",
+        "status": "APROVADO"
+      }
+    ]
+  },
+  "ui": {
+    "scope": "REAL_UI_PUBLIC_FLOWS_ONLY_NO_AUTHENTICATED_E2E",
+    "results": [
+      {
+        "width": 1440,
+        "invalidLoginHTTP": 400,
+        "workspaceHidden": true,
+        "recoveryFormOnly": true,
+        "noBrowserErrors": true,
+        "status": "APROVADO"
+      },
+      {
+        "width": 390,
+        "invalidLoginHTTP": 400,
+        "workspaceHidden": true,
+        "recoveryFormOnly": true,
+        "noBrowserErrors": true,
+        "status": "APROVADO"
+      }
+    ]
+  },
+  "blocked": [
+    "A/B/C/D provisioning",
+    "valid login and user JWTs",
+    "authenticated RLS isolation",
+    "refresh/logout/session expiration",
+    "password recovery token consumption and email",
+    "Storage upload/download/delete",
+    "authenticated desktop/mobile UI"
+  ],
+  "reason": "Owner confirmed no administrative lab credential configured. No synthetic users or objects created.",
+  "finalDatabaseCounts": {
+    "auth_users": 0,
+    "legal_access": 0,
+    "clients": 0,
+    "cases": 0,
+    "events": 0,
+    "movements": 0,
+    "documents": 0,
+    "audit_rows": 0,
+    "objects": 0
+  },
+  "cleanup": "Not applicable: no fixtures created; final zero counts verified via lab-only SQL"
+}

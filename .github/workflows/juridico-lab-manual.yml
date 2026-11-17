@@ -1,0 +1,38 @@
+name: Radar Juridico - laboratorio manual (sem deploy)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: juridico-lab-manual
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    # Standard public runner only. Never allocate on private repositories.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sem credenciais persistidas
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Medir capacidade sem pulls ou servicos
+        run: node Sitezino/lab/codespaces-preflight.mjs
+
+  e2e:
+    # Deliberately locked. No input/secret can enable it. GPT-6 must review
+    # actual runner evidence, costs and a scoped lifecycle before unlocking.
+    if: ${{ false }}
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Bloqueio explicito
+        run: |
+          echo 'E2E bloqueado: capacidade e ciclo de vida ainda nao comprovados.'
+          exit 1

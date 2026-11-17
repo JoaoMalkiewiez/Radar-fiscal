@@ -1,0 +1,22 @@
+{
+  "name": "Radar Jurídico — laboratório local isolado",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+  },
+  "remoteUser": "codespace",
+  "hostRequirements": { "cpus": 4, "memory": "8gb", "storage": "64gb" },
+  "forwardPorts": [],
+  "portsAttributes": {
+    "5517": {
+      "label": "Portal local — não publicar",
+      "onAutoForward": "ignore"
+    }
+  },
+  "otherPortsAttributes": { "onAutoForward": "ignore" },
+  "customizations": {
+    "vscode": {
+      "settings": { "remote.autoForwardPorts": false }
+    }
+  }
+}

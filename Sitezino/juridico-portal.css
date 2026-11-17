@@ -20,3 +20,6 @@
 @media(max-width:600px){.records .inline-edit{grid-template-columns:1fr}}
 
 .investigation-card{padding:18px;margin:14px 0;border:1px solid #d5e1d5;border-radius:12px;background:#fff;overflow-wrap:anywhere}.investigation-card h3{margin:0 0 12px;font-size:18px;color:#20452d}.investigation-card h4{margin:16px 0 8px}.investigation-card p{margin:7px 0}.investigation-card li{padding:4px 0}.investigation-note{font-size:13px;line-height:1.5;color:#617266}#investigation-status,#rural-status{font-weight:600;line-height:1.5;overflow-wrap:anywhere}#investigation a{color:#265b3a;text-decoration:underline;text-underline-offset:3px}#investigation .legal-form{align-items:end}
+
+/* A saída da sessão deve continuar disponível quando a navegação vira mobile. */
+@media(max-width:900px){.sidebar-bottom{display:grid}}

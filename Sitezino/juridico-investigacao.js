@@ -2,6 +2,13 @@
 // Consulta cadastral real, sem inferência ou promessa de localização de bens.
 (function () {
   const get = (id) => document.getElementById(id);
+  // A renovação de token mantém a geração; logout invalida todas as consultas antigas.
+  function captureSession() {
+    const version = sessionVersion;
+    const user = currentUser;
+    return () => version === sessionVersion && user === currentUser &&
+      Boolean(accessToken) && Boolean(settings) && !get("workspace").hidden;
+  }
   function el(tag, text, className) {
     const n = document.createElement(tag);
     if (text !== undefined && text !== null) n.textContent = String(text);
@@ -81,21 +88,26 @@
       status.textContent = "Entre com uma conta autorizada antes de consultar.";
       return;
     }
+    const isCurrentSession = captureSession();
     button.disabled = true;
     status.textContent = "Consultando cadastro empresarial nas fontes públicas...";
     try {
       // Verifica autorização de novo antes de consultar.
       const allowed = await api("/legal_access?select=enabled&user_id=eq." + encodeURIComponent(currentUser));
+      if (!isCurrentSession()) return;
       if (!Array.isArray(allowed) || !allowed.some((a) => a.enabled)) throw new Error("Conta sem autorização de escritório.");
       const response = await fetch("/api/cnpj?cnpj=" + encodeURIComponent(cnpj), { cache: "no-store" });
+      if (!isCurrentSession()) return;
       if (!response.ok) throw new Error(response.status === 429 ? "Limite de consultas atingido; tente mais tarde." : "Não foi possível consultar esta fonte agora.");
       const payload = await response.json();
+      if (!isCurrentSession()) return;
       showCompany(payload);
       status.textContent = "Consulta cadastral concluída. Nenhuma base patrimonial foi consultada nesta operação.";
     } catch (error) {
+      if (!isCurrentSession()) return;
       status.textContent = error.message || "Falha na consulta.";
     } finally {
-      button.disabled = false;
+      if (isCurrentSession()) button.disabled = false;
     }
   });
   get("datajud-form").addEventListener("submit", async (event) => {
@@ -116,19 +128,23 @@
       status.textContent = "Entre com uma conta autorizada.";
       return;
     }
+    const isCurrentSession = captureSession();
     button.disabled = true;
     status.textContent = "Consultando metadados públicos do CNJ...";
     try {
       const allowed = await api("/legal_access?select=enabled&user_id=eq." + encodeURIComponent(currentUser));
+      if (!isCurrentSession()) return;
       if (!Array.isArray(allowed) || !allowed.some((entry) => entry.enabled))
         throw new Error("Conta não autorizada.");
       const response = await fetch("/api/juridico/datajud?numero=" +
         encodeURIComponent(number) + "&tribunal=" + encodeURIComponent(tribunal), { cache:"no-store" });
+      if (!isCurrentSession()) return;
       if (!response.ok) {
         if (response.status === 429) throw new Error("Limite temporário de consultas; tente depois.");
         throw new Error("A fonte CNJ está indisponível ou não respondeu. Resultado inconclusivo.");
       }
       const result = await response.json();
+      if (!isCurrentSession()) return;
       status.textContent = result.records?.length
         ? result.records.length + " processo(s) público(s) encontrado(s) no tribunal selecionado."
         : "Nenhum processo localizado nessa consulta ao tribunal. Isso não comprova inexistência.";
@@ -156,9 +172,10 @@
       source(target, "Consultar documentação oficial DataJud", result.sourceUrl);
       note(target, result.coverage);
     } catch (error) {
+      if (!isCurrentSession()) return;
       status.textContent = error.message || "A consulta ao CNJ falhou.";
     } finally {
-      button.disabled = false;
+      if (isCurrentSession()) button.disabled = false;
     }
   });
   get("rural-form").addEventListener("submit", async (event) => {
@@ -180,12 +197,16 @@
       status.textContent = "Informe um CSV oficial de até 8 MB, nome e área de abrangência.";
       return;
     }
+    const isCurrentSession = captureSession();
     button.disabled = true;
     status.textContent = "Analisando somente no navegador...";
     try {
       const allowed = await api("/legal_access?select=enabled&user_id=eq." + encodeURIComponent(currentUser));
+      if (!isCurrentSession()) return;
       if (!Array.isArray(allowed) || !allowed.some((a) => a.enabled)) throw new Error("Conta sem autorização de escritório.");
-      const result = RuralCsv.search(await file.text(), holder);
+      const text = await file.text();
+      if (!isCurrentSession()) return;
+      const result = RuralCsv.search(text, holder);
       status.textContent = result.matches.length
         ? result.matches.length + " vínculo(s) cadastral(is) encontrado(s) no CSV fornecido."
         : "Nenhuma correspondência exata de nome encontrada neste arquivo.";
@@ -204,10 +225,13 @@
       if (result.matches.length > 100) note(target, "Foram exibidos os 100 primeiros registros; restrinja o arquivo para analisar o restante.");
       note(target, "Os dados são DECLARATÓRIOS e uma correspondência por nome não confirma identidade nem titularidade atual. Ausência de registros não comprova ausência de bens.");
     } catch (error) {
+      if (!isCurrentSession()) return;
       status.textContent = error.message || "Não foi possível analisar o CSV.";
     } finally {
-      form.elements.file.value = "";
-      button.disabled = false;
+      if (isCurrentSession()) {
+        form.elements.file.value = "";
+        button.disabled = false;
+      }
     }
   });
 })();
