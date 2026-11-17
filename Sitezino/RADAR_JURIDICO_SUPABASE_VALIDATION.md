@@ -469,3 +469,30 @@ Limitações honestas: adaptador de alvo/transporte e plano preparados; **matriz
 Removida etapa temporária de diagnóstico Docker de radar-juridico-ci.yml; auxiliares/testes anteriores preservados, sem nova tentativa Docker. **331/331 testes**,329 anteriores+2 guardas úteis (produção/allowlist/redirect/sanitização/alvoimutável), zerofail/skip. Checks de18JS/MJS, compilaçãoPython(2), YAML/remoção do diagnóstico e diffcheck aprovados. CI final no comentário do PR. Runtime/SQL/RLS/fiscal/dependências de produção preservados.
 
 Arquivos: lab/hosted/{authorization.json,target.mjs,prepare.mjs,validate-hosted.mjs,README.md}, test/hosted-lab.test.js, workflow existente sem diagnóstico, READMEprincipal e três relatórios. Risco residual: código preparatório ainda sem backendreal, autorização/ref/credenciais pendentes, matriz e UI não implementadas integralmente, email sem SMTP comprovado. PRdraft/etapa01parcialmentebloqueada, sem merge/deploy/contratação/missão02; aguardar revisão GPT-6 e autorização específica de criação.
+
+## Missão01.13 — integração e validação pública real, autenticada bloqueada
+
+Em17/11/2026, base bc198b12e4c0f3f32667d9e3b81284cd53ceb6c9. Projeto **pkiowhcjmxfznhuhrxvj/radar-juridico-lab**, Xixis/sa-east-1, confirmado ACTIVE_HEALTHY. Infra criada pelo GPT-6, baseline não reaplicada. Allowlist fixa esse ref no código e authorization.json; não basta editar autorização para apontar terceiro. Produção permanece deny explícito e não foi acessada.
+
+**Bloqueio confirmado pelo proprietário:** nenhum arquivo/variável com chave administrativa foi configurado. Cloud environment também lista zero secrets/runtime variables. MCP disponível consulta SQL/metadados/chaves públicas, sem API de administração Auth. Não extraímos segredos por SQL nem criamos auth.users manualmente. Por isso, A/B/C/D não provisionados; sem JWTs reais de usuários, não executar/classificar isolamento autenticado, refresh/logout/revogação, consumo de link/recovery, Storage positivo/CRUD e UI privada como aprovados. O runner autenticado completo e o bootstrap/cleanup continuam sem integração neste commit: não afirmar missão concluída.
+
+Execução real com chave **publicável** exclusiva do laboratório, guardada em arquivo0600 foraGit, sem imprimir:
+
+| Caso | Resultado comprovado |
+| --- | --- |
+| Settings Auth | HTTP200, disable_signup=false observado no lab, sem mudança |
+| REST anônimo nas7tabelas | HTTP401 e SQLSTATE42501 em cada uma, acesso negado |
+| Login inexistente sintético | HTTP400/invalid_credentials, sem criação/envio de email |
+| Chromium1440px e390px | Portal real via proxyloopback; login inválidoHTTP400; workspace oculto; recoveryform visível sem envio; local/sessionStorage vazios; zero pageerrors |
+| Schema/bucket | SQLlab confirmou7tabelasRLS; legal-private privado10MB/MIMEs aprovados |
+| Contagem final | Zero auth.users/legal_access/clientes/processos/eventos/movimentos/documentos/auditorias/objetos |
+
+Evidência estruturada versionada: [mission-01-13-public.json](lab/hosted/evidence/mission-01-13-public.json). São fluxos públicos reais, **não isolamento E2E autenticado**; SQL anterior com claims simulados pelo GPT-6 não foi contado. Não testamos recuperação por email; apenas abrimos formulário. SMTP continua pendente, sem contornar limites.
+
+Integração: hosted/portal-harness.mjs valida ref antes de iniciar; servidor extraído para lab/portal-server.mjs e compartilhado com entrylocal. Entrylocal ainda recusa hosted e mantém loopback/guardas. Host/Origin/CSP/no-store/filtragem de headers/body/redirect e binding127.0.0.1 preservados; adminKey não vai ao servidor/browser. Script probe-public.mjs e ui-public-check.cjs explícitos fora npmtest usam respostas reais, sem mocks/interceptação. A validação readiness existente foi executada de fato.
+
+Problemas do executor/checker corrigidos: Nodefetch sem suporte ao proxy herdado falhou; NODE_USE_ENV_PROXY=1 no Node24 resolveu, mantendo certificados/TLS. O primeiro checker de navegador teve espera de resposta/corpo instável, depois corrigida para status capturado+feedback visível, sem relaxar HTTP400. Tentativas falhas intermediárias não foram declaradas aprovadas nem como bugs do produto. UI pública final passou nos dois viewports. Harness foi encerrado; nenhum serviço Docker/custo/deploy criado.
+
+331/331 testes de regressão preservados, testes de alvo atualizados ao refreal e rejeição de refarbitrário/autorizaçãofalse; zero fail/skip.22checksJS/MJS,2Python,YAML e diffcheck aprovados; CI do SHA final no comentário. Runtime fiscal/jurídico/SQL/RLS/produção intactos. Nenhum teste remoto em npmtest e nenhuma dependência comercial adicionada.
+
+Limpeza: zero fixtures foram criadas; não há remoção a executar. Zero contagens finais confirmadas por SQLlaboratório, não declaração de cleanup autenticado executado. Projeto não apagado/pausado. Próximo requisito concreto é chave administrativa exclusiva do laboratório em canal seguro (nunca chat/Git), depois implementação e revisão do bootstrap/oráculo/matriz/cleanup e testes autenticados. Signup aberto do lab observado sem alterações; cadastro de produção não consultado. PRdraft/etapa01parcialmentebloqueada, sem Docker/contratação/produção/merge/deploy/missão02; aguardar GPT-6.

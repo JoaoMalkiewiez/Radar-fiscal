@@ -1,51 +1,43 @@
-# Laboratório hospedado independente — aprovação pendente
+# Laboratório hospedado — Missão 01.13
 
-Proposta: **radar-juridico-lab**, organização **Xixis** (`hwjjvpmhopftkwcbscnx`), região **sa-east-1**, plano **Free**, cotação oficial **US$0/mês** em17/11/2026. Não é branch nem clone da produção. Nenhum recurso criado. Confirmação de custo não substitui autorização específica solicitada ao proprietário.
+Projeto existente **radar-juridico-lab**, ref **pkiowhcjmxfznhuhrxvj**, organização Xixis, região sa-east-1, Free/R$0. Confirmado ACTIVE_HEALTHY; baseline já aplicada pelo GPT-6. **Não criar outro projeto, reaplicar SQL ou restaurar/alterar produção.** Autorização agora fixa exatamente esse ref no código e em authorization.json; produção kokpxikvisheaxkicmop sempre negada, inclusive se configurada na allowlist. Alvos arbitrários com autorização modificada também são negados.
 
-## Elegibilidade observada
+## Execução comprovada e limite
 
-API get_organization confirmou free/tier_free; get_cost retornou project/monthly/amount0. Foram listados cinco projetos, todos INACTIVE (pausados), nenhum laboratório com esse nome. [Regra oficial](https://supabase.com/docs/guides/platform/billing-on-supabase): dois projetos Free ativos entre organizações em que o usuário é Owner/Admin; pausados não contam. A lista disponível indica espaço para laboratório, mas a criação ainda valida elegibilidade global/capacidade/região. Se recusar ou exigir upgrade, parar; não retomar, excluir ou transferir projetos existentes. Não alterar cobrança/plano/cartão. Reconfirmar cotação/plano imediatamente antes da criação autorizada.
+[Evidência sanitizada](evidence/mission-01-13-public.json), coletada em17/11/2026:
 
-Free: banco500MB/projeto, Storage1GB, quotas de tráfego/MAU e pausa por inatividade; não é serviço com SLA. Fixtures pequenas e poucos usuários mantêm planejamento dentro das quotas, mas não são saldo de uso medido. Nada pago será habilitado para ultrapassar limite.
+- Settings Auth HTTP200; disable_signup=false observado no laboratório, sem mudança.
+- Sete tabelas recusaram acesso anônimo com HTTP401/SQLSTATE42501.
+- Login inexistente retornou HTTP400/invalid_credentials, sem criar conta.
+- Chromium real1440px/390px, portal em127.0.0.1 com proxy ao laboratório: login inválido, workspace oculto, formulário recovery visível sem envio, armazenamento do navegador vazio e zero pageerrors. Sem mocks ou interceptação de respostas.
+- SQL do laboratório confirmou sete tabelas com RLS e bucket privado10MB. Ao finalizar, zero usuários, autorizações, registros, auditorias e objetos.
 
-## Preparação concreta e bloqueio da produção
+**Não é validação de isolamento autenticado**. Proprietário confirmou que nenhuma chave administrativa do laboratório foi configurada. Sem essa credencial não criamos A/B/C/D nem geramos JWTs/links. Login válido, refresh, logout, recuperação com token/email, revogação, uploads/downloads/exclusão e interface autenticada seguem BLOQUEADOS. Não manipulamos auth.users por SQL nem fabricamos JWTs. Nada a limpar: zero fixtures criadas; harness foi encerrado. Testes SQL simulados prévios do GPT-6 não são evidência desta execução E2E.
 
-`authorization.json` versionado mantém creationApproved=false/projectRef=null. Nenhum endpoint hospedado é permitido até aprovação específica, criação legítima e posterior fixação do ref **exato** com revisão. Não preencher com ref de outro projeto existente. `target.mjs` sempre nega `kokpxikvisheaxkicmop`, inclusive se colocado na autorização; aceita exclusivamente HTTPS no host canônico do ref aprovado, sem caminho/query/credenciais. Transporte prende alvo imutável, permite apenas Auth/REST/Storage, rejeita redirects e erros não incluem URL/token. Não aceita variável que sobreponha allowlist.
+## Como reproduzir os fluxos públicos
 
-`validate-hosted.mjs inspect` é entrada hospedada separada, somente readiness após allowlist; não é execução da matriz E2E. Config privado externo ao Git em RADAR_HOSTED_LAB_CONFIG: projectRef, url exata e publicKey do laboratório. Não pedir/enviar credenciais em chat. Chave administrativa nunca vai ao portal. Runner local e suas proteções loopback/Docker/Mailpit permanecem intactos. Não apontar o runner local ao hosted.
-
-Preparação offline, sem Docker/rede/provisionamento:
+Arquivo JSON privado fora do Git, modo0600, fornecido por RADAR_HOSTED_LAB_CONFIG, contém projectRef, url exata `https://pkiowhcjmxfznhuhrxvj.supabase.co`, publicKey ativa do laboratório. Sem credenciais de produção. Nunca imprimir conteúdo. Endpoints pinados, redirects recusados e mensagens sanitizadas.
 
 ```bash
-# caminho privado fora de qualquer checkout; não imprimir/compartilhar conteúdo
-node Sitezino/lab/hosted/prepare.mjs /CAMINHO_PRIVADO/hosted-plan.private.json
+node Sitezino/lab/hosted/validate-hosted.mjs inspect
+node Sitezino/lab/hosted/probe-public.mjs /CAMINHO_PRIVADO/evidence-api.json
+node Sitezino/lab/hosted/portal-harness.mjs
+# em outro terminal do mesmo executor, com Playwright e Chromium existentes:
+node Sitezino/lab/hosted/ui-public-check.cjs /CAMINHO_PRIVADO/evidence-ui.json
 ```
 
-Plano0600 contém runUUID, quatro identidades @example.test/senhas aleatórias e cópia com SHA256 dos SQL existentes, nesta ordem:
-1. database/radar-juridico.sql
-2. database/authorized-access-and-movements.sql
-3. database/private-audit-trail.sql
+Inspect e probe são verificações públicas; não são matriz autenticada. Harness só escuta127.0.0.1:5517. Publica só chave pública; jamais chave administrativa. Reutiliza portal-server.mjs com o harness local, mantendo CSP/Host/Origin/no-store/limite de corpo. Entry local ainda exige loopback; entry hosted valida ref antes de iniciar servidor. Nenhuma política da aplicação de produção foi alterada.
 
-Nenhuma conta/DDL criado; SQL de produção não modificado. Aplicar **todos** em banco vazio do laboratório, após conferir ref/organização/nome/plano via management oficial. Primeira migração tem políticas intermediárias; não criar fixtures antes de aplicar todas. Validar grant/schema exposure, RLS nas sete tabelas, gate legal_access e bucket legal-private privado/10MB/MIMEs depois. Não adicionar RPC privilegiada para facilitar runner. Não aplicar SQL pela credencial de usuário comum.
+Neste executor Node24 exigiu **NODE_USE_ENV_PROXY=1** para respeitar proxy do ambiente; manter HTTPS_PROXY/HTTP_PROXY/NO_PROXY e certificados herdados, sem desativar TLS. Isso resolveu conectividade sem alterar produção ou guardas. Não presuma comportamento idêntico em outro Node/runner. Os outputs devem ser arquivos novos; falha por saída já existente não exige repetir chamadas reais.
 
-Provisionamento futuro: MCP apply_migration com project_id exato do laboratório, nomes correspondentes aos três arquivos e SQL do plano verificado; somente após autorização. Nenhuma chamada a produção. As migrations ainda não foram aplicadas nem testadas em Postgres hospedado. Sem credencial administrativa/DB segura do laboratório, bootstrap/oráculo/auditoria/cleanup permanecem bloqueados. Não reutilizar credencial hospedada de produção.
+O primeiro checker de navegador aguardava corpo/resposta de forma instável nesta configuração. Foi corrigido para coletar status da resposta e aguardar feedback visível, mantendo HTTP400 e backend real como exigências. Falhas intermediárias do checker não foram classificadas como defeito da aplicação ou aprovação. O script falha com fase/tipo de erro, sem URL/senha/token. Recuperação apenas abre o formulário; não envia email.
 
-## A/B/C/D e matriz
+## Desbloqueio autenticado
 
-A: administrador habilitado; B: advogado habilitado; C: Auth válido sem linha legal_access; D: habilitado e depois revogado durante sessão. Contas exclusivamente sintéticas, runUUID em registros/paths. Futuros casos da matriz existente devem usar JWT de usuário, nunca service_role representando usuário comum. Admin serve só para bootstrap/oráculo/cleanup escopado. O plano offline define identidades, não comprova criação ou login.
+Falta provisionar **credencial administrativa exclusiva do laboratório por arquivo privado/variável segura**, nunca pelo chat/Git/logs. Não é nova autorização de custo ou criação. API MCP atual permite SQL/metadados/chave pública, mas não oferece administração Auth ou entrega de segredo do projeto. Depois, integrar bootstrap A/B/C/D, oracle/cleanup e matriz completa; validate-hosted ainda não implementa esses modos. Config público atual não contém adminKey. Não usar SQL para criar usuários Auth nem credencial de produção como atalho.
 
-Matriz completa Auth/CRUD/eventos/movimentos/documentos/RLS/Storage/auditoria e cleanup do manifesto ainda exige adaptação do transporte SQL/oráculo e captura de links: `validate-real.mjs` usa docker exec/psql e Mailpit e **não é portável diretamente**. Não transformamos falta dessa adaptação em teste aprovado nem escrevemos RPC com bypassRLS. Transport/alvo e plano estão preparados; suite hospedada completa ainda não executável neste commit. Deve ser completada/revisada após laboratório existir e credenciais seguras disponíveis.
+Usar o plano offline preparado na01.12 somente como referência; IDs/senhas locais não criam contas. Confirmar vazio antes de bootstrap, rastrear UUIDs e paths por run, executar escritas como usuários reais, confirmar negativas por SQLSTATE/códigos pertinentes e confirmar limpeza. Não adicionar RPC com bypassRLS. Baseline SQL já aplicada, deve apenas ser conferida.
 
-## Convite e recuperação sem Mailpit
+SMTP padrão limita destinatários à equipe e2mensagens/h. admin.generateLink é alternativa oficial sem envio para testar verificação invite/recovery, não comprova SMTP/recepção/templates. Nenhum envio/link gerado nesta missão. Não contornar limite nem usar caixa descartável pública. Mailpit/Docker não utilizados.
 
-[SMTP padrão](https://supabase.com/docs/guides/auth/auth-smtp): só destinatários da equipe e2 mensagens/h; @example.test não recebe. Não contornar limites, cadastrar e-mails reais como fixtures ou adicionar equipe para simular caixa postal.
-
-Alternativa oficial gratuita [admin.generateLink](https://supabase.com/docs/reference/javascript/auth-admin-generatelink), REST /auth/v1/admin/generate_link, gera link invite/recovery sem enviar email, com chave administrativa do **lab**. Pode validar consumo real do token, senha e sessão, com redirect exato de loopback. Isso **não testa envio SMTP, recepção, template ou botão público recover**. Links não vão a logs/screenshots. Ainda requer implementar coletor de links separado do localAuthLink (que deve continuar loopback), pinando HTTPS/ref/path/type/redirect do laboratório. Nenhum link gerado nesta missão.
-
-SMTP próprio já existente ou plano gratuito de provedor legítimo só após prova de quotas/custo/credenciais e autorização do proprietário; nenhum provedor contratado ou conta criada. Caixa postal descartável pública expõe links e não é aceita. Recuperação completa via email fica explicitamente pendente sem SMTP/caixa privada elegível.
-
-## Interface isolada e limpeza
-
-Usar browser headless no executor e portal/harness em127.0.0.1; nenhum Render/deploy/site público. Harness local existente recusa upstream hospedado: **não foi alterado**. Variante hosted futura deve usar exclusivamente transporte pinned deste diretório, manter Host/Origin/CSP/no-store e nunca expor adminKey. UI ainda não executável contra hosted neste commit; desktop/mobile/login/logout/CRUD devem ser verificados depois com backend real, sem mocksE2E.
-
-Após executar: remover apenas usuários/objetos/registros runUUID e confirmar ausência, sem apagar projeto/contas de terceiros. Preservar manifesto privado em falha. Projeto Free não será excluído automaticamente; exclusão específica depende de autorização. Nenhuma limpeza real aplicável hoje: zero recursos criados. Produção não foi consultada em dados/Auth/config; apenas listagem administrativa de projetos necessária à elegibilidade.
+Sem merge/deploy/contratação/missão02; PR12 permanece draft e etapa01 parcialmente bloqueada. Nenhum teste cria recurso ao rodar npm test; E2E públicos são explicitamente acionados pelos comandos acima.

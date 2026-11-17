@@ -2,7 +2,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const moduleForLab = () => import("../lab/hosted/target.mjs");
-const ref = "abcdefghijklmnopqrst";
+const ref = "pkiowhcjmxfznhuhrxvj";
 const approval = () => ({
   projectRef: ref,
   creationApproved: true,
@@ -24,7 +24,12 @@ test("hosted lab bloqueia produção, projeto arbitrário e autorização penden
       projectRef: m.PRODUCTION_REF,
     }),
   );
-  assert.throws(() => m.validateHostedTarget(config(), m.loadAuthorization()));
+  assert.throws(() =>
+    m.validateHostedTarget(config(), {
+      ...m.loadAuthorization(),
+      creationApproved: false,
+    }),
+  );
   for (const url of [
     "https://external.invalid",
     `https://${m.PRODUCTION_REF}.supabase.co`,
@@ -34,6 +39,13 @@ test("hosted lab bloqueia produção, projeto arbitrário e autorização penden
     assert.throws(() =>
       m.validateHostedTarget({ ...config(), url }, approval()),
     );
+  const other = "abcdefghijklmnopqrst";
+  assert.throws(() =>
+    m.validateHostedTarget(
+      { projectRef: other, url: `https://${other}.supabase.co` },
+      { ...approval(), projectRef: other },
+    ),
+  );
   assert.equal(
     m.validateHostedTarget(config(), approval()).origin,
     config().url,

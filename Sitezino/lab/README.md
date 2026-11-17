@@ -165,3 +165,7 @@ Cada evidência se aplica somente ao run/attempt/job medido. Rerun, outro job ou
 ## Missão01.12 — alternativa hospedada independente
 
 [Proposta radar-juridico-lab Free, bloqueio da produção e roteiro](hosted/README.md). Cotação oficial0; criação ainda exige autorização específica. Plano offline com SQLchecksums e A/B/C/D preparado, adaptador nega tudo enquanto ref não autorizado. Readiness hospedado não executa matriz completa. Runnerlocal permanece inalterado. Nenhum Dockerdiagnostic repetido; etapa temporária do CI removida nesta missão. E2E hospedado/SMTP/UI continuam pendentes.
+
+## Missão01.13 — laboratório já existente
+
+[Estado/execução hospedados](hosted/README.md): refpkiowhcjmxfznhuhrxvj fixado; nenhum projeto novo/baseline reaplicado. Proxybrowserloopback e probes públicos reais aprovados; credencialadministrativa ausente bloqueia matriz autenticada. Harnesslocal conserva validação loopback e compartilha só servidorHTTP com entryhosted. Não confundir evidencepública com E2EA/B/C/D. Sem Docker.

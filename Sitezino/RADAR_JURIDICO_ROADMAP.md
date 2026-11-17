@@ -116,3 +116,7 @@ Temporário restrito ao PR12/repo público/branch/headrepo exatos, a remover ant
 ### Missão01.12 — proposta Supabase Free independente
 
 Xixis confirmouFree; cotação oficial US$0/mês; cinco projetos pausados, regra de2ativos não conta pausados. Proposto radar-juridico-lab/sa-east-1; **autorização específica de criação pendente**, nenhum recurso criado. Adaptador de alvo hospedado com denyprodução/allowlist pendente, plano offline A/B/C/D+SQLchecksums preparados; readiness não é E2E, matriz/harness completos ainda pendentes.331/331 testes (329preservados), JS/Python/YAML aprovados; CI final no PR. DiagnósticoDockertemporário removido. Sem produção/merge/deploy/missão02; etapa01parcialmentebloqueada/PRdraft. [Roteiro hospedado](lab/hosted/README.md).
+
+### Missão01.13 — hospedado: público real aprovado, autenticado bloqueado
+
+Labexistente pkiowhcjmxfznhuhrxvj integrado com allowlist exata e harnessloopback real;7negaçõesREST401/42501, login inválido400 e browser1440/390px aprovados, sem mocks.331/331regressão e checks aprovados. Proprietário confirmou ausência de credencialadministrativa: A/B/C/D/JWT/refresh/recovery/Storage/UIprivada não executados e runnerautenticado ainda não integrado. Nenhuma fixture criada; contagens finais zero; harness encerrado. [Evidências](lab/hosted/evidence/mission-01-13-public.json), [roteiro](lab/hosted/README.md). Etapa01parcialmentebloqueada/PRdraft, sem Docker/produção/merge/deploy/missão02; revisar com GPT-6.

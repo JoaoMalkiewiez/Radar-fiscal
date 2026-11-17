@@ -14,6 +14,7 @@ export function validateHostedTarget(config, authorization) {
   const ref = authorization?.projectRef;
   if (
     !authorization?.creationApproved ||
+    authorization.projectRef !== "pkiowhcjmxfznhuhrxvj" ||
     !/^[a-z]{20}$/.test(ref || "") ||
     authorization.organizationId !== "hwjjvpmhopftkwcbscnx" ||
     authorization.projectName !== "radar-juridico-lab" ||
