@@ -421,3 +421,31 @@ Capacidade real de runner manual não medida, pois workflow novo não registrado
 Regressão **327/327 testes**, zero fail/skip, nenhum teste removido/adicionado (não houve defeito novo de código). Treze node--check, compilação Python, YAML+guardas de dispatch/public/read-only/E2Elock e diffcheck aprovados. CI do SHA final e tentativa de dispatch constam no comentário de entrega. Testes unitários não são Supabase E2E. Arquivos alterados: workflow novo, lab/README.md e três documentos. Runtime fiscal/jurídico/dependências/SQL/produção preservados.
 
 Pendências do proprietário/revisor: resolver registro/permissão de workflow manual pelo processo autorizado, sem merge nesta missão; disponibilizar runner com capacidade real comprovada, ou confirmar saldo/bloqueio de custos de Codespaces antes de criar. A aprovação de registro não aprova E2E: este continua desabilitado até revisão de custo/capacidade/segurança/lifecycle. Cadastro público segue pendência administrativa anterior; produção não consultada/alterada. Etapa01 parcialmente bloqueada, PR draft, sem merge/deploy/contratação/missão02. **Resultado B**, nunca Resultado A.
+
+## Missão01.11 — capacidade medida no CI existente (17/11/2026)
+
+Base `dfb12c3d01e933785beddaeffde3d70e6f2f1a65`. Diagnóstico temporário adicionado ao workflow existente radar-juridico-ci.yml, restrito a evento pull_request, repo público exato, PR12, branch fix/juridico-auth-session-security e head repo idêntico; sem forks/push/outros PRs. Nenhuma alteração main, secrets, cache adicional, artifacts, stack, imagem baixada, serviço pago ou produção. Etapa deve ser removida antes da publicação definitiva.
+
+**Evidência real específica do run [44139282340](https://github.com/JoaoMalkiewiez/Radar-fiscal/actions/runs/44139282340), SHA `7fb19a96c0a463468f0ac1fceac75b8ab407e976`, job verify:**
+
+| Medida | Resultado real |
+| --- | --- |
+| Preflight | status1 / HOST_CAPACITY_UNVERIFIED, capacidade BLOQUEADA |
+| Daemon Docker |29.4.2,4CPU, driver overlayfs, root /var/lib/docker |
+| RAM host |16.758.403.072 bytes total;15.650.242.560 bytes disponíveis no instante |
+| RAM informada pelo Docker |16.758.403.072 bytes |
+| Cliente namespaces |mount mnt:[4026531832]; cgroup cgroup:[4026531835] |
+| Cliente cgroups visíveis |memory.max=max; consumo620.236.800 e1.384.177.664 bytes nos níveis observados |
+| Daemon cgroup legível |memory.max=max; consumo7.389.184 bytes; namespace não legível |
+| Peer do socket UNIX |PID1; executável/mount namespace/cgroup namespace PermissionError |
+| Prova de filesystem |DOCKER_PEER_UNVERIFIED: identidade de dockerd não comprovada |
+| Disco informado pelo daemon |6 imagens,3.609GB usados; zero contêineres/volumes/cachebuild ativos |
+| Espaço livre do daemon |**NÃO VERIFICADO**, sem inferir pelo uso ou filesystem do checkout |
+
+Medições são observações daquele run, não garantem outro runner, próximo job/attempt ou capacidade efetiva da stack. Memória do host/cgroups legíveis não substitui prova completa do daemon. Não inferimos causa do PID1 nem contornamos permissão; guardas aprovadas foram mantidas. Não há prova de margem30GiB. Resultado: ambiente ainda inadequado para autorizar E2E por **evidência incompleta**, não declaração de disco fisicamente insuficiente. A etapa verde significa coleta concluída, nunca preflight aprovado.
+
+Novo auxiliar lab/ci-capacity-diagnostic.py somente leitura coleta campos selecionados, erros controlados e uso de disco via Docker API. Não imprime stderr de comandos/endpoints remotos/segredos nem configuração inteira do daemon. Dois testes de protocolo verificam sanitização e bloqueio com daemon indisponível/remoto. **329/329 testes**,327 anteriores preservados, zero falha/skip. Quatorze checks JS/MJS, compilação de dois Python, YAML/condições de escopo e diffcheck aprovados. Actions do SHA final registradas no comentário; run acima é evidência independente do commit de diagnóstico inicial.
+
+Plano executável apenas após revisão e prova completa: no **mesmo job e runner**, imediatamente após preflight aprovado, instalar CLI3.1.0 com checksum e iniciar projeto local fora do Git em RUNNER_TEMP; stack loopback e SQL em banco vazio; setup/run/UI real; cleanup do manifesto com verificação; parar apenas projeto criado. Guardar manifesto privado para reconciliação em falha exige desenho revisado antes de iniciar. Não transferir aprovação entre jobs. Nenhuma etapa E2E habilitada nesta missão.
+
+Auth/RLS/Storage/UI seguem NÃO EXECUTADOS; nenhuma fixture/volume/container criado e cleanup real não aplicável. Não removemos imagens preexistentes. Codespaces/custozero continuam pendentes, sem criação. Cadastro público conserva pendência administrativa anterior; produção não consultada/alterada. Riscos: coleta depende de permissões reais do runner e espaço livre não comprovado; temporário ainda precisa remoção antes de publicação. PR draft, etapa01 parcialmente bloqueada, sem merge/deploy/contratação/missão02; aguardar GPT-6.

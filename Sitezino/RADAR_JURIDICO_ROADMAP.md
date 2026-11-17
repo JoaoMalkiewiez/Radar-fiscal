@@ -1,6 +1,6 @@
 # Radar Jurídico — roteiro de evolução com aprovação por testes
 
-> Documento de referência persistente. Última revisão: 16/11/2026.
+> Documento de referência persistente. Última revisão: 17/11/2026.
 > Projeto: `JoaoMalkiewiez/Radar-fiscal` · hospedagem Render · Supabase dedicado.
 > **Prioridade absoluta:** manter Radar Fiscal e Radar Jurídico existentes funcionando.
 > **Orçamento incremental:** R$ 0. Nenhuma assinatura, serviço pago ou consulta onerosa sem autorização expressa.
@@ -108,3 +108,7 @@ Prova de filesystem local do daemon por peer/namespace/identidade; memória limi
 ### Missão01.10 — Resultado B (16/11/2026)
 
 Workflow exclusivamente manual preparado: preflight sem serviços e E2E permanentemente bloqueado. Repositório público confirmado; regra oficial de runner padrão gratuito verificada, sem artifacts/cache. Workflow novo não registrado na padrão(404); capacidade real do runner não medida. Executor continua HOST_CAPACITY_UNVERIFIED. Codespaces/billing403 sem custo zero comprovado; nenhum recurso criado.327/327 testes+checks JS/Python/YAML aprovados; CI final no PR. Auth/RLS/Storage/UI reais não executados, cleanup não aplicável. [Relatório](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão0110--resultado-b-preparado-execução-real-bloqueada). Etapa01 parcialmente bloqueada/PRdraft, sem merge/deploy/missão02.
+
+### Missão01.11 — diagnóstico no CI existente (17/11/2026)
+
+Temporário restrito ao PR12/repo público/branch/headrepo exatos, a remover antes de publicação. Run44139282340 mediu4CPU,16,76GB RAMtotal/15,65GB disponíveis host, Docker29.4.2/overlayfs. PeerPID1/executável e namespaces inacessíveis: preflight1/HOST_CAPACITY_UNVERIFIED; espaço livre daemon não comprovado. Não confundir uso3,609GB com disponível nem reutilizar capacidade em outro runner.329/329 testes, checksJS/Python/YAML aprovados; CI final no comentário. Auth/RLS/Storage/UI não executados, nenhum pull/stack/main/merge/deploy/missão02. Etapa01 parcialmente bloqueada/PRdraft. [Evidências](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão0111--capacidade-medida-no-ci-existente-17112026).
