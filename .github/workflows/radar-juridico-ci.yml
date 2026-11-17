@@ -32,21 +32,3 @@ jobs:
           node --check server.js
       - name: Testar aplicacao existente e portal juridico
         run: npm test
-
-      # TEMPORARY mission01.11: remove before definitive publication.
-      - name: Diagnostico temporario PR12 (nao aprova capacidade)
-        if: >-
-          github.event_name == 'pull_request' &&
-          github.repository == 'JoaoMalkiewiez/Radar-fiscal' &&
-          github.event.repository.private == false &&
-          github.event.pull_request.number == 12 &&
-          github.event.pull_request.head.ref == 'fix/juridico-auth-session-security' &&
-          github.event.pull_request.head.repo.full_name == 'JoaoMalkiewiez/Radar-fiscal'
-        timeout-minutes: 3
-        run: |
-          set +e
-          node lab/codespaces-preflight.mjs
-          preflight_status=$?
-          set -e
-          echo "Preflight exit status: $preflight_status (diagnostic only; nonzero means BLOCKED)"
-          python3 -B lab/ci-capacity-diagnostic.py

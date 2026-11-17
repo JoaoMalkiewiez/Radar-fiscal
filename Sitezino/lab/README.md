@@ -161,3 +161,7 @@ A etapa temporária de `.github/workflows/radar-juridico-ci.yml` roda somente em
 Cada evidência se aplica somente ao run/attempt/job medido. Rerun, outro job ou execução seguinte recebe outro runner e exige novo preflight. Não reutilizar aprovação de capacidade por SHA/label. Plano futuro, **sujeito à revisão**: no mesmo job, imediatamente após preflight aprovado e demais controles de custo/segurança, instalar CLI3.1.0 com checksum, criar projeto local em RUNNER_TEMP fora do Git, iniciar stack loopback, aplicar SQL em banco vazio, rodar setup/run/UI real e cleanup verificado, parar apenas recursos daquele projeto; nunca job separado baseado em outputs de capacidade antigos. Falha de cleanup deve preservar manifesto de maneira privada e previamente revisada antes de descartar runner. Nenhuma dessas operações é habilitada nesta missão.
 
 **Remover a etapa temporária de diagnóstico antes da publicação definitiva**; qualquer diagnóstico futuro depende de revisão explícita. Os arquivos auxiliares são somente leitura, sem ligação ao runtime de produção.
+
+## Missão01.12 — alternativa hospedada independente
+
+[Proposta radar-juridico-lab Free, bloqueio da produção e roteiro](hosted/README.md). Cotação oficial0; criação ainda exige autorização específica. Plano offline com SQLchecksums e A/B/C/D preparado, adaptador nega tudo enquanto ref não autorizado. Readiness hospedado não executa matriz completa. Runnerlocal permanece inalterado. Nenhum Dockerdiagnostic repetido; etapa temporária do CI removida nesta missão. E2E hospedado/SMTP/UI continuam pendentes.

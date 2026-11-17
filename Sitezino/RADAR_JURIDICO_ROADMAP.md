@@ -112,3 +112,7 @@ Workflow exclusivamente manual preparado: preflight sem serviços e E2E permanen
 ### Missão01.11 — diagnóstico no CI existente (17/11/2026)
 
 Temporário restrito ao PR12/repo público/branch/headrepo exatos, a remover antes de publicação. Run44139282340 mediu4CPU,16,76GB RAMtotal/15,65GB disponíveis host, Docker29.4.2/overlayfs. PeerPID1/executável e namespaces inacessíveis: preflight1/HOST_CAPACITY_UNVERIFIED; espaço livre daemon não comprovado. Não confundir uso3,609GB com disponível nem reutilizar capacidade em outro runner.329/329 testes, checksJS/Python/YAML aprovados; CI final no comentário. Auth/RLS/Storage/UI não executados, nenhum pull/stack/main/merge/deploy/missão02. Etapa01 parcialmente bloqueada/PRdraft. [Evidências](RADAR_JURIDICO_SUPABASE_VALIDATION.md#missão0111--capacidade-medida-no-ci-existente-17112026).
+
+### Missão01.12 — proposta Supabase Free independente
+
+Xixis confirmouFree; cotação oficial US$0/mês; cinco projetos pausados, regra de2ativos não conta pausados. Proposto radar-juridico-lab/sa-east-1; **autorização específica de criação pendente**, nenhum recurso criado. Adaptador de alvo hospedado com denyprodução/allowlist pendente, plano offline A/B/C/D+SQLchecksums preparados; readiness não é E2E, matriz/harness completos ainda pendentes.331/331 testes (329preservados), JS/Python/YAML aprovados; CI final no PR. DiagnósticoDockertemporário removido. Sem produção/merge/deploy/missão02; etapa01parcialmentebloqueada/PRdraft. [Roteiro hospedado](lab/hosted/README.md).
