@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-11-17T00:09:32Z",
+  "updatedAt": "2026-11-18T15:41:11Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -825,6 +825,17 @@
       "detectedAt": "2026-11-16T20:51:18Z",
       "recoveredAt": "2026-11-17T00:09:32Z",
       "durationSeconds": 11894,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "cte-PR-20261118T154111Z",
+      "key": "cte:PR",
+      "document": "cte",
+      "uf": "PR",
+      "detectedAt": "2026-11-18T15:41:11Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
       "maxSeverity": 5,
       "statusLabel": "erro"
     }
