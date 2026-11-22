@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-11-21T20:55:45Z",
+  "updatedAt": "2026-11-22T01:01:36Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -878,8 +878,8 @@
       "document": "nfe",
       "uf": "PE",
       "detectedAt": "2026-11-21T00:06:37Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-22T01:01:36Z",
+      "durationSeconds": 89699,
       "maxSeverity": 5,
       "statusLabel": "erro",
       "severityUpdatedAt": "2026-11-21T06:58:46Z"
