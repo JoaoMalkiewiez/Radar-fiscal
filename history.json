@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-11-24T06:08:32Z",
+  "updatedAt": "2026-11-24T17:41:36Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -912,8 +912,8 @@
       "document": "nfce",
       "uf": "DF",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -923,8 +923,8 @@
       "document": "nfce",
       "uf": "BA",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -934,8 +934,8 @@
       "document": "nfce",
       "uf": "AP",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -945,8 +945,8 @@
       "document": "nfce",
       "uf": "AC",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -956,8 +956,8 @@
       "document": "nfce",
       "uf": "ES",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -967,8 +967,8 @@
       "document": "nfce",
       "uf": "CE",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -978,8 +978,8 @@
       "document": "nfce",
       "uf": "AL",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -989,8 +989,8 @@
       "document": "nfce",
       "uf": "PI",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1000,8 +1000,8 @@
       "document": "nfce",
       "uf": "RN",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1011,8 +1011,8 @@
       "document": "nfce",
       "uf": "MA",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1022,8 +1022,8 @@
       "document": "nfce",
       "uf": "RJ",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1033,8 +1033,8 @@
       "document": "nfce",
       "uf": "PB",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1044,8 +1044,8 @@
       "document": "nfce",
       "uf": "PE",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1055,8 +1055,8 @@
       "document": "nfce",
       "uf": "PA",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1066,8 +1066,8 @@
       "document": "nfce",
       "uf": "TO",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1077,8 +1077,8 @@
       "document": "nfce",
       "uf": "SE",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1088,8 +1088,8 @@
       "document": "nfce",
       "uf": "RO",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1099,8 +1099,8 @@
       "document": "nfce",
       "uf": "RR",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     },
@@ -1110,8 +1110,8 @@
       "document": "nfce",
       "uf": "SC",
       "detectedAt": "2026-11-24T06:08:32Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T17:41:36Z",
+      "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
     }
