@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-11-23T22:14:48Z",
+  "updatedAt": "2026-11-24T06:08:32Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -901,10 +901,219 @@
       "document": "nfe",
       "uf": "PR",
       "detectedAt": "2026-11-23T22:14:48Z",
-      "recoveredAt": null,
-      "durationSeconds": null,
+      "recoveredAt": "2026-11-24T06:08:32Z",
+      "durationSeconds": 28424,
       "maxSeverity": 3,
       "statusLabel": "muito_lento"
+    },
+    {
+      "id": "nfce-DF-20261124T060832Z",
+      "key": "nfce:DF",
+      "document": "nfce",
+      "uf": "DF",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-BA-20261124T060832Z",
+      "key": "nfce:BA",
+      "document": "nfce",
+      "uf": "BA",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-AP-20261124T060832Z",
+      "key": "nfce:AP",
+      "document": "nfce",
+      "uf": "AP",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-AC-20261124T060832Z",
+      "key": "nfce:AC",
+      "document": "nfce",
+      "uf": "AC",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-ES-20261124T060832Z",
+      "key": "nfce:ES",
+      "document": "nfce",
+      "uf": "ES",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-CE-20261124T060832Z",
+      "key": "nfce:CE",
+      "document": "nfce",
+      "uf": "CE",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-AL-20261124T060832Z",
+      "key": "nfce:AL",
+      "document": "nfce",
+      "uf": "AL",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-PI-20261124T060832Z",
+      "key": "nfce:PI",
+      "document": "nfce",
+      "uf": "PI",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-RN-20261124T060832Z",
+      "key": "nfce:RN",
+      "document": "nfce",
+      "uf": "RN",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-MA-20261124T060832Z",
+      "key": "nfce:MA",
+      "document": "nfce",
+      "uf": "MA",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-RJ-20261124T060832Z",
+      "key": "nfce:RJ",
+      "document": "nfce",
+      "uf": "RJ",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-PB-20261124T060832Z",
+      "key": "nfce:PB",
+      "document": "nfce",
+      "uf": "PB",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-PE-20261124T060832Z",
+      "key": "nfce:PE",
+      "document": "nfce",
+      "uf": "PE",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-PA-20261124T060832Z",
+      "key": "nfce:PA",
+      "document": "nfce",
+      "uf": "PA",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-TO-20261124T060832Z",
+      "key": "nfce:TO",
+      "document": "nfce",
+      "uf": "TO",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-SE-20261124T060832Z",
+      "key": "nfce:SE",
+      "document": "nfce",
+      "uf": "SE",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-RO-20261124T060832Z",
+      "key": "nfce:RO",
+      "document": "nfce",
+      "uf": "RO",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-RR-20261124T060832Z",
+      "key": "nfce:RR",
+      "document": "nfce",
+      "uf": "RR",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-SC-20261124T060832Z",
+      "key": "nfce:SC",
+      "document": "nfce",
+      "uf": "SC",
+      "detectedAt": "2026-11-24T06:08:32Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
     }
   ]
 }
