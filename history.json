@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackingSince": "2026-10-23T19:08:45Z",
-  "updatedAt": "2026-11-24T17:41:36Z",
+  "updatedAt": "2026-11-27T03:12:55Z",
   "incidents": [
     {
       "id": "cte-AP-20261023T201042Z",
@@ -1114,6 +1114,72 @@
       "durationSeconds": 41584,
       "maxSeverity": 5,
       "statusLabel": "erro"
+    },
+    {
+      "id": "nfe-AM-20261127T031255Z",
+      "key": "nfe:AM",
+      "document": "nfe",
+      "uf": "AM",
+      "detectedAt": "2026-11-27T03:12:55Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 5,
+      "statusLabel": "erro"
+    },
+    {
+      "id": "nfce-CE-20261127T031255Z",
+      "key": "nfce:CE",
+      "document": "nfce",
+      "uf": "CE",
+      "detectedAt": "2026-11-27T03:12:55Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
+    },
+    {
+      "id": "nfce-AC-20261127T031255Z",
+      "key": "nfce:AC",
+      "document": "nfce",
+      "uf": "AC",
+      "detectedAt": "2026-11-27T03:12:55Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
+    },
+    {
+      "id": "nfce-RO-20261127T031255Z",
+      "key": "nfce:RO",
+      "document": "nfce",
+      "uf": "RO",
+      "detectedAt": "2026-11-27T03:12:55Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
+    },
+    {
+      "id": "nfce-RR-20261127T031255Z",
+      "key": "nfce:RR",
+      "document": "nfce",
+      "uf": "RR",
+      "detectedAt": "2026-11-27T03:12:55Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 4,
+      "statusLabel": "timeout"
+    },
+    {
+      "id": "nfce-SC-20261127T031255Z",
+      "key": "nfce:SC",
+      "document": "nfce",
+      "uf": "SC",
+      "detectedAt": "2026-11-27T03:12:55Z",
+      "recoveredAt": null,
+      "durationSeconds": null,
+      "maxSeverity": 3,
+      "statusLabel": "muito_lento"
     }
   ]
 }
